@@ -616,6 +616,38 @@ assert '.player-header.player-header-minimal' in player_css, "player.css içinde
 
 test_passed("Player kontrolleri ve footer sahne içine taşındı, genişliği sahne ile eşitlendi, ses ve feedback alanları kaldırıldı.")
 
+# 5.23 Öğrenme ve Değerlendirme Modları, Tik/Çarpı Rozetleri ve Tekrar Dene Döngüsü Testi
+print("\n[Aşama 5.23] Öğrenme ve Değerlendirme Modları, Rozetler ve Tekrar Dene Döngüsü Testi")
+with open(os.path.join(BASE_DIR, 'js/player/ActivityEngine.js'), 'r', encoding='utf-8') as f:
+    ae_code = f.read()
+with open(os.path.join(BASE_DIR, 'css/player.css'), 'r', encoding='utf-8') as f:
+    player_css = f.read()
+with open(os.path.join(BASE_DIR, 'src/ActivityPlayer.js'), 'r', encoding='utf-8') as f:
+    ap_code = f.read()
+with open(os.path.join(BASE_DIR, 'src/components/DNDPlayerElement.js'), 'r', encoding='utf-8') as f:
+    dnd_elem_code = f.read()
+
+assert 'player-mode-switch' in ae_code, "ActivityEngine içinde segmented mod değiştirici (player-mode-switch) bulunmalıdır!"
+assert 'btn-mode-learning' in ae_code and 'btn-mode-assessment' in ae_code, "Öğrenme ve Değerlendirme butonları tanımlı olmalıdır!"
+assert 'setPlayMode' in ae_code and 'getPlayMode' in ae_code, "ActivityEngine üzerinde setPlayMode ve getPlayMode API'leri tanımlı olmalıdır!"
+assert 'retryWrongAnswers' in ae_code, "Değerlendirme modu için retryWrongAnswers metodu bulunmalıdır!"
+assert 'setCheckButtonState' in ae_code, "Kontrol Et ve Tekrar Dene durum geçişleri için setCheckButtonState metodu bulunmalıdır!"
+assert 'lockedTargetIds' in ae_code, "Doğru eşleşen hedeflere tekrar nesne bırakılmasını engellemek için lockedTargetIds mantığı yer almalıdır!"
+assert 'is-target-locked' in ae_code, "Kilitlenen hedeflere görsel ve işlevsel kilit sınıfı (is-target-locked) eklenmelidir!"
+assert 'player-status-badge' in ae_code, "Doğru (✓) ve yanlış (✕) durum rozetleri için player-status-badge DOM oluşturması bulunmalıdır!"
+
+# CSS denetimleri
+assert '.player-mode-switch' in player_css, "player.css içinde mod değiştirici stilleri tanımlı olmalıdır!"
+assert '.player-btn.retry-btn' in player_css, "player.css içinde Tekrar Dene butonu vurgu stilleri tanımlı olmalıdır!"
+assert '.player-status-badge' in player_css, "player.css içinde durum rozeti stilleri tanımlı olmalıdır!"
+assert '.player-status-badge.badge-correct' in player_css and '.player-status-badge.badge-incorrect' in player_css, "player.css içinde yeşil tik ve kırmızı çarpı rozet stilleri tanımlı olmalıdır!"
+
+# Kütüphane sarmalayıcı denetimleri
+assert 'getPlayMode' in ap_code and 'setPlayMode' in ap_code, "ActivityPlayer sınıfında getPlayMode ve setPlayMode metotları bulunmalıdır!"
+assert 'getPlayMode' in dnd_elem_code and 'setPlayMode' in dnd_elem_code, "DNDPlayerElement bileşeninde getPlayMode ve setPlayMode bulunmalıdır!"
+
+test_passed("Öğrenme ve Değerlendirme modları, segmented switch, yeşil tik/kırmızı çarpı rozetleri, hedef kilitleme ve Tekrar Dene döngüsü doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

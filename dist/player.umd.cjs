@@ -299,6 +299,11 @@ class ActivityEngine {
     this.correctCount = 0;
     this.isCompleted = false;
 
+    // Etkinlik Modu: 'learning' (Öğrenme - Anlık) veya 'assessment' (Değerlendirme - Toplu Kontrol)
+    this.playMode = this.options.playMode || this.projectData.settings?.playMode || 'learning';
+    this.isRetryMode = false;
+    this.lockedTargetIds = new Set();
+
     // Sürükleme değişkenleri
     this.activeDragId = null;
     this.dragStartPos = { x: 0, y: 0 };
@@ -474,10 +479,19 @@ class ActivityEngine {
 
               <!-- İkinci Kontrol Alanı (Sahne genişliğinde) -->
               <div class="player-controls" id="player-controls">
+                <div class="player-mode-switch" role="group" aria-label="Etkinlik Modu">
+                  <button type="button" class="mode-btn ${this.playMode === 'learning' ? 'active' : ''}" id="btn-mode-learning" data-mode="learning" title="Öğrenme Modu (Anlık Geri Bildirim)">
+                    🎓 Öğrenme
+                  </button>
+                  <button type="button" class="mode-btn ${this.playMode === 'assessment' ? 'active' : ''}" id="btn-mode-assessment" data-mode="assessment" title="Değerlendirme Modu (Toplu Kontrol)">
+                    📝 Değerlendirme
+                  </button>
+                </div>
+
                 <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
                   🔄 Sıfırla
                 </button>
-                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
+                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et" style="${this.playMode === 'learning' ? 'display: none;' : 'display: inline-flex;'}">
                   ✓ Kontrol Et
                 </button>
               </div>
@@ -520,6 +534,16 @@ class ActivityEngine {
     `;
 
     // Buton dinleyicileri
+    const modeLearningBtn = this.container.querySelector('#btn-mode-learning');
+    if (modeLearningBtn) {
+      modeLearningBtn.onclick = () => this.setPlayMode('learning');
+    }
+
+    const modeAssessmentBtn = this.container.querySelector('#btn-mode-assessment');
+    if (modeAssessmentBtn) {
+      modeAssessmentBtn.onclick = () => this.setPlayMode('assessment');
+    }
+
     const resetBtn = this.container.querySelector('#btn-reset-game');
     if (resetBtn) resetBtn.onclick = () => this.resetGame();
 
@@ -531,7 +555,15 @@ class ActivityEngine {
     }
 
     const checkBtn = this.container.querySelector('#btn-check-answers');
-    if (checkBtn) checkBtn.onclick = () => this.checkAllAnswers();
+    if (checkBtn) {
+      checkBtn.onclick = () => {
+        if (this.isRetryMode) {
+          this.retryWrongAnswers();
+        } else {
+          this.checkAllAnswers();
+        }
+      };
+    }
 
     const playAgainBtn = this.container.querySelector('#btn-play-again');
     if (playAgainBtn) playAgainBtn.onclick = () => this.resetGame();
@@ -544,6 +576,69 @@ class ActivityEngine {
     if (type === 'categorization') return 'Kategorilere Ayırma';
     if (type === 'sequencing') return 'Sıralama';
     return 'Etkinlik';
+  }
+
+  getPlayMode() {
+    return this.playMode;
+  }
+
+  setPlayMode(mode) {
+    if (mode !== 'learning' && mode !== 'assessment') return;
+    if (this.playMode === mode) return;
+    this.playMode = mode;
+    this.resetGame();
+    this.updateModeUI();
+    this.emit('playModeChange', { mode: this.playMode });
+  }
+
+  addStatusBadge(dragEl, type) {
+    if (!dragEl) return;
+    this.removeStatusBadge(dragEl);
+    const badge = document.createElement('span');
+    badge.className = `player-status-badge badge-${type}`;
+    badge.textContent = type === 'correct' ? '✓' : '✕';
+    dragEl.appendChild(badge);
+  }
+
+  removeStatusBadge(dragEl) {
+    if (!dragEl) return;
+    const badge = dragEl.querySelector('.player-status-badge');
+    if (badge) badge.remove();
+  }
+
+  updateModeUI() {
+    const learnBtn = this.container.querySelector('#btn-mode-learning');
+    const assessBtn = this.container.querySelector('#btn-mode-assessment');
+    const checkBtn = this.container.querySelector('#btn-check-answers');
+
+    if (learnBtn) learnBtn.classList.toggle('active', this.playMode === 'learning');
+    if (assessBtn) assessBtn.classList.toggle('active', this.playMode === 'assessment');
+
+    if (checkBtn) {
+      if (this.playMode === 'learning') {
+        checkBtn.style.display = 'none';
+      } else {
+        checkBtn.style.display = 'inline-flex';
+        this.setCheckButtonState('check');
+      }
+    }
+  }
+
+  setCheckButtonState(state) {
+    const checkBtn = this.container.querySelector('#btn-check-answers');
+    if (!checkBtn) return;
+
+    if (state === 'retry') {
+      this.isRetryMode = true;
+      checkBtn.textContent = '🔄 Tekrar Dene';
+      checkBtn.title = 'Yanlış seçenekleri geri gönderip tekrar deneyin';
+      checkBtn.className = 'player-btn retry-btn';
+    } else {
+      this.isRetryMode = false;
+      checkBtn.textContent = '✓ Kontrol Et';
+      checkBtn.title = 'Cevapları Kontrol Et';
+      checkBtn.className = 'player-btn primary-btn check-answers-btn';
+    }
   }
 
   setupResizeHandler() {
@@ -685,15 +780,8 @@ class ActivityEngine {
       draggablesLayer.appendChild(el);
     });
 
-    // Değerlendirme modu ayarı
-    const isManualCheck = this.projectData.settings?.evaluationMode === 'submit';
-    const checkBtn = this.container.querySelector('#btn-check-answers');
-    if (checkBtn) {
-      checkBtn.style.display = 'inline-flex';
-      if (isManualCheck) {
-        checkBtn.classList.add('pulse-highlight');
-      }
-    }
+    // Değerlendirme modu UI ayarı
+    this.updateModeUI();
   }
 
   createDOMObject(obj, isDraggable = false) {
@@ -973,7 +1061,7 @@ class ActivityEngine {
     const itemMidY = itemY + itemH / 2;
 
     const targets = (this.projectData.objects || []).filter(o =>
-      ['target', 'category', 'sequence_slot'].includes(o.role)
+      ['target', 'category', 'sequence_slot'].includes(o.role) && !this.lockedTargetIds.has(o.id)
     );
 
     // Öncelik: Merkez noktasını içinde barındıran hedef
@@ -1005,7 +1093,8 @@ class ActivityEngine {
 
   highlightHoverTarget(targetId) {
     this.container.querySelectorAll('.player-object.is-target').forEach(el => {
-      if (targetId && el.getAttribute('data-id') === targetId) {
+      const id = el.getAttribute('data-id');
+      if (targetId && id === targetId && !this.lockedTargetIds.has(id)) {
         el.classList.add('hover-active');
       } else {
         el.classList.remove('hover-active');
@@ -1023,14 +1112,25 @@ class ActivityEngine {
     const dragObj = this.getObj(dragId);
     if (!targetObj || !dragObj) return;
 
-    const isInstant = this.projectData.settings?.evaluationMode !== 'submit';
-    this.attempts++;
-    this.updateStats();
+    // Doğru eşleşmiş kilitli hedeflere nesne bırakılamaz
+    if (this.lockedTargetIds.has(targetId)) return;
 
-    if (isInstant) {
+    if (this.playMode === 'learning') {
+      this.attempts++;
+      this.updateStats();
       this.evaluateSingleDrop(dragId, targetId);
     } else {
-      // Manuel kontrol modunda doğrudan hedefe oturtulur, henüz doğrulanmaz
+      // Değerlendirme Modu: Kullanıcı tüm nesneleri sürükleyecek, sürüklediği yere yerleşecek.
+      // Eğer hedef kategori değilse ve üzerinde henüz doğrulanmamış başka bir öğe varsa, eski öğeyi başlangıç yerine gönder
+      if (targetObj.role !== 'category') {
+        const prevDragId = Object.keys(this.placedMap).find(id => this.placedMap[id] === targetId && id !== dragId);
+        if (prevDragId) {
+          this.returnToOrigin(prevDragId);
+        }
+      }
+
+      this.attempts++;
+      this.updateStats();
       this.snapToTarget(dragId, targetObj);
       this.placedMap[dragId] = targetId;
       this.audio.playDrop();
@@ -1045,6 +1145,7 @@ class ActivityEngine {
 
     const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
     const targetObj = this.getObj(targetId);
+    const targetEl = this.container.querySelector(`[data-id="${targetId}"]`);
 
     if (isCorrect) {
       // DOĞRU CEVAP
@@ -1064,6 +1165,12 @@ class ActivityEngine {
           dragEl.classList.add('is-locked');
           dragEl.setAttribute('tabindex', '-1');
         }
+        this.addStatusBadge(dragEl, 'correct');
+      }
+
+      if (targetObj && targetObj.role !== 'category') {
+        this.lockedTargetIds.add(targetId);
+        if (targetEl) targetEl.classList.add('is-target-locked');
       }
 
       this.emit('drop', { dragId, targetId, isCorrect: true });
@@ -1076,8 +1183,12 @@ class ActivityEngine {
 
       if (dragEl) {
         dragEl.classList.add('is-incorrect');
+        this.addStatusBadge(dragEl, 'incorrect');
         setTimeout(() => {
-          if (dragEl) dragEl.classList.remove('is-incorrect');
+          if (dragEl) {
+            dragEl.classList.remove('is-incorrect');
+            this.removeStatusBadge(dragEl);
+          }
         }, 600);
       }
 
@@ -1133,9 +1244,13 @@ class ActivityEngine {
     if (!dragEl || !origin) return;
 
     delete this.placedMap[dragId];
+    this.removeStatusBadge(dragEl);
+    if (dragEl) dragEl.classList.remove('is-incorrect');
 
     if (dragEl.classList.contains('is-correct')) {
       dragEl.classList.remove('is-correct');
+      dragEl.classList.remove('is-locked');
+      dragEl.setAttribute('tabindex', '0');
       this.correctCount = Math.max(0, this.correctCount - 1);
       this.updateStats();
     }
@@ -1154,7 +1269,7 @@ class ActivityEngine {
     }, 360);
   }
 
-  // Toplu Değerlendirme (Submit Modu veya Buton ile Manuel Kontrol)
+  // Toplu Değerlendirme (Değerlendirme Modunda Kontrol Et butonu ile)
   checkAllAnswers() {
     const answerKey = this.projectData.answerKey || {};
     let correct = 0;
@@ -1166,9 +1281,12 @@ class ActivityEngine {
       return;
     }
 
+    let hasWrong = false;
     for (const [dragId, targetId] of Object.entries(this.placedMap)) {
       const isRight = answerKey[dragId] === targetId;
       const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+      const targetObj = this.getObj(targetId);
+      const targetEl = this.container.querySelector(`[data-id="${targetId}"]`);
 
       if (isRight) {
         correct++;
@@ -1176,10 +1294,19 @@ class ActivityEngine {
           dragEl.classList.remove('is-incorrect');
           dragEl.classList.add('is-correct');
           dragEl.classList.add('is-locked');
+          dragEl.setAttribute('tabindex', '-1');
+          this.addStatusBadge(dragEl, 'correct');
+        }
+        if (targetObj && targetObj.role !== 'category') {
+          this.lockedTargetIds.add(targetId);
+          if (targetEl) targetEl.classList.add('is-target-locked');
         }
       } else {
+        hasWrong = true;
         if (dragEl) {
+          dragEl.classList.remove('is-correct');
           dragEl.classList.add('is-incorrect');
+          this.addStatusBadge(dragEl, 'incorrect');
         }
       }
     }
@@ -1194,9 +1321,36 @@ class ActivityEngine {
       this.showCompletionModal();
     } else {
       this.audio.playWrong();
-      this.setFeedback(`${correct} / ${this.totalDraggables} doğru. Kırmızı ile işaretlenenleri düzeltmeyi deneyin.`, 'warning', 4000);
-      this.showHint('Bazı eşleştirmeler hatalı. Kırmızı ile işaretlenenleri düzeltmeyi deneyin.');
+      this.setFeedback(`${correct} / ${this.totalDraggables} doğru. Yanlışları Tekrar Dene butonuyla düzeltebilirsiniz.`, 'warning', 4000);
+      this.showHint('Bazı eşleştirmeler hatalı. "Tekrar Dene" butonuna basarak yanlışları eski yerine gönderebilirsiniz.');
+      if (hasWrong) {
+        this.setCheckButtonState('retry');
+      }
     }
+  }
+
+  // Değerlendirme Modunda Yanlışları Eski Yerine Gönderip Tekrar Dene Döngüsü
+  retryWrongAnswers() {
+    const answerKey = this.projectData.answerKey || {};
+    const wrongIds = [];
+
+    for (const [dragId, targetId] of Object.entries(this.placedMap)) {
+      if (answerKey[dragId] !== targetId) {
+        wrongIds.push(dragId);
+      }
+    }
+
+    wrongIds.forEach(dragId => {
+      const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+      if (dragEl) {
+        dragEl.classList.remove('is-incorrect');
+        this.removeStatusBadge(dragEl);
+      }
+      this.returnToOrigin(dragId);
+    });
+
+    this.setCheckButtonState('check');
+    this.showHint('Kalan nesneleri boş hedeflere sürükleyip tekrar kontrol edin.');
   }
 
   checkCompletion() {
@@ -1334,7 +1488,12 @@ class ActivityEngine {
     this.attempts = 0;
     this.correctCount = 0;
     this.isCompleted = false;
+    this.lockedTargetIds.clear();
 
+    this.container.querySelectorAll('.player-status-badge').forEach(el => el.remove());
+    this.container.querySelectorAll('.is-target-locked').forEach(el => el.classList.remove('is-target-locked'));
+
+    this.setCheckButtonState('check');
     this.updateStats();
     this.resetFeedback();
 

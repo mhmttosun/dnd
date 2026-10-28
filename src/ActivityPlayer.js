@@ -29,6 +29,7 @@ export class ActivityPlayer {
   constructor(options = {}) {
     this.options = Object.assign({
       sound: true,
+      playMode: 'learning',
       onComplete: null,
       onStep: null,
       onDrop: null,
@@ -169,6 +170,7 @@ export class ActivityPlayer {
     // Seçenekleri hazırla
     const engineOptions = {
       isEmbedded: false,
+      playMode: this.options.playMode,
       onComplete: (res) => {
         if (typeof this.options.onComplete === 'function') this.options.onComplete(res);
       },
@@ -256,6 +258,25 @@ export class ActivityPlayer {
     return (this.engine && typeof this.engine.getFeedback === 'function')
       ? this.engine.getFeedback()
       : null;
+  }
+
+  /**
+   * Aktif oyun modunu döner ('learning' veya 'assessment')
+   */
+  getPlayMode() {
+    return (this.engine && typeof this.engine.getPlayMode === 'function')
+      ? this.engine.getPlayMode()
+      : this.options.playMode || 'learning';
+  }
+
+  /**
+   * Oyun modunu değiştirir ('learning' veya 'assessment')
+   * @param {'learning'|'assessment'} mode
+   */
+  setPlayMode(mode) {
+    if (this.engine && typeof this.engine.setPlayMode === 'function') {
+      this.engine.setPlayMode(mode);
+    }
   }
 
   /**

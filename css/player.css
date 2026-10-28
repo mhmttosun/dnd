@@ -165,6 +165,19 @@
   box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4);
 }
 
+.player-btn.retry-btn {
+  background: #f59e0b;
+  border-color: #fbbf24;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+}
+
+.player-btn.retry-btn:hover {
+  background: #d97706;
+  color: #ffffff;
+}
+
 .player-btn.pulse-highlight {
   animation: checkPulse 1.5s infinite;
 }
@@ -331,6 +344,48 @@
   to { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.4); }
 }
 
+/* DOĞRU / YANLIŞ İKON ROZETLERİ (✓ / ✕) */
+.player-status-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  animation: badgePop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.player-status-badge.badge-correct {
+  background: #10b981;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+.player-status-badge.badge-incorrect {
+  background: #ef4444;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.player-object.is-target.is-target-locked {
+  pointer-events: none !important;
+  opacity: 0.9;
+  border-color: #10b981 !important;
+}
+
 .player-object-content {
   width: 100%;
   height: 100%;
@@ -412,6 +467,45 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
   width: 100%;
+}
+
+/* MOD DEĞİŞTİRİCİ (Segmented Switch) */
+.player-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.player-mode-switch .mode-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.player-mode-switch .mode-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-mode-switch .mode-btn.active {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
 
 /* ALT BİLGİ / FOOTER (Sahne genişliğinde) */
@@ -566,6 +660,11 @@
   .player-btn {
     padding: 6px 10px;
     font-size: 0.75rem;
+  }
+
+  .player-mode-switch .mode-btn {
+    padding: 4px 8px;
+    font-size: 0.72rem;
   }
 
   .player-controls {

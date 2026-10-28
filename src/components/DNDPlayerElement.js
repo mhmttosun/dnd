@@ -12,7 +12,7 @@ import { ActivityPlayer } from '../ActivityPlayer.js';
 
 export class DNDPlayerElement extends HTMLElement {
   static get observedAttributes() {
-    return ['src', 'sound'];
+    return ['src', 'sound', 'mode'];
   }
 
   constructor() {
@@ -39,6 +39,8 @@ export class DNDPlayerElement extends HTMLElement {
       this.initPlayer();
     } else if (name === 'sound' && this._player) {
       this._player.setSound(newValue !== 'false');
+    } else if (name === 'mode' && this._player && (newValue === 'learning' || newValue === 'assessment')) {
+      this._player.setPlayMode(newValue);
     }
   }
 
@@ -78,6 +80,7 @@ export class DNDPlayerElement extends HTMLElement {
     const src = this.getAttribute('src');
     const soundAttr = this.getAttribute('sound');
     const sound = soundAttr !== 'false';
+    const modeAttr = this.getAttribute('mode') || 'learning';
 
     if (!src && !this._data) return;
 
@@ -86,6 +89,7 @@ export class DNDPlayerElement extends HTMLElement {
       src: src || undefined,
       data: this._data || undefined,
       sound: sound,
+      playMode: modeAttr,
       onComplete: (stats) => {
         this.dispatchEvent(new CustomEvent('dnd:complete', { detail: stats, bubbles: true }));
       },
@@ -162,6 +166,22 @@ export class DNDPlayerElement extends HTMLElement {
    */
   getState() {
     return this._player ? this._player.getState() : null;
+  }
+
+  /**
+   * Aktif oyun modunu döner ('learning' veya 'assessment')
+   */
+  getPlayMode() {
+    return this._player ? this._player.getPlayMode() : (this.getAttribute('mode') || 'learning');
+  }
+
+  /**
+   * Oyun modunu değiştirir ('learning' veya 'assessment')
+   * @param {'learning'|'assessment'} mode
+   */
+  setPlayMode(mode) {
+    if (this._player) this._player.setPlayMode(mode);
+    this.setAttribute('mode', mode);
   }
 }
 
