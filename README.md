@@ -233,6 +233,49 @@ const player = new ActivityPlayer({
 // player.destroy();
 ```
 
+#### E. Editörün Başka Uygulamalara Gömülmesi (Embedded Editor) & Canlı JSON Export
+
+Editör bir CMS, LMS (Moodle, Canvas vb.), öğretmen yönetim paneli veya React/Vue uygulamasının içerisine `<iframe>` veya bileşen olarak gömüldüğünde:
+* **Üst Başlık (Header) Otomatik Gizlenir:** Sayfa bir `<iframe>` içinde açıldığında veya URL'e `?embedded=true` (veya `?header=false`) eklendiğinde editörün üst başlık çubuğu (`.app-top-header`) gizlenir ve çalışma alanı tüm ekranı kaplar.
+* **Sahnenin JSON Verisini Kolayca Alma:** Host uygulama tek satırda güncel sahne JSON'ını alabilir.
+
+```html
+<!-- Host Uygulama (LMS / Portal / React) -->
+<iframe id="dnd-editor" src="/dnd/index.html?embedded=true" style="width: 100%; height: 750px; border: none;"></iframe>
+
+<script>
+  const editorFrame = document.getElementById('dnd-editor');
+
+  // 1. YÖNTEM: Doğrudan JavaScript Kısayolu (Same-Origin)
+  function saveFromEditor() {
+    // Tek satırda güncel sahnenin JSON nesnesi:
+    const projectData = editorFrame.contentWindow.dndExport();
+    console.log('Sahne JSON:', projectData);
+    return projectData;
+  }
+
+  // 2. YÖNTEM: postMessage API (Cross-Origin / Güvenli İletişim)
+  function requestEditorData() {
+    editorFrame.contentWindow.postMessage({ type: 'DND_GET_DATA' }, '*');
+  }
+
+  // Editörden gelen yanıtları ve anlık değişiklikleri dinleme:
+  window.addEventListener('message', (event) => {
+    // İstek üzerine dönen JSON
+    if (event.data.type === 'DND_DATA_RESPONSE') {
+      console.log('Alınan Proje JSON:', event.data.data);
+    }
+    // Sahnede kullanıcı nesne taşıdığında / düzenlediğinde canlı fırlatılan bildirim
+    if (event.data.type === 'DND_DATA_CHANGED') {
+      console.log('Canlı Değişiklik:', event.data.data);
+    }
+  });
+
+  // İstenirse ebeveynden yeni proje verisi yükleme:
+  // editorFrame.contentWindow.postMessage({ type: 'DND_LOAD_DATA', data: newProjectJson }, '*');
+</script>
+```
+
 ---
 
 ## 🧪 Otomatik Testleri Çalıştırma

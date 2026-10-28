@@ -67,6 +67,16 @@ body {
   justify-content: space-between;
   padding: 0 24px;
   z-index: 50;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Gömülü Mod (Embedded Mode): Başka uygulamalara entegre edildiğinde header gizlenir */
+body.is-embedded .app-top-header {
+  display: none !important;
+}
+
+body.is-embedded .editor-workspace {
+  height: calc(100vh - 48px);
 }
 
 .top-header-left {
