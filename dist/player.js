@@ -333,6 +333,10 @@ class ActivityEngine {
 
   // Yaşam döngüsü temizliği: SPA, React, Vue unmount durumlarında tüm dinleyicileri ve sesi temizler
   destroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.onResizeBound) {
       window.removeEventListener('resize', this.onResizeBound);
     }
@@ -525,21 +529,32 @@ class ActivityEngine {
 
     this.onResizeBound = () => this.updateScale();
     window.addEventListener('resize', this.onResizeBound);
-    setTimeout(() => this.updateScale(), 10);
+
+      this.resizeObserver = new window.ResizeObserver(() => {
+        this.updateScale();
+      });
+      this.resizeObserver.observe(this.viewportEl);
+    }
+
+    this.updateScale();
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => this.updateScale());
+    }
+    setTimeout(() => this.updateScale(), 30);
   }
 
   updateScale() {
     if (!this.stageEl || !this.viewportEl) return;
 
-    const stageW = this.projectData.stage.width || 1200;
-    const stageH = this.projectData.stage.height || 675;
+    const stageW = (this.projectData.stage && this.projectData.stage.width) || 1200;
+    const stageH = (this.projectData.stage && this.projectData.stage.height) || 675;
 
     this.stageEl.style.width = `${stageW}px`;
     this.stageEl.style.height = `${stageH}px`;
 
     // Arka plan stilleri
-    this.stageEl.style.backgroundColor = this.projectData.stage.backgroundColor || '#ffffff';
-    if (this.projectData.stage.backgroundImage) {
+    this.stageEl.style.backgroundColor = (this.projectData.stage && this.projectData.stage.backgroundColor) || '#ffffff';
+    if (this.projectData.stage && this.projectData.stage.backgroundImage) {
       this.stageEl.style.backgroundImage = `url("${this.projectData.stage.backgroundImage}")`;
       this.stageEl.style.backgroundSize = 'contain';
       this.stageEl.style.backgroundPosition = 'center';
@@ -547,9 +562,16 @@ class ActivityEngine {
     }
 
     const vpRect = this.viewportEl.getBoundingClientRect();
-    const pad = 20;
-    const availW = Math.max(vpRect.width - pad, 100);
-    const availH = Math.max(vpRect.height - pad, 100);
+    if (vpRect.width === 0 || vpRect.height === 0) {
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => this.updateScale());
+      }
+      return;
+    }
+
+    const pad = vpRect.width < 600 ? 16 : 32;
+    const availW = Math.max(vpRect.width - pad, 60);
+    const availH = Math.max(vpRect.height - pad, 60);
 
     this.currentScale = Math.min(availW / stageW, availH / stageH);
     this.stageEl.style.transform = `scale(${this.currentScale})`;

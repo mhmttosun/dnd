@@ -4,20 +4,27 @@
 
 #preview-container {
   display: none;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 9999;
   background: #0f172a;
+  overflow: hidden;
 }
 
 .player-wrapper {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   user-select: none;
   -webkit-user-select: none;
@@ -25,6 +32,8 @@
 
 .player-header {
   height: 60px;
+  min-height: 52px;
+  flex-shrink: 0;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -119,21 +128,30 @@
 
 /* OYUN ALANI */
 .player-stage-viewport {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+  touch-action: none;
 }
 
 .player-stage {
-  position: relative;
+  position: absolute;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   border-radius: 12px;
   overflow: hidden;
   touch-action: none;
+  transform-origin: center center;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
 }
 
 .player-targets-layer,
@@ -289,6 +307,8 @@
 /* ALT BİLGİ */
 .player-footer {
   height: 50px;
+  min-height: 44px;
+  flex-shrink: 0;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -398,4 +418,47 @@
   background: #4338ca;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+}
+
+/* ==========================================================================
+   RESPONSIVE UYARLAMALAR (Küçük Ekran ve Pencereler)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .player-header {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .player-title {
+    font-size: 0.95rem;
+  }
+
+  .player-badge {
+    display: none;
+  }
+
+  .stat-pill {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  .player-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .player-footer {
+    height: auto;
+    min-height: 38px;
+    padding: 4px 12px;
+  }
+
+  .player-hint {
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

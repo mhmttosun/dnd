@@ -79,13 +79,19 @@ class ExportManager {
     .player-wrapper {
       width: 100vw;
       height: 100vh;
+      max-width: 100%;
+      max-height: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      position: relative;
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
 
     .player-header {
       height: 60px;
+      min-height: 52px;
+      flex-shrink: 0;
       padding: 0 20px;
       display: flex;
       align-items: center;
@@ -184,21 +190,30 @@ class ExportManager {
 
     /* OYUN ALANI VE SAHNE */
     .player-stage-viewport {
-      flex: 1;
+      flex: 1 1 0%;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
       position: relative;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.9) 100%);
+      touch-action: none;
     }
 
     .player-stage {
-      position: relative;
+      position: absolute;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
       border-radius: 12px;
       overflow: hidden;
       touch-action: none;
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-select: none;
+      flex-shrink: 0;
     }
 
     .player-targets-layer,
@@ -352,6 +367,8 @@ class ExportManager {
     /* ALT BİLGİ VE İPUCU */
     .player-footer {
       height: 50px;
+      min-height: 44px;
+      flex-shrink: 0;
       padding: 0 20px;
       display: flex;
       align-items: center;
