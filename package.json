@@ -1,0 +1,31 @@
+{
+  "name": "dnd-activity-editor",
+  "version": "1.0.0",
+  "description": "HTML Tabanlı Görsel Sürükle-Bırak Etkinlik Editörü (100% DOM/SVG, Zero Canvas, Bağımsız Çevrimdışı Tek Parça HTML İhracı)",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "python3 tests/run_tests.py"
+  },
+  "keywords": [
+    "drag-and-drop",
+    "activity-editor",
+    "education",
+    "edtech",
+    "interactive-learning",
+    "vanilla-js",
+    "no-canvas",
+    "svg",
+    "offline-first"
+  ],
+  "author": "mhmttosun <mhmttosun@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mhmttosun/dnd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mhmttosun/dnd/issues"
+  },
+  "homepage": "https://github.com/mhmttosun/dnd#readme"
+}

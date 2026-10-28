@@ -1,0 +1,119 @@
+/* ==========================================================================
+   ANSWER KEY CSS - Cevap Anahtarı Modu Görsel Eşleştirme Stilleri
+   ========================================================================== */
+
+/* Cevap Anahtarı Modunda Nesneler */
+.mode-answer-key .stage-object {
+  cursor: default;
+}
+
+.mode-answer-key .stage-object[data-role="draggable"] {
+  cursor: pointer !important;
+}
+
+/* Seçilen Kaynak Sürüklenebilir Öğe (Sadece seçili nesne vurgulanır, konumu korunur) */
+.mode-answer-key .stage-object.ak-source-active {
+  outline: 3px solid #6366f1 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px #ffffff, 0 8px 24px rgba(99, 102, 241, 0.35) !important;
+  z-index: 1000 !important;
+  cursor: pointer !important;
+}
+
+/* ==========================================================================
+   Hedef Seçim Aşaması: Sürüklenecek nesne seçildikten sonra
+   Sadece sahne rolü "Hedef" olan nesneler tıklanabilir olmalıdır.
+   ========================================================================== */
+.mode-answer-key.ak-selecting-target .stage-object {
+  cursor: default;
+  pointer-events: none; /* Hedef olmayan (dekoratif vb.) nesneler tıklanamaz */
+}
+
+/* Kaynak nesnenin kendisi tıklanarak seçim iptal edilebilir */
+.mode-answer-key.ak-selecting-target .stage-object.ak-source-active {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* Başka bir sürüklenebilir nesneye tıklanarak kaynak değiştirilebilir */
+.mode-answer-key.ak-selecting-target .stage-object[data-role="draggable"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* Sahne rolü "Hedef" olan nesneler tıklanabilir */
+.mode-answer-key.ak-selecting-target .stage-object[data-role="target"],
+.mode-answer-key.ak-selecting-target .stage-object[data-role="category"],
+.mode-answer-key.ak-selecting-target .stage-object[data-role="sequence_slot"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* SVG Bağlantı Çizgileri */
+.ak-connection-group {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.ak-connection-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 24;
+  pointer-events: stroke;
+}
+
+.ak-connection-path {
+  fill: none;
+  stroke: #6366f1;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 4;
+  animation: dashAnimation 1s linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3));
+}
+
+@keyframes dashAnimation {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.ak-node-circle {
+  fill: #4f46e5;
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.ak-node-circle.start {
+  fill: #ec4899;
+}
+
+.ak-node-circle.end {
+  fill: #10b981;
+}
+
+/* Bağlantı Kaldırma (Unlink) Butonu */
+.ak-unlink-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, background 0.15s ease;
+  pointer-events: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.ak-unlink-btn:hover {
+  background: #dc2626;
+  transform: scale(1.2);
+}

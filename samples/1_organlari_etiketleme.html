@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>İnsan Vücudundaki Organlar</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; min-height: 100vh; overflow: hidden; }
+    /* ==========================================================================
+   PLAYER CSS - Etkinlik Oynatıcı ve Önizleme Stilleri
+   ========================================================================== */
+
+#preview-container {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  background: #0f172a;
+}
+
+.player-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.player-header {
+  height: 60px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+.player-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.player-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.player-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.stat-pill .stat-value {
+  color: #38bdf8;
+}
+
+.player-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.player-btn.exit-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.player-btn.exit-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+/* OYUN ALANI */
+.player-stage-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+}
+
+.player-stage {
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.player-targets-layer,
+.player-draggables-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.player-object {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.player-object.is-draggable {
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.player-object.is-draggable:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.player-object.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.92;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.35));
+}
+
+.player-object.is-locked {
+  cursor: default !important;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.player-object.is-correct {
+  border-color: #10b981 !important;
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+}
+
+.player-object.is-incorrect {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.player-object.is-incorrect .player-object-content {
+  animation: shake 0.4s ease-in-out;
+}
+
+.player-object.hover-active {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35) !important;
+}
+
+.player-object.keyboard-active {
+  outline: 4px solid #f59e0b;
+  outline-offset: 4px;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+@keyframes pulse {
+  from { box-shadow: 0 0 0 2px #f59e0b; }
+  to { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.4); }
+}
+
+.player-object-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Çizgi Nesnesi Oynatıcı Stilleri */
+.player-object[data-type="line"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.player-object[data-type="line"] .player-inner-content {
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.player-line-bar,
+.player-object svg.object-line-bar {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.player-object-content span,
+.player-object-content .player-text-span {
+  width: 100%;
+  display: block;
+  text-align: inherit;
+  box-sizing: border-box;
+}
+
+.player-object-content img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.cat-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 8px;
+}
+
+.slot-badge {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #6d28d9;
+}
+
+.slot-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* ALT BİLGİ */
+.player-footer {
+  height: 50px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.88);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* BAŞARI MODALI */
+.player-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.player-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 36px 40px;
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-star-banner {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.modal-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.modal-desc {
+  font-size: 1rem;
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.modal-score-summary {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.summary-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #4f46e5;
+}
+
+.summary-lbl {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 12px;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn:hover {
+  background: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+}
+
+  </style>
+</head>
+<body>
+  <div id="activity-app"></div>
+
+  <script id="activity-data" type="application/json">
+{"version": "1.0", "project": {"id": "proj_1", "name": "İnsan Vücudundaki Organlar", "activityType": "image-labeling"}, "stage": {"width": 1200, "height": 675, "backgroundColor": "#f8fafc"}, "objects": [{"id": "bg_anatomi", "name": "Gövde", "type": "rectangle", "role": "decorative", "x": 420, "y": 80, "width": 360, "height": 520, "backgroundColor": "#fef3c7", "borderColor": "#f59e0b", "borderWidth": 2, "borderRadius": 20}, {"id": "target_kalp", "name": "Hedef: Kalp", "type": "zone", "role": "target", "x": 620, "y": 240, "width": 130, "height": 50, "text": "Hedef: Kalp", "textColor": "#dc2626", "backgroundColor": "rgba(254, 226, 226, 0.7)", "borderColor": "#ef4444", "borderStyle": "dashed", "borderWidth": 2, "borderRadius": 8}, {"id": "target_akciger", "name": "Hedef: Akciğer", "type": "zone", "role": "target", "x": 450, "y": 220, "width": 130, "height": 50, "text": "Hedef: Akciğer", "textColor": "#0284c7", "backgroundColor": "rgba(224, 242, 254, 0.7)", "borderColor": "#0284c7", "borderStyle": "dashed", "borderWidth": 2, "borderRadius": 8}, {"id": "target_mide", "name": "Hedef: Mide", "type": "zone", "role": "target", "x": 580, "y": 340, "width": 130, "height": 50, "text": "Hedef: Mide", "textColor": "#d97706", "backgroundColor": "rgba(254, 243, 199, 0.7)", "borderColor": "#f59e0b", "borderStyle": "dashed", "borderWidth": 2, "borderRadius": 8}, {"id": "drag_kalp", "name": "Kalp", "type": "text", "role": "draggable", "x": 920, "y": 180, "width": 150, "height": 48, "text": "❤️ Kalp", "backgroundColor": "#ffffff", "borderColor": "#6366f1", "borderWidth": 2, "borderRadius": 10}, {"id": "drag_akciger", "name": "Akciğer", "type": "text", "role": "draggable", "x": 920, "y": 250, "width": 150, "height": 48, "text": "🫁 Akciğer", "backgroundColor": "#ffffff", "borderColor": "#6366f1", "borderWidth": 2, "borderRadius": 10}, {"id": "drag_mide", "name": "Mide", "type": "text", "role": "draggable", "x": 920, "y": 320, "width": 150, "height": 48, "text": "🥘 Mide", "backgroundColor": "#ffffff", "borderColor": "#6366f1", "borderWidth": 2, "borderRadius": 10}], "answerKey": {"drag_kalp": "target_kalp", "drag_akciger": "target_akciger", "drag_mide": "target_mide"}, "settings": {"evaluationMode": "instant", "wrongAnswerBehavior": "return", "correctAnswerBehavior": "lock", "soundEnabled": true, "completionMessage": "Tebrikler! Bütün organları doğru yerleştirdiniz."}}
+  </script>
+
+  <script>
+    window.DND = window.DND || {};
+    /**
+ * AudioSynthesizer - Tarayıcı Web Audio API kullanarak harici ses dosyalarına
+ * ihtiyaç duymadan temiz, profesyonel ses efektleri üretir.
+ * Tamamen çevrimdışı çalışır.
+ */
+class AudioSynthesizer {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  setEnabled(val) {
+    this.enabled = !!val;
+  }
+
+  playTone(freq, type, duration, delay = 0, gainLevel = 0.15) {
+    if (!this.enabled) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const startTime = this.ctx.currentTime + delay;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(gainLevel, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    } catch (e) {
+      // Ses hatası sessizce geçilir
+    }
+  }
+
+  // Doğru cevap sesi: Neşeli, yükselen majör akor (C5, E5, G5)
+  playCorrect() {
+    if (!this.enabled) return;
+    this.playTone(523.25, 'triangle', 0.12, 0, 0.18);      // C5
+    this.playTone(659.25, 'triangle', 0.14, 0.08, 0.18);   // E5
+    this.playTone(783.99, 'triangle', 0.25, 0.16, 0.22);   // G5
+  }
+
+  // Yanlış cevap sesi: Yumuşak alçalan uyarı tonu
+  playWrong() {
+    if (!this.enabled) return;
+    this.playTone(320, 'sine', 0.12, 0, 0.15);
+    this.playTone(260, 'sine', 0.22, 0.09, 0.15);
+  }
+
+  // Nesneyi eline alma / tıklama çıt sesi
+  playPickup() {
+    if (!this.enabled) return;
+    this.playTone(480, 'sine', 0.05, 0, 0.08);
+  }
+
+  // Nesneyi bırakma sesi
+  playDrop() {
+    if (!this.enabled) return;
+    this.playTone(360, 'sine', 0.07, 0, 0.1);
+  }
+
+  // Etkinlik tamamlandığında kutlama fanfarı
+  playComplete() {
+    if (!this.enabled) return;
+    const notes = [
+      { f: 523.25, d: 0.12, t: 0 },       // C5
+      { f: 659.25, d: 0.12, t: 0.1 },     // E5
+      { f: 783.99, d: 0.14, t: 0.2 },     // G5
+      { f: 1046.50, d: 0.45, t: 0.32 }    // C6
+    ];
+    notes.forEach(n => {
+      this.playTone(n.f, 'triangle', n.d, n.t, 0.2);
+    });
+  }
+}
+
+// Global namespace
+window.DND = window.DND || {};
+window.DND.AudioSynthesizer = AudioSynthesizer;
+
+    /**
+ * ValidationEngine - Proje JSON verisi, cevap anahtarı ve nesne tutarlılığı
+ * doğrulamalarını gerçekleştirir. Hatalı ve eksik durumları tespit eder.
+ */
+class ValidationEngine {
+  static get VALID_ACTIVITY_TYPES() {
+    return ['image-labeling', 'matching', 'categorization', 'sequencing'];
+  }
+
+  static get VALID_ROLES() {
+    return ['decorative', 'draggable', 'target', 'category', 'sequence_slot'];
+  }
+
+  /**
+   * Bir projenin şemasını doğrular
+   * @param {Object} projectData
+   * @returns {{ valid: boolean, errors: string[], warnings: string[] }}
+   */
+  static validateProject(projectData) {
+    const errors = [];
+    const warnings = [];
+
+    if (!projectData || typeof projectData !== 'object') {
+      return { valid: false, errors: ['Proje verisi geçerli bir JSON nesnesi değil.'], warnings };
+    }
+
+    // Sürüm kontrolü
+    if (!projectData.version) {
+      warnings.push('Proje sürüm bilgisi bulunamadı, varsayılan sürüm (1.0) kabul edildi.');
+    }
+
+    // Proje başlığı ve türü
+    if (!projectData.project || typeof projectData.project !== 'object') {
+      errors.push('Proje meta verisi (project alanı) eksik.');
+    } else {
+      if (!projectData.project.name || typeof projectData.project.name !== 'string') {
+        warnings.push('Proje adı belirtilmemiş.');
+      }
+      if (!this.VALID_ACTIVITY_TYPES.includes(projectData.project.activityType)) {
+        errors.push(`Geçersiz etkinlik türü: ${projectData.project.activityType}. Desteklenenler: ${this.VALID_ACTIVITY_TYPES.join(', ')}`);
+      }
+    }
+
+    // Sahne (Stage) kontrolleri
+    if (!projectData.stage || typeof projectData.stage !== 'object') {
+      errors.push('Sahne ayarları (stage alanı) eksik.');
+    } else {
+      if (typeof projectData.stage.width !== 'number' || projectData.stage.width <= 0) {
+        errors.push('Sahne genişliği pozitif bir sayı olmalıdır.');
+      }
+      if (typeof projectData.stage.height !== 'number' || projectData.stage.height <= 0) {
+        errors.push('Sahne yüksekliği pozitif bir sayı olmalıdır.');
+      }
+    }
+
+    // Nesneler (Objects) kontrolleri
+    if (!Array.isArray(projectData.objects)) {
+      errors.push('Nesneler listesi (objects alanı) bir dizi olmalıdır.');
+    } else {
+      const idSet = new Set();
+      let draggablesCount = 0;
+      let targetsCount = 0;
+
+      projectData.objects.forEach((obj, idx) => {
+        if (!obj.id) {
+          errors.push(`Nesne #${idx + 1} için 'id' alanı eksik.`);
+        } else if (idSet.has(obj.id)) {
+          errors.push(`Mükerrer nesne ID'si tespit edildi: '${obj.id}'.`);
+        } else {
+          idSet.add(obj.id);
+        }
+
+        if (typeof obj.x !== 'number' || typeof obj.y !== 'number') {
+          errors.push(`'${obj.id || idx}' nesnesinin X ve Y koordinatları sayı olmalıdır.`);
+        }
+
+        if (obj.role === 'draggable') draggablesCount++;
+        if (['target', 'category', 'sequence_slot'].includes(obj.role)) targetsCount++;
+      });
+
+      if (draggablesCount === 0) {
+        warnings.push('Etkinlikte henüz hiç sürüklenebilir nesne bulunmuyor.');
+      }
+      if (targetsCount === 0) {
+        warnings.push('Etkinlikte henüz hiç hedef alan bulunmuyor.');
+      }
+
+      // Cevap anahtarı kontrolü
+      const answerKey = projectData.answerKey || {};
+      for (const [dragId, targetId] of Object.entries(answerKey)) {
+        if (!idSet.has(dragId)) {
+          warnings.push(`Cevap anahtarındaki '${dragId}' ID'li sürüklenebilir nesne sahnede bulunamadı.`);
+        }
+        if (projectData.project && projectData.project.activityType !== 'sequencing') {
+          if (!idSet.has(targetId)) {
+            warnings.push(`Cevap anahtarındaki '${targetId}' ID'li hedef nesne sahnede bulunamadı.`);
+          }
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * HTML dışa aktarmadan önce cevap anahtarının oynanabilirlik durumunu kontrol eder
+   */
+  static validatePlayability(projectData) {
+    const issues = [];
+    const objects = projectData.objects || [];
+    const answerKey = projectData.answerKey || {};
+    const draggables = objects.filter(o => o.role === 'draggable');
+
+    if (draggables.length === 0) {
+      issues.push('En az bir adet sürüklenebilir nesne eklemelisiniz.');
+    }
+
+    const unassignedDraggables = draggables.filter(d => !answerKey[d.id]);
+    if (unassignedDraggables.length > 0) {
+      const names = unassignedDraggables.map(d => d.name || d.text || d.id).join(', ');
+      issues.push(`Şu sürüklenebilir nesnelerin cevap anahtarında hedefi belirlenmemiş: ${names}`);
+    }
+
+    return {
+      ready: issues.length === 0,
+      issues
+    };
+  }
+
+  /**
+   * XSS ve zararlı HTML girişlerini engellemek için metin temizleme
+   */
+  static sanitizeText(str) {
+    if (str === null || str === undefined) return '';
+    const temp = document.createElement('div');
+    temp.textContent = String(str);
+    return temp.innerHTML;
+  }
+}
+
+// Global namespace
+window.DND = window.DND || {};
+window.DND.ValidationEngine = ValidationEngine;
+
+    /**
+ * ActivityEngine - Etkinlik Oynatıcı Motoru.
+ * Hem editör içi Önizleme (Preview) modunda hem de bağımsız dışa aktarılan
+ * HTML dosyasında çalışan gerçek zamanlı öğrenci deneyimi motorudur.
+ *
+ * Dört etkinlik türünü eksiksiz destekler:
+ * 1. Görsel Üzerinde Etiketleme
+ * 2. Sürükle-Bırak Eşleştirme
+ * 3. Kategorilere Ayırma
+ * 4. Sürükleyerek Sıralama
+ */
+class ActivityEngine {
+  constructor(containerEl, projectData, options = {}) {
+    this.container = containerEl;
+    this.projectData = JSON.parse(JSON.stringify(projectData)); // Orijinal veriyi korumak için derin kopya
+    this.options = Object.assign({
+      isEmbedded: false,
+      onComplete: null,
+      onExit: null
+    }, options);
+
+    this.audio = new window.DND.AudioSynthesizer();
+    this.audio.setEnabled(this.projectData.settings?.soundEnabled !== false);
+
+    // Oyun durumları
+    this.placedMap = {}; // { [draggableId]: targetId }
+    this.originPositions = {}; // { [draggableId]: { x, y } }
+    this.score = 0;
+    this.attempts = 0;
+    this.correctCount = 0;
+    this.isCompleted = false;
+
+    // Sürükleme değişkenleri
+    this.activeDragId = null;
+    this.dragStartPos = { x: 0, y: 0 };
+    this.dragElemStart = { x: 0, y: 0 };
+    this.activePointerId = null;
+    this.currentScale = 1.0;
+
+    // Klavye erişilebilirliği için seçili nesne
+    this.keyboardSelectedId = null;
+
+    this.init();
+  }
+
+  init() {
+    this.renderGameLayout();
+    this.setupResizeHandler();
+    this.setupPointerEvents();
+    this.setupKeyboardEvents();
+    this.prepareItems();
+  }
+
+  destroy() {
+    window.removeEventListener('resize', this.onResizeBound);
+    if (this.container) {
+      this.container.innerHTML = '';
+    }
+  }
+
+  renderGameLayout() {
+    this.container.innerHTML = `
+      <div class="player-wrapper">
+        <header class="player-header">
+          <div class="player-title-box">
+            <h1 class="player-title">${window.DND.ValidationEngine.sanitizeText(this.projectData.project.name || 'Etkinlik')}</h1>
+            <span class="player-badge">${this.getActivityTypeLabel()}</span>
+          </div>
+          <div class="player-stats">
+            <div class="stat-pill score-stat" title="Doğru Sayısı">
+              <span class="stat-icon">🎯</span>
+              <span class="stat-value" id="stat-correct">0</span> / <span id="stat-total">0</span>
+            </div>
+            <div class="stat-pill attempts-stat" title="Deneme Sayısı">
+              <span class="stat-icon">⚡</span>
+              <span class="stat-value" id="stat-attempts">0</span> Deneme
+            </div>
+          </div>
+          <div class="player-actions">
+            <button class="player-btn sound-btn" id="btn-toggle-sound" title="Ses Aç/Kapat">
+              ${this.audio.enabled ? '🔊' : '🔇'}
+            </button>
+            <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
+              🔄 Baştan Başla
+            </button>
+            ${this.options.isEmbedded ? `
+              <button class="player-btn exit-btn" id="btn-exit-preview" title="Önizlemeden Çık">
+                ✕ Editöre Dön
+              </button>
+            ` : ''}
+          </div>
+        </header>
+
+        <main class="player-stage-viewport" id="player-viewport">
+          <div class="player-stage" id="player-stage">
+            <div class="player-targets-layer" id="player-targets"></div>
+            <div class="player-draggables-layer" id="player-draggables"></div>
+          </div>
+        </main>
+
+        <footer class="player-footer">
+          <div class="player-hint" id="player-hint">
+            💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+          </div>
+          <div class="player-footer-actions">
+            <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" style="display: none;">
+              ✓ Kontrol Et
+            </button>
+          </div>
+        </footer>
+
+        <!-- Başarı / Kutlama Modalı -->
+        <div class="player-modal-backdrop" id="completion-modal" style="display: none;">
+          <div class="player-modal-card">
+            <div class="modal-confetti" id="modal-confetti"></div>
+            <div class="modal-star-banner">🎉 ⭐ 🏆 ⭐ 🎉</div>
+            <h2 class="modal-title">Harika İş!</h2>
+            <p class="modal-desc" id="modal-completion-msg">
+              ${window.DND.ValidationEngine.sanitizeText(this.projectData.settings?.completionMessage || 'Etkinliği başarıyla tamamladınız!')}
+            </p>
+            <div class="modal-score-summary">
+              <div class="summary-box">
+                <span class="summary-num" id="modal-final-score">100%</span>
+                <span class="summary-lbl">Başarı Oranı</span>
+              </div>
+              <div class="summary-box">
+                <span class="summary-num" id="modal-final-attempts">0</span>
+                <span class="summary-lbl">Toplam Deneme</span>
+              </div>
+            </div>
+            <button class="player-btn modal-btn" id="btn-play-again">
+              🔄 Tekrar Oyna
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Buton dinleyicileri
+    const soundBtn = this.container.querySelector('#btn-toggle-sound');
+    if (soundBtn) {
+      soundBtn.onclick = () => {
+        this.audio.setEnabled(!this.audio.enabled);
+        soundBtn.textContent = this.audio.enabled ? '🔊' : '🔇';
+      };
+    }
+
+    const resetBtn = this.container.querySelector('#btn-reset-game');
+    if (resetBtn) resetBtn.onclick = () => this.resetGame();
+
+    const exitBtn = this.container.querySelector('#btn-exit-preview');
+    if (exitBtn) {
+      exitBtn.onclick = () => {
+        if (typeof this.options.onExit === 'function') this.options.onExit();
+      };
+    }
+
+    const checkBtn = this.container.querySelector('#btn-check-answers');
+    if (checkBtn) checkBtn.onclick = () => this.checkAllAnswers();
+
+    const playAgainBtn = this.container.querySelector('#btn-play-again');
+    if (playAgainBtn) playAgainBtn.onclick = () => this.resetGame();
+  }
+
+  getActivityTypeLabel() {
+    const type = this.projectData.project.activityType;
+    if (type === 'image-labeling') return 'Görsel Etiketleme';
+    if (type === 'matching') return 'Eşleştirme';
+    if (type === 'categorization') return 'Kategorilere Ayırma';
+    if (type === 'sequencing') return 'Sıralama';
+    return 'Etkinlik';
+  }
+
+  setupResizeHandler() {
+    this.stageEl = this.container.querySelector('#player-stage');
+    this.viewportEl = this.container.querySelector('#player-viewport');
+
+    this.onResizeBound = () => this.updateScale();
+    window.addEventListener('resize', this.onResizeBound);
+    setTimeout(() => this.updateScale(), 10);
+  }
+
+  updateScale() {
+    if (!this.stageEl || !this.viewportEl) return;
+
+    const stageW = this.projectData.stage.width || 1200;
+    const stageH = this.projectData.stage.height || 675;
+
+    this.stageEl.style.width = `${stageW}px`;
+    this.stageEl.style.height = `${stageH}px`;
+
+    // Arka plan stilleri
+    this.stageEl.style.backgroundColor = this.projectData.stage.backgroundColor || '#ffffff';
+    if (this.projectData.stage.backgroundImage) {
+      this.stageEl.style.backgroundImage = `url("${this.projectData.stage.backgroundImage}")`;
+      this.stageEl.style.backgroundSize = 'contain';
+      this.stageEl.style.backgroundPosition = 'center';
+      this.stageEl.style.backgroundRepeat = 'no-repeat';
+    }
+
+    const vpRect = this.viewportEl.getBoundingClientRect();
+    const pad = 20;
+    const availW = Math.max(vpRect.width - pad, 100);
+    const availH = Math.max(vpRect.height - pad, 100);
+
+    this.currentScale = Math.min(availW / stageW, availH / stageH);
+    this.stageEl.style.transform = `scale(${this.currentScale})`;
+    this.stageEl.style.transformOrigin = 'center center';
+  }
+
+  clientToStage(clientX, clientY) {
+    const rect = this.stageEl.getBoundingClientRect();
+    const stageW = this.projectData.stage.width || 1200;
+    const scale = rect.width / stageW;
+    return {
+      x: (clientX - rect.left) / scale,
+      y: (clientY - rect.top) / scale
+    };
+  }
+
+  prepareItems() {
+    const targetsLayer = this.container.querySelector('#player-targets');
+    const draggablesLayer = this.container.querySelector('#player-draggables');
+    targetsLayer.innerHTML = '';
+    draggablesLayer.innerHTML = '';
+
+    const objects = this.projectData.objects || [];
+    const draggables = objects.filter(o => o.role === 'draggable');
+    const nonDraggables = objects.filter(o => o.role !== 'draggable');
+
+    this.totalDraggables = draggables.length;
+    this.container.querySelector('#stat-total').textContent = this.totalDraggables;
+    this.container.querySelector('#stat-correct').textContent = '0';
+    this.container.querySelector('#stat-attempts').textContent = '0';
+
+    // Sabit, hedef ve dekoratif nesneleri çiz
+    nonDraggables.forEach(obj => {
+      const el = this.createDOMObject(obj, false);
+      targetsLayer.appendChild(el);
+    });
+
+    // Eğer ayarlarda karıştırma aktifse sürüklenebilir nesnelerin konumlarını karıştır
+    let renderDraggables = [...draggables];
+    if (this.projectData.settings?.shuffleDraggables) {
+      const positions = draggables.map(d => ({ x: d.x, y: d.y }));
+      // Fisher-Yates karıştırma
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positions[i], positions[j]] = [positions[j], positions[i]];
+      }
+      renderDraggables.forEach((d, idx) => {
+        d.currentX = positions[idx].x;
+        d.currentY = positions[idx].y;
+      });
+    } else {
+      renderDraggables.forEach(d => {
+        d.currentX = d.x;
+        d.currentY = d.y;
+      });
+    }
+
+    // Başlangıç konumlarını karıştırma sonrası ekrandaki gerçek yerleriyle kaydet
+    renderDraggables.forEach(d => {
+      this.originPositions[d.id] = { x: d.currentX, y: d.currentY };
+    });
+
+    // Sürüklenebilir nesneleri çiz
+    renderDraggables.forEach(obj => {
+      const el = this.createDOMObject(obj, true);
+      draggablesLayer.appendChild(el);
+    });
+
+    // Değerlendirme modu ayarı
+    const isManualCheck = this.projectData.settings?.evaluationMode === 'submit';
+    const checkBtn = this.container.querySelector('#btn-check-answers');
+    if (checkBtn) {
+      checkBtn.style.display = isManualCheck ? 'inline-block' : 'none';
+    }
+  }
+
+  createDOMObject(obj, isDraggable = false) {
+    const el = document.createElement('div');
+    el.className = `player-object ${isDraggable ? 'is-draggable' : 'is-target'}`;
+    el.setAttribute('data-id', obj.id);
+    el.setAttribute('data-role', obj.role);
+    el.setAttribute('tabindex', isDraggable ? '0' : '-1');
+
+    const posX = isDraggable && obj.currentX !== undefined ? obj.currentX : obj.x;
+    const posY = isDraggable && obj.currentY !== undefined ? obj.currentY : obj.y;
+
+    el.style.width = `${obj.width}px`;
+    el.style.height = `${obj.height}px`;
+    el.style.transform = `translate(${posX}px, ${posY}px) rotate(${obj.rotation || 0}deg)`;
+    el.style.zIndex = isDraggable ? (obj.zIndex || 10) + 10 : (obj.zIndex || 1);
+
+    // Stiller
+    el.style.backgroundColor = obj.backgroundColor || 'transparent';
+    el.style.borderColor = obj.borderColor || 'transparent';
+    el.style.borderWidth = `${obj.borderWidth || 0}px`;
+    el.style.borderStyle = obj.borderStyle || 'solid';
+    el.style.borderRadius = `${obj.borderRadius || 0}px`;
+    el.style.boxShadow = obj.boxShadow || 'none';
+
+    // İçerik
+    const content = document.createElement('div');
+    content.className = 'player-object-content';
+    content.style.fontFamily = obj.fontFamily || 'sans-serif';
+    content.style.fontSize = `${obj.fontSize || 16}px`;
+    content.style.fontWeight = obj.fontWeight || 'normal';
+    content.style.color = obj.textColor || '#1e293b';
+    content.style.padding = `${obj.padding !== undefined ? obj.padding : 8}px`;
+
+    // Dikey hizalama (Top / Middle / Bottom)
+    if (obj.verticalAlign === 'top') {
+      content.style.justifyContent = 'flex-start';
+    } else if (obj.verticalAlign === 'bottom') {
+      content.style.justifyContent = 'flex-end';
+    } else {
+      content.style.justifyContent = 'center';
+    }
+
+    // Yatay hizalama (Left / Center / Right)
+    const textAlign = obj.textAlign || 'center';
+    content.style.textAlign = textAlign;
+    if (textAlign === 'left') {
+      content.style.alignItems = 'flex-start';
+    } else if (textAlign === 'right') {
+      content.style.alignItems = 'flex-end';
+    } else {
+      content.style.alignItems = 'center';
+    }
+
+    if (obj.type === 'line') {
+      el.style.backgroundColor = 'transparent';
+      el.style.borderColor = 'transparent';
+      el.style.borderWidth = '0px';
+      el.style.boxShadow = 'none';
+      content.style.padding = '0px';
+      content.innerHTML = this.renderLineSVG(obj);
+    } else if (obj.type === 'image' && obj.src) {
+      const img = document.createElement('img');
+      img.src = obj.src;
+      img.draggable = false;
+      content.appendChild(img);
+      if (obj.text) {
+        const cap = document.createElement('div');
+        cap.className = 'image-caption';
+        cap.style.width = '100%';
+        cap.style.textAlign = textAlign;
+        cap.textContent = obj.text;
+        content.appendChild(cap);
+      }
+    } else if (obj.role === 'category') {
+      const header = document.createElement('div');
+      header.className = 'cat-title';
+      header.style.width = '100%';
+      header.style.textAlign = textAlign;
+      header.textContent = obj.text || obj.name;
+      content.appendChild(header);
+
+      const itemsContainer = document.createElement('div');
+      itemsContainer.className = 'category-slots-container';
+      itemsContainer.setAttribute('data-category-id', obj.id);
+      content.appendChild(itemsContainer);
+    } else if (obj.role === 'sequence_slot') {
+      const slotNum = document.createElement('div');
+      slotNum.className = 'slot-badge';
+      slotNum.textContent = (obj.slotIndex !== undefined ? obj.slotIndex + 1 : 1);
+      content.appendChild(slotNum);
+      if (obj.text) {
+        const slotText = document.createElement('div');
+        slotText.className = 'slot-text';
+        slotText.style.width = '100%';
+        slotText.style.textAlign = textAlign;
+        slotText.textContent = obj.text;
+        content.appendChild(slotText);
+      }
+    } else {
+      if (obj.text) {
+        const textSpan = document.createElement('span');
+        textSpan.className = 'player-text-span';
+        textSpan.style.width = '100%';
+        textSpan.style.display = 'block';
+        textSpan.style.textAlign = textAlign;
+        textSpan.textContent = obj.text;
+        content.appendChild(textSpan);
+      }
+    }
+
+    el.appendChild(content);
+
+    // Durum ikonu göstergesi (doğru / yanlış işareti)
+    const statusBadge = document.createElement('div');
+    statusBadge.className = 'status-badge';
+    el.appendChild(statusBadge);
+
+    return el;
+  }
+
+  // Pointer Events API ile Sürükle Bırak
+  setupPointerEvents() {
+    const draggablesLayer = this.container.querySelector('#player-draggables');
+
+    draggablesLayer.addEventListener('pointerdown', (e) => {
+      const itemEl = e.target.closest('.player-object.is-draggable');
+      if (!itemEl || itemEl.classList.contains('is-locked')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const id = itemEl.getAttribute('data-id');
+      this.activeDragId = id;
+      this.activePointerId = e.pointerId;
+
+      const stagePos = this.clientToStage(e.clientX, e.clientY);
+      this.dragStartPos = stagePos;
+
+      // Nesnenin mevcut transform koordinatlarını al
+      const styleTransform = itemEl.style.transform;
+      const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(styleTransform);
+      const currX = match ? parseFloat(match[1]) : 0;
+      const currY = match ? parseFloat(match[2]) : 0;
+
+      this.dragElemStart = { x: currX, y: currY };
+
+      itemEl.classList.add('is-dragging');
+      itemEl.style.zIndex = '9999';
+
+      try {
+        itemEl.setPointerCapture(e.pointerId);
+      } catch (err) {}
+
+      this.audio.playPickup();
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+
+      const itemEl = this.container.querySelector(`[data-id="${this.activeDragId}"]`);
+      if (!itemEl) return;
+
+      const currentStagePos = this.clientToStage(e.clientX, e.clientY);
+      const dx = currentStagePos.x - this.dragStartPos.x;
+      const dy = currentStagePos.y - this.dragStartPos.y;
+
+      const objData = this.getObj(this.activeDragId);
+      const stageW = (this.projectData.stage && this.projectData.stage.width) || 1200;
+      const stageH = (this.projectData.stage && this.projectData.stage.height) || 675;
+      const objW = (objData && objData.width) || 60;
+      const objH = (objData && objData.height) || 40;
+
+      const nextX = Math.round(Math.max(0, Math.min(stageW - objW, this.dragElemStart.x + dx)));
+      const nextY = Math.round(Math.max(0, Math.min(stageH - objH, this.dragElemStart.y + dy)));
+
+      itemEl.style.transform = `translate(${nextX}px, ${nextY}px) scale(1.05)`;
+
+      // Hedef algılama ve vurgulama (Hover highlight)
+      const dropTarget = this.findDropTarget(nextX, nextY, (objData && objData.width) || 60, (objData && objData.height) || 40);
+      this.highlightHoverTarget(dropTarget ? dropTarget.id : null);
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+      this.finalizeDrop();
+    });
+
+    window.addEventListener('pointercancel', (e) => {
+      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+      this.finalizeDrop();
+    });
+  }
+
+  // Klavye Erişilebilirliği (Space/Enter ile seç, hedefte bırak)
+  setupKeyboardEvents() {
+    this.container.addEventListener('keydown', (e) => {
+      const activeEl = document.activeElement;
+      if (!activeEl) return;
+
+      if (e.key === ' ' || e.key === 'Enter') {
+        if (activeEl.classList.contains('is-draggable') && !activeEl.classList.contains('is-locked')) {
+          e.preventDefault();
+          const id = activeEl.getAttribute('data-id');
+          if (this.keyboardSelectedId === id) {
+            // Seçimi bırak
+            this.keyboardSelectedId = null;
+            activeEl.classList.remove('keyboard-active');
+          } else {
+            // Nesneyi eline al
+            if (this.keyboardSelectedId) {
+              const prev = this.container.querySelector(`[data-id="${this.keyboardSelectedId}"]`);
+              if (prev) prev.classList.remove('keyboard-active');
+            }
+            this.keyboardSelectedId = id;
+            activeEl.classList.add('keyboard-active');
+            this.audio.playPickup();
+            this.showHint('Öğeyi seçtiniz. Şimdi Tab tuşu ile hedef alana gidip Boşluk tuşuna basarak bırakın.');
+          }
+        } else if (activeEl.classList.contains('is-target') && this.keyboardSelectedId) {
+          e.preventDefault();
+          const targetId = activeEl.getAttribute('data-id');
+          this.executeDrop(this.keyboardSelectedId, targetId);
+          const itemEl = this.container.querySelector(`[data-id="${this.keyboardSelectedId}"]`);
+          if (itemEl) itemEl.classList.remove('keyboard-active');
+          this.keyboardSelectedId = null;
+        }
+      }
+    });
+  }
+
+  finalizeDrop() {
+    const itemEl = this.container.querySelector(`[data-id="${this.activeDragId}"]`);
+    if (!itemEl) return;
+
+    itemEl.classList.remove('is-dragging');
+    itemEl.style.zIndex = '100';
+
+    try {
+      if (this.activePointerId !== null && itemEl.hasPointerCapture && itemEl.hasPointerCapture(this.activePointerId)) {
+        itemEl.releasePointerCapture(this.activePointerId);
+      }
+    } catch (err) {}
+
+    const styleTransform = itemEl.style.transform;
+    const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(styleTransform);
+    const currX = match ? parseFloat(match[1]) : 0;
+    const currY = match ? parseFloat(match[2]) : 0;
+
+    const objData = this.getObj(this.activeDragId);
+    const dropTarget = this.findDropTarget(currX, currY, (objData && objData.width) || 60, (objData && objData.height) || 40);
+
+    this.highlightHoverTarget(null);
+
+    const dragId = this.activeDragId;
+    this.activeDragId = null;
+    this.activePointerId = null;
+
+    if (dropTarget) {
+      this.executeDrop(dragId, dropTarget.id);
+    } else {
+      // Hedef dışına bırakıldıysa başlangıç konumuna dön
+      this.returnToOrigin(dragId);
+      this.audio.playDrop();
+    }
+  }
+
+  // Bırakılan hedefin tespiti (AABB ve Merkez noktası çakışması)
+  findDropTarget(itemX, itemY, itemW, itemH) {
+    const itemMidX = itemX + itemW / 2;
+    const itemMidY = itemY + itemH / 2;
+
+    const targets = (this.projectData.objects || []).filter(o =>
+      ['target', 'category', 'sequence_slot'].includes(o.role)
+    );
+
+    // Öncelik: Merkez noktasını içinde barındıran hedef
+    for (const t of targets) {
+      if (itemMidX >= t.x && itemMidX <= t.x + t.width &&
+          itemMidY >= t.y && itemMidY <= t.y + t.height) {
+        return t;
+      }
+    }
+
+    // İkinci öncelik: En az %40 kesişim olan hedef
+    for (const t of targets) {
+      const interLeft = Math.max(itemX, t.x);
+      const interTop = Math.max(itemY, t.y);
+      const interRight = Math.min(itemX + itemW, t.x + t.width);
+      const interBottom = Math.min(itemY + itemH, t.y + t.height);
+
+      if (interRight > interLeft && interBottom > interTop) {
+        const interArea = (interRight - interLeft) * (interBottom - interTop);
+        const itemArea = itemW * itemH;
+        if (interArea / itemArea > 0.35) {
+          return t;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  highlightHoverTarget(targetId) {
+    this.container.querySelectorAll('.player-object.is-target').forEach(el => {
+      if (targetId && el.getAttribute('data-id') === targetId) {
+        el.classList.add('hover-active');
+      } else {
+        el.classList.remove('hover-active');
+      }
+    });
+  }
+
+  getObj(id) {
+    return (this.projectData.objects || []).find(o => o.id === id);
+  }
+
+  // Bir nesnenin bir hedefe bırakılma işlemi
+  executeDrop(dragId, targetId) {
+    const targetObj = this.getObj(targetId);
+    const dragObj = this.getObj(dragId);
+    if (!targetObj || !dragObj) return;
+
+    const isInstant = this.projectData.settings?.evaluationMode !== 'submit';
+    this.attempts++;
+    this.updateStats();
+
+    if (isInstant) {
+      this.evaluateSingleDrop(dragId, targetId);
+    } else {
+      // Manuel kontrol modunda doğrudan hedefe oturtulur, henüz doğrulanmaz
+      this.snapToTarget(dragId, targetObj);
+      this.placedMap[dragId] = targetId;
+      this.audio.playDrop();
+    }
+  }
+
+  evaluateSingleDrop(dragId, targetId) {
+    const correctTargetId = this.projectData.answerKey ? this.projectData.answerKey[dragId] : null;
+    const isCorrect = correctTargetId === targetId;
+
+    const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+    const targetObj = this.getObj(targetId);
+
+    if (isCorrect) {
+      // DOĞRU CEVAP
+      this.audio.playCorrect();
+      this.placedMap[dragId] = targetId;
+      this.correctCount++;
+      this.updateStats();
+
+      this.snapToTarget(dragId, targetObj);
+
+      if (dragEl) {
+        dragEl.classList.remove('is-incorrect');
+        dragEl.classList.add('is-correct');
+
+        if (this.projectData.settings?.correctAnswerBehavior === 'lock') {
+          dragEl.classList.add('is-locked');
+          dragEl.setAttribute('tabindex', '-1');
+        }
+      }
+
+      this.checkCompletion();
+    } else {
+      // YANLIŞ CEVAP
+      this.audio.playWrong();
+
+      if (dragEl) {
+        dragEl.classList.add('is-incorrect');
+        setTimeout(() => {
+          if (dragEl) dragEl.classList.remove('is-incorrect');
+        }, 600);
+      }
+
+      const wrongBehavior = (this.projectData.settings && this.projectData.settings.wrongAnswerBehavior) || 'return';
+      if (wrongBehavior === 'return') {
+        this.returnToOrigin(dragId);
+      } else {
+        this.snapToTarget(dragId, targetObj);
+        this.placedMap[dragId] = targetId;
+      }
+    }
+  }
+
+  // Hedefe Hizalama / Yerleştirme
+  snapToTarget(dragId, targetObj) {
+    const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+    const dragObj = this.getObj(dragId);
+    if (!dragEl || !dragObj) return;
+
+    let targetX = targetObj.x;
+    let targetY = targetObj.y;
+
+    if (targetObj.role === 'category') {
+      // Kategori içine yerleştirme: kategori içindeki mevcut öğe sayısına göre gridleme
+      const existingItems = Object.keys(this.placedMap).filter(id => this.placedMap[id] === targetObj.id && id !== dragId);
+      const slotIndex = existingItems.length;
+
+      const col = slotIndex % 2;
+      const row = Math.floor(slotIndex / 2);
+
+      targetX = targetObj.x + 20 + col * (dragObj.width + 10);
+      targetY = targetObj.y + 60 + row * (dragObj.height + 10);
+    } else if (targetObj.role === 'sequence_slot' || targetObj.role === 'target') {
+      // Merkeze hizalama
+      targetX = targetObj.x + (targetObj.width - dragObj.width) / 2;
+      targetY = targetObj.y + (targetObj.height - dragObj.height) / 2;
+    }
+
+    dragEl.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    dragEl.style.transform = `translate(${Math.round(targetX)}px, ${Math.round(targetY)}px) rotate(0deg)`;
+
+    setTimeout(() => {
+      if (dragEl) dragEl.style.transition = '';
+    }, 260);
+  }
+
+  returnToOrigin(dragId) {
+    const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+    const origin = this.originPositions[dragId];
+    if (!dragEl || !origin) return;
+
+    delete this.placedMap[dragId];
+
+    if (dragEl.classList.contains('is-correct')) {
+      dragEl.classList.remove('is-correct');
+      this.correctCount = Math.max(0, this.correctCount - 1);
+      this.updateStats();
+    }
+
+    const origObj = this.getObj(dragId);
+    const rot = (origObj && origObj.rotation) ? origObj.rotation : 0;
+
+    dragEl.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    dragEl.style.transform = `translate(${origin.x}px, ${origin.y}px) rotate(${rot}deg) scale(1)`;
+
+    setTimeout(() => {
+      if (dragEl) {
+        dragEl.style.transition = '';
+        dragEl.style.zIndex = origObj && origObj.zIndex ? `${origObj.zIndex + 10}` : '20';
+      }
+    }, 360);
+  }
+
+  // Toplu Değerlendirme (Submit Modu)
+  checkAllAnswers() {
+    const answerKey = this.projectData.answerKey || {};
+    let correct = 0;
+    this.attempts++;
+
+    for (const [dragId, targetId] of Object.entries(this.placedMap)) {
+      const isRight = answerKey[dragId] === targetId;
+      const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+
+      if (isRight) {
+        correct++;
+        if (dragEl) {
+          dragEl.classList.remove('is-incorrect');
+          dragEl.classList.add('is-correct');
+          dragEl.classList.add('is-locked');
+        }
+      } else {
+        if (dragEl) {
+          dragEl.classList.add('is-incorrect');
+        }
+      }
+    }
+
+    this.correctCount = correct;
+    this.updateStats();
+
+    if (correct === this.totalDraggables) {
+      this.audio.playComplete();
+      this.showCompletionModal();
+    } else {
+      this.audio.playWrong();
+      this.showHint('Bazı eşleştirmeler hatalı. Kırmızı ile işaretlenenleri düzeltmeyi deneyin.');
+    }
+  }
+
+  checkCompletion() {
+    if (this.correctCount >= this.totalDraggables && this.totalDraggables > 0) {
+      if (!this.isCompleted) {
+        this.isCompleted = true;
+        this.audio.playComplete();
+        setTimeout(() => this.showCompletionModal(), 400);
+      }
+    }
+  }
+
+  showCompletionModal() {
+    const modal = this.container.querySelector('#completion-modal');
+    if (!modal) return;
+
+    const accuracy = Math.round((this.totalDraggables / Math.max(this.attempts, this.totalDraggables)) * 100);
+    this.container.querySelector('#modal-final-score').textContent = `%${accuracy}`;
+    this.container.querySelector('#modal-final-attempts').textContent = this.attempts;
+
+    modal.style.display = 'flex';
+
+    if (typeof this.options.onComplete === 'function') {
+      this.options.onComplete({
+        score: accuracy,
+        attempts: this.attempts,
+        correctCount: this.correctCount
+      });
+    }
+  }
+
+  updateStats() {
+    const statCorrect = this.container.querySelector('#stat-correct');
+    const statAttempts = this.container.querySelector('#stat-attempts');
+    if (statCorrect) statCorrect.textContent = this.correctCount;
+    if (statAttempts) statAttempts.textContent = this.attempts;
+  }
+
+  showHint(msg) {
+    const hintEl = this.container.querySelector('#player-hint');
+    if (hintEl) {
+      hintEl.textContent = `💡 ${msg}`;
+    }
+  }
+
+  renderLineSVG(obj) {
+    const w = Math.max(10, obj.width || 200);
+    const h = Math.max(10, obj.height || 24);
+    const cy = h / 2;
+    const strokeColor = (obj.borderColor && obj.borderColor !== 'transparent') ? obj.borderColor : '#1e293b';
+    const strokeWidth = (obj.borderWidth !== undefined && obj.borderWidth > 0) ? obj.borderWidth : 3;
+    const strokeStyle = obj.borderStyle || 'solid';
+
+    let dashArray = 'none';
+    if (strokeStyle === 'dashed') dashArray = '8 6';
+    else if (strokeStyle === 'dotted') dashArray = '2 6';
+
+    const hasStartArrow = !!obj.arrowStart;
+    const hasEndArrow = !!obj.arrowEnd;
+    const arrowSize = Math.min(Math.max(8, strokeWidth * 3), w / 2.5);
+
+    const x1 = hasStartArrow ? arrowSize - 1 : 0;
+    const x2 = hasEndArrow ? w - (arrowSize - 1) : w;
+
+    let svgHtml = `<svg class="object-line-bar" width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="overflow: visible; display: block; pointer-events: none;">`;
+
+    // Ana Çizgi
+    svgHtml += `<line x1="${x1}" y1="${cy}" x2="${x2}" y2="${cy}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${dashArray}" stroke-linecap="round" />`;
+
+    // Başlangıç Oku
+    if (hasStartArrow) {
+      svgHtml += `<polygon points="${arrowSize},${cy - arrowSize * 0.6} 0,${cy} ${arrowSize},${cy + arrowSize * 0.6}" fill="${strokeColor}" />`;
+    }
+
+    // Bitiş Oku
+    if (hasEndArrow) {
+      svgHtml += `<polygon points="${w - arrowSize},${cy - arrowSize * 0.6} ${w},${cy} ${w - arrowSize},${cy + arrowSize * 0.6}" fill="${strokeColor}" />`;
+    }
+
+    svgHtml += `</svg>`;
+    return svgHtml;
+  }
+
+  resetGame() {
+    this.placedMap = {};
+    this.score = 0;
+    this.attempts = 0;
+    this.correctCount = 0;
+    this.isCompleted = false;
+
+    const modal = this.container.querySelector('#completion-modal');
+    if (modal) modal.style.display = 'none';
+
+    this.prepareItems();
+  }
+}
+
+// Global namespace
+window.DND = window.DND || {};
+window.DND.ActivityEngine = ActivityEngine;
+
+
+    window.addEventListener('DOMContentLoaded', function() {
+      const raw = document.getElementById('activity-data').textContent;
+      const project = JSON.parse(raw);
+      const container = document.getElementById('activity-app');
+      new window.DND.ActivityEngine(container, project);
+    });
+  </script>
+</body>
+</html>

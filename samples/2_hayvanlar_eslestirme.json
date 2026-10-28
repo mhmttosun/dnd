@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "project": {
+    "id": "proj_2",
+    "name": "Hayvanlar ve Yaşam Alanları",
+    "activityType": "matching"
+  },
+  "stage": {
+    "width": 1200,
+    "height": 675,
+    "backgroundColor": "#f1f5f9"
+  },
+  "objects": [
+    {
+      "id": "drag_aslan",
+      "name": "Aslan",
+      "type": "text",
+      "role": "draggable",
+      "x": 120,
+      "y": 140,
+      "width": 180,
+      "height": 70,
+      "text": "🦁 Aslan",
+      "fontSize": 18,
+      "fontWeight": "bold",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#cbd5e1",
+      "borderWidth": 2,
+      "borderRadius": 12
+    },
+    {
+      "id": "drag_penguen",
+      "name": "Penguen",
+      "type": "text",
+      "role": "draggable",
+      "x": 120,
+      "y": 260,
+      "width": 180,
+      "height": 70,
+      "text": "🐧 Penguen",
+      "fontSize": 18,
+      "fontWeight": "bold",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#cbd5e1",
+      "borderWidth": 2,
+      "borderRadius": 12
+    },
+    {
+      "id": "drag_yunus",
+      "name": "Yunus",
+      "type": "text",
+      "role": "draggable",
+      "x": 120,
+      "y": 380,
+      "width": 180,
+      "height": 70,
+      "text": "🐬 Yunus",
+      "fontSize": 18,
+      "fontWeight": "bold",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#cbd5e1",
+      "borderWidth": 2,
+      "borderRadius": 12
+    },
+    {
+      "id": "target_savan",
+      "name": "Savan",
+      "type": "text",
+      "role": "target",
+      "x": 760,
+      "y": 140,
+      "width": 300,
+      "height": 70,
+      "text": "🌾 Sıcak Savanlar",
+      "fontSize": 18,
+      "textColor": "#854d0e",
+      "backgroundColor": "#fef9c3",
+      "borderColor": "#ca8a04",
+      "borderStyle": "dashed",
+      "borderWidth": 2.5,
+      "borderRadius": 12
+    },
+    {
+      "id": "target_kutup",
+      "name": "Kutup",
+      "type": "text",
+      "role": "target",
+      "x": 760,
+      "y": 260,
+      "width": 300,
+      "height": 70,
+      "text": "❄️ Kutup Buzulları",
+      "fontSize": 18,
+      "textColor": "#0369a1",
+      "backgroundColor": "#e0f2fe",
+      "borderColor": "#0284c7",
+      "borderStyle": "dashed",
+      "borderWidth": 2.5,
+      "borderRadius": 12
+    },
+    {
+      "id": "target_okyanus",
+      "name": "Okyanus",
+      "type": "text",
+      "role": "target",
+      "x": 760,
+      "y": 380,
+      "width": 300,
+      "height": 70,
+      "text": "🌊 Derin Okyanuslar",
+      "fontSize": 18,
+      "textColor": "#1e40af",
+      "backgroundColor": "#dbeafe",
+      "borderColor": "#2563eb",
+      "borderStyle": "dashed",
+      "borderWidth": 2.5,
+      "borderRadius": 12
+    }
+  ],
+  "answerKey": {
+    "drag_aslan": "target_savan",
+    "drag_penguen": "target_kutup",
+    "drag_yunus": "target_okyanus"
+  },
+  "settings": {
+    "evaluationMode": "instant",
+    "wrongAnswerBehavior": "return",
+    "correctAnswerBehavior": "lock",
+    "soundEnabled": true,
+    "completionMessage": "Tebrikler! Hayvanları doğal ortamlarıyla eşleştirdiniz."
+  }
+}

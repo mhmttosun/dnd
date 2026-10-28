@@ -1,0 +1,137 @@
+{
+  "version": "1.0",
+  "project": {
+    "id": "proj_1",
+    "name": "İnsan Vücudundaki Organlar",
+    "activityType": "image-labeling"
+  },
+  "stage": {
+    "width": 1200,
+    "height": 675,
+    "backgroundColor": "#f8fafc"
+  },
+  "objects": [
+    {
+      "id": "bg_anatomi",
+      "name": "Gövde",
+      "type": "rectangle",
+      "role": "decorative",
+      "x": 420,
+      "y": 80,
+      "width": 360,
+      "height": 520,
+      "backgroundColor": "#fef3c7",
+      "borderColor": "#f59e0b",
+      "borderWidth": 2,
+      "borderRadius": 20
+    },
+    {
+      "id": "target_kalp",
+      "name": "Hedef: Kalp",
+      "type": "zone",
+      "role": "target",
+      "x": 620,
+      "y": 240,
+      "width": 130,
+      "height": 50,
+      "text": "Hedef: Kalp",
+      "textColor": "#dc2626",
+      "backgroundColor": "rgba(254, 226, 226, 0.7)",
+      "borderColor": "#ef4444",
+      "borderStyle": "dashed",
+      "borderWidth": 2,
+      "borderRadius": 8
+    },
+    {
+      "id": "target_akciger",
+      "name": "Hedef: Akciğer",
+      "type": "zone",
+      "role": "target",
+      "x": 450,
+      "y": 220,
+      "width": 130,
+      "height": 50,
+      "text": "Hedef: Akciğer",
+      "textColor": "#0284c7",
+      "backgroundColor": "rgba(224, 242, 254, 0.7)",
+      "borderColor": "#0284c7",
+      "borderStyle": "dashed",
+      "borderWidth": 2,
+      "borderRadius": 8
+    },
+    {
+      "id": "target_mide",
+      "name": "Hedef: Mide",
+      "type": "zone",
+      "role": "target",
+      "x": 580,
+      "y": 340,
+      "width": 130,
+      "height": 50,
+      "text": "Hedef: Mide",
+      "textColor": "#d97706",
+      "backgroundColor": "rgba(254, 243, 199, 0.7)",
+      "borderColor": "#f59e0b",
+      "borderStyle": "dashed",
+      "borderWidth": 2,
+      "borderRadius": 8
+    },
+    {
+      "id": "drag_kalp",
+      "name": "Kalp",
+      "type": "text",
+      "role": "draggable",
+      "x": 920,
+      "y": 180,
+      "width": 150,
+      "height": 48,
+      "text": "❤️ Kalp",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#6366f1",
+      "borderWidth": 2,
+      "borderRadius": 10
+    },
+    {
+      "id": "drag_akciger",
+      "name": "Akciğer",
+      "type": "text",
+      "role": "draggable",
+      "x": 920,
+      "y": 250,
+      "width": 150,
+      "height": 48,
+      "text": "🫁 Akciğer",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#6366f1",
+      "borderWidth": 2,
+      "borderRadius": 10
+    },
+    {
+      "id": "drag_mide",
+      "name": "Mide",
+      "type": "text",
+      "role": "draggable",
+      "x": 920,
+      "y": 320,
+      "width": 150,
+      "height": 48,
+      "text": "🥘 Mide",
+      "backgroundColor": "#ffffff",
+      "borderColor": "#6366f1",
+      "borderWidth": 2,
+      "borderRadius": 10
+    }
+  ],
+  "answerKey": {
+    "drag_kalp": "target_kalp",
+    "drag_akciger": "target_akciger",
+    "drag_mide": "target_mide"
+  },
+  "settings": {
+    "evaluationMode": "instant",
+    "wrongAnswerBehavior": "return",
+    "correctAnswerBehavior": "lock",
+    "soundEnabled": true,
+    "completionMessage": "Tebrikler! Bütün organları doğru yerleştirdiniz."
+  }
+}
