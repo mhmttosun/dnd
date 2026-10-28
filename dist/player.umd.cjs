@@ -477,32 +477,34 @@ class ActivityEngine {
                 </div>
               </div>
 
-              <!-- İkinci Kontrol Alanı (Sahne genişliğinde) -->
+              <!-- Kontrol Alanı (Açık Zemin, Hiyerarşik Butonlar) -->
               <div class="player-controls" id="player-controls">
                 <div class="player-mode-switch" role="group" aria-label="Etkinlik Modu">
                   <button type="button" class="mode-btn ${this.playMode === 'learning' ? 'active' : ''}" id="btn-mode-learning" data-mode="learning" title="Öğrenme Modu (Anlık Geri Bildirim)">
-                    🎓 Öğrenme
+                    Öğrenme
                   </button>
                   <button type="button" class="mode-btn ${this.playMode === 'assessment' ? 'active' : ''}" id="btn-mode-assessment" data-mode="assessment" title="Değerlendirme Modu (Toplu Kontrol)">
-                    📝 Değerlendirme
+                    Değerlendirme
                   </button>
                 </div>
 
-                <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
-                  🔄 Sıfırla
-                </button>
-                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et" style="${this.playMode === 'learning' ? 'display: none;' : 'display: inline-flex;'}">
-                  ✓ Kontrol Et
-                </button>
-              </div>
-
-              <!-- Alt Bilgi / İpucu Alanı (Sahne genişliğinde) -->
-              <footer class="player-footer" id="player-footer">
-                <div class="player-hint" id="player-hint">
-                  💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+                <div class="player-actions">
+                  <button class="player-btn reset-btn secondary-btn" id="btn-reset-game" title="Yeniden Başlat">
+                    <span class="btn-icon">↺</span> Sıfırla
+                  </button>
+                  <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et" style="${this.playMode === 'learning' ? 'display: none;' : 'display: inline-flex;'}">
+                    ✓ Kontrol Et
+                  </button>
                 </div>
-              </footer>
+              </div>
             </div>
+
+            <!-- Alt Yardımcı İpucu Metni (Ayrı koyu şerit değil, sade yardımcı metin) -->
+            <footer class="player-footer" id="player-footer">
+              <div class="player-hint" id="player-hint">
+                💡 Öğeleri sürükleyerek doğru hedeflerle eşleştirin.
+              </div>
+            </footer>
           </div>
         </main>
 

@@ -163,28 +163,78 @@
 
 .player-btn.primary-btn,
 .player-btn.check-answers-btn {
-  background: #4f46e5;
-  border-color: #6366f1;
+  background: #0f172a;
+  border: 1px solid #0f172a;
   color: #ffffff;
+  border-radius: 9999px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
 }
 
 .player-btn.primary-btn:hover,
 .player-btn.check-answers-btn:hover {
-  background: #4338ca;
-  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4);
+  background: #1e293b;
+  border-color: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.player-btn.secondary-btn,
+.player-btn.reset-btn {
+  background: transparent;
+  border: none;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: none;
+}
+
+.player-btn.secondary-btn:hover,
+.player-btn.reset-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: none;
+}
+
+.player-btn.reset-btn .btn-icon {
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
 .player-btn.retry-btn {
-  background: #f59e0b;
-  border-color: #fbbf24;
-  color: #0f172a;
-  font-weight: 700;
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+  background: #d97706;
+  border: 1px solid #d97706;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
+  transition: all 0.15s ease;
 }
 
 .player-btn.retry-btn:hover {
-  background: #d97706;
-  color: #ffffff;
+  background: #b45309;
+  border-color: #b45309;
+  transform: translateY(-1px);
 }
 
 .player-btn.pulse-highlight {
@@ -219,7 +269,7 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  background: radial-gradient(circle at 50% 35%, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.98) 100%);
+  background: #f8fafc;
   touch-action: none;
 }
 
@@ -242,11 +292,11 @@
 .player-stage-board {
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  border-radius: 12px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
   overflow: hidden;
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -256,7 +306,7 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  border-radius: 12px 12px 0 0;
+  border-radius: 16px 16px 0 0;
 }
 
 .player-stage {
@@ -463,42 +513,49 @@
   color: #64748b;
 }
 
-/* İKİNCİ KONTROL ALANI (Sahne genişliğinde) */
+/* KONTROL ALANI (Açık Zemin, Hiyerarşik Butonlar) */
 .player-controls {
   flex-shrink: 0;
-  min-height: 48px;
-  padding: 8px 16px;
+  min-height: 54px;
+  padding: 10px 18px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.92);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
   box-sizing: border-box;
   width: 100%;
+}
+
+.player-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 /* MOD DEĞİŞTİRİCİ (Segmented Switch) */
 .player-mode-switch {
   display: inline-flex;
   align-items: center;
-  background: rgba(2, 6, 23, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 2px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 3px;
   gap: 2px;
 }
 
 .player-mode-switch .mode-btn {
   border: none;
   background: transparent;
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 6px;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -507,35 +564,42 @@
 }
 
 .player-mode-switch .mode-btn:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.08);
+  color: #0f172a;
 }
 
 .player-mode-switch .mode-btn.active {
-  background: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* ALT BİLGİ / FOOTER (Sahne genişliğinde) */
+/* YARDIMCI İPUCU METNİ (Koyu panel değil, sade yardımcı metin) */
 .player-footer {
-  height: 36px;
-  min-height: 32px;
+  height: auto;
+  min-height: 28px;
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 8px 16px 2px 16px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  background: rgba(10, 15, 30, 0.96);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: center;
+  background: transparent;
+  border: none;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   box-sizing: border-box;
   width: 100%;
 }
 
 .player-hint {
-  text-align: left;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1181,32 +1245,34 @@ class ActivityEngine {
                 </div>
               </div>
 
-              <!-- İkinci Kontrol Alanı (Sahne genişliğinde) -->
+              <!-- Kontrol Alanı (Açık Zemin, Hiyerarşik Butonlar) -->
               <div class="player-controls" id="player-controls">
                 <div class="player-mode-switch" role="group" aria-label="Etkinlik Modu">
                   <button type="button" class="mode-btn ${this.playMode === 'learning' ? 'active' : ''}" id="btn-mode-learning" data-mode="learning" title="Öğrenme Modu (Anlık Geri Bildirim)">
-                    🎓 Öğrenme
+                    Öğrenme
                   </button>
                   <button type="button" class="mode-btn ${this.playMode === 'assessment' ? 'active' : ''}" id="btn-mode-assessment" data-mode="assessment" title="Değerlendirme Modu (Toplu Kontrol)">
-                    📝 Değerlendirme
+                    Değerlendirme
                   </button>
                 </div>
 
-                <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
-                  🔄 Sıfırla
-                </button>
-                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et" style="${this.playMode === 'learning' ? 'display: none;' : 'display: inline-flex;'}">
-                  ✓ Kontrol Et
-                </button>
-              </div>
-
-              <!-- Alt Bilgi / İpucu Alanı (Sahne genişliğinde) -->
-              <footer class="player-footer" id="player-footer">
-                <div class="player-hint" id="player-hint">
-                  💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+                <div class="player-actions">
+                  <button class="player-btn reset-btn secondary-btn" id="btn-reset-game" title="Yeniden Başlat">
+                    <span class="btn-icon">↺</span> Sıfırla
+                  </button>
+                  <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et" style="${this.playMode === 'learning' ? 'display: none;' : 'display: inline-flex;'}">
+                    ✓ Kontrol Et
+                  </button>
                 </div>
-              </footer>
+              </div>
             </div>
+
+            <!-- Alt Yardımcı İpucu Metni (Ayrı koyu şerit değil, sade yardımcı metin) -->
+            <footer class="player-footer" id="player-footer">
+              <div class="player-hint" id="player-hint">
+                💡 Öğeleri sürükleyerek doğru hedeflerle eşleştirin.
+              </div>
+            </footer>
           </div>
         </main>
 
