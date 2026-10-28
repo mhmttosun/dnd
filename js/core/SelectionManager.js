@@ -3,11 +3,12 @@
  * 8 yönlü boyutlandırma tutamaçları ve döndürme tutamacını yönetir.
  */
 class SelectionManager {
-  constructor(core, stageManager, objectManager, stageEl) {
+  constructor(core, stageManager, objectManager, stageEl, options = {}) {
     this.core = core;
     this.stageManager = stageManager;
     this.objectManager = objectManager;
     this.stage = stageEl;
+    this.signal = options.signal;
 
     this.selectedIds = new Set();
     this.clipboard = [];
@@ -114,7 +115,7 @@ class SelectionManager {
           this.nudgeSelected(dx, dy);
         }
       }
-    });
+    }, this.signal ? { signal: this.signal } : undefined);
   }
 
   select(id, multi = false) {

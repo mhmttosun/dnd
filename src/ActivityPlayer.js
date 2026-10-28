@@ -33,7 +33,8 @@ export class ActivityPlayer {
       onStep: null,
       onDrop: null,
       onReset: null,
-      onReady: null
+      onReady: null,
+      initialState: null
     }, options);
 
     this.container = null;
@@ -183,11 +184,13 @@ export class ActivityPlayer {
     };
 
     // Ses ayarını uygula
-    if (projectData.settings) {
-      projectData.settings.soundEnabled = this.options.sound !== false;
-    }
+    const mountedData = JSON.parse(JSON.stringify(projectData));
+    mountedData.settings = Object.assign({}, mountedData.settings, {
+      soundEnabled: this.options.sound !== false
+    });
 
-    this.engine = new EngineClass(this.container, projectData, engineOptions);
+    this.engine = new EngineClass(this.container, mountedData, engineOptions);
+    if (this.options.initialState) this.engine.setState(this.options.initialState);
 
     if (typeof this.options.onReady === 'function') {
       this.options.onReady(this);
@@ -218,6 +221,11 @@ export class ActivityPlayer {
    */
   getState() {
     return this.engine ? this.engine.getState() : null;
+  }
+
+  setState(state) {
+    if (!this.engine) throw new Error('[ActivityPlayer] Oynatıcı henüz başlatılmadı.');
+    return this.engine.setState(state);
   }
 
   /**

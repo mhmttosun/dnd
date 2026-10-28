@@ -1,4 +1,5 @@
 export interface ActivityProject {
+  schemaVersion: 1;
   version: string;
   project: {
     id: string;
@@ -9,7 +10,7 @@ export interface ActivityProject {
     width: number;
     height: number;
     backgroundColor?: string;
-    backgroundImage?: string;
+    backgroundImage?: string | null;
   };
   objects: Array<{
     id: string;
@@ -20,13 +21,14 @@ export interface ActivityProject {
     width: number;
     height: number;
     text?: string;
+    src?: string | null;
     backgroundColor?: string;
     borderColor?: string;
     borderWidth?: number;
     borderRadius?: number;
     zIndex?: number;
   }>;
-  answerKey?: Record<string, string>;
+  answerKey: Record<string, string>;
   settings?: {
     soundEnabled?: boolean;
     shuffleDraggables?: boolean;
@@ -66,6 +68,7 @@ export interface ActivityPlayerOptions {
   file?: File | Blob;
   jsonString?: string;
   sound?: boolean;
+  initialState?: ActivityState;
   onComplete?: (stats: ActivityStats) => void;
   onStep?: (state: ActivityState) => void;
   onDrop?: (dropInfo: DropInfo) => void;
@@ -82,6 +85,7 @@ export declare class ActivityPlayer {
   on(event: 'complete' | 'step' | 'drop' | 'reset' | 'destroy', callback: (data: any) => void): () => void;
   off(event: string, callback: (data: any) => void): void;
   getState(): ActivityState | null;
+  setState(state: ActivityState): ActivityState;
   setSound(enabled: boolean): void;
   reset(): void;
   destroy(): void;

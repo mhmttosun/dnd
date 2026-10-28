@@ -12,6 +12,8 @@ Harici ağır derleyicilere gerek kalmadan saf Python ile:
 
 import os
 import shutil
+import json
+import re
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST_DIR = os.path.join(BASE_DIR, 'dist')
@@ -23,7 +25,20 @@ def read_file(rel_path):
 
 # CSS Dosyalarını Kopyala
 shutil.copy(os.path.join(BASE_DIR, 'css/player.css'), os.path.join(DIST_DIR, 'player.css'))
-shutil.copy(os.path.join(BASE_DIR, 'css/editor.css'), os.path.join(DIST_DIR, 'editor.css'))
+editor_css = '\n'.join(read_file(path) for path in [
+    'css/editor.css', 'css/stage.css', 'css/answer-key.css', 'css/player.css'
+])
+editor_css = editor_css.replace(':root', '.dnd-editor-root')
+editor_css = editor_css.replace('body.is-embedded', '.dnd-editor-root.is-embedded')
+editor_css = editor_css.replace('body {', '.dnd-editor-root {')
+editor_css += '''
+:host { display: block; width: 100%; height: 100%; min-height: 620px; }
+.dnd-editor-root { width: 100%; height: 100%; min-height: 620px; position: relative; }
+.dnd-editor-root.hide-file-actions .top-header-right { display: none; }
+.dnd-editor-root #preview-container { position: absolute; inset: 0; }
+'''
+with open(os.path.join(DIST_DIR, 'editor.css'), 'w', encoding='utf-8') as f:
+    f.write(editor_css)
 
 # 1. Kaynak dosyaları oku
 audio_code = read_file('js/utils/AudioSynthesizer.js')
@@ -31,16 +46,41 @@ val_code = read_file('js/engine/ValidationEngine.js')
 engine_code = read_file('js/player/ActivityEngine.js')
 player_code = read_file('src/ActivityPlayer.js')
 webcomp_code = read_file('src/components/DNDPlayerElement.js')
+bundled_player_code = player_code.replace('export class ActivityPlayer', 'class ActivityPlayer')
+bundled_webcomp_code = webcomp_code.replace('export class DNDPlayerElement', 'class DNDPlayerElement')
+
+# Direct-mount editor bundle. Editor internals still register into window.DND,
+# while the public API is a normal ESM export and renders inside Shadow DOM.
+editor_sources = [
+    'js/utils/AudioSynthesizer.js',
+    'js/engine/ValidationEngine.js',
+    'js/core/EditorCore.js',
+    'js/core/StageManager.js',
+    'js/core/ObjectManager.js',
+    'js/core/SelectionManager.js',
+    'js/core/HistoryManager.js',
+    'js/core/LayerManager.js',
+    'js/core/AnswerKeyManager.js',
+    'js/engine/TransformEngine.js',
+    'js/player/ActivityEngine.js',
+    'js/player/ExportManager.js',
+    'js/ui/MiniToolbar.js',
+    'js/ui/UIManager.js',
+    'js/data/SampleProjects.js',
+]
+editor_api = read_file('src/DNDEditor.js').replace(
+    "const EDITOR_CSS = globalThis.__DND_EDITOR_CSS__ || '';",
+    'const EDITOR_CSS = ' + json.dumps(editor_css) + ';'
+)
+editor_bundle = '''/** @mhmttosun/dnd direct-mount editor bundle */\n''' + \
+    '\n'.join(read_file(path) for path in editor_sources) + '\n' + editor_api
+editor_bundle = re.sub(r'[ \t]+$', '', editor_bundle, flags=re.MULTILINE)
+with open(os.path.join(DIST_DIR, 'editor.js'), 'w', encoding='utf-8') as f:
+    f.write(editor_bundle)
 
 # Temizleme yardımcıları: universal export satırlarını ayıkla (iç içe çakışmayı önlemek için)
 def strip_exports(code):
-    lines = code.split('\n')
-    filtered = []
-    for l in lines:
-        if 'module.exports =' in l or 'window.DND =' in l or 'if (typeof module !==' in l or 'if (typeof window !==' in l:
-            continue
-        filtered.append(l)
-    return '\n'.join(filtered)
+    return re.sub(r'\n// (?:Universal namespace export|Global namespace)[\s\S]*$', '', code)
 
 clean_audio = strip_exports(audio_code)
 clean_val = strip_exports(val_code)
@@ -66,9 +106,9 @@ windowObj.DND.ValidationEngine = ValidationEngine;
 {clean_engine}
 windowObj.DND.ActivityEngine = ActivityEngine;
 
-{player_code.replace("const getActivityEngine = () => {", "const getActivityEngine = () => ActivityEngine; // internal reference\nconst _unused = () => {")}
+{bundled_player_code.replace("const getActivityEngine = () => {", "const getActivityEngine = () => ActivityEngine; // internal reference\nconst _unused = () => {")}
 
-{webcomp_code.replace("import { ActivityPlayer } from '../ActivityPlayer.js';", "// ActivityPlayer doğrudan modül içinde mevcut")}
+{bundled_webcomp_code.replace("import { ActivityPlayer } from '../ActivityPlayer.js';", "// ActivityPlayer doğrudan modül içinde mevcut")}
 
 export {{
   ActivityPlayer,

@@ -4,13 +4,14 @@
  * sahne üzeri çoklu seçim (marquee selection) işlemlerini yönetir.
  */
 class TransformEngine {
-  constructor(core, stageManager, objectManager, selectionManager, historyManager, stageEl) {
+  constructor(core, stageManager, objectManager, selectionManager, historyManager, stageEl, options = {}) {
     this.core = core;
     this.stageManager = stageManager;
     this.objectManager = objectManager;
     this.selectionManager = selectionManager;
     this.historyManager = historyManager;
     this.stage = stageEl;
+    this.signal = options.signal;
 
     this.activeAction = null; // 'move' | 'resize' | 'rotate' | 'marquee'
     this.activeHandle = null; // 'nw', 'n', 'se', vb.
@@ -29,10 +30,11 @@ class TransformEngine {
   }
 
   init() {
-    this.stage.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-    window.addEventListener('pointermove', (e) => this.onPointerMove(e));
-    window.addEventListener('pointerup', (e) => this.onPointerUp(e));
-    window.addEventListener('pointercancel', (e) => this.onPointerCancel(e));
+    const options = this.signal ? { signal: this.signal } : undefined;
+    this.stage.addEventListener('pointerdown', (e) => this.onPointerDown(e), options);
+    window.addEventListener('pointermove', (e) => this.onPointerMove(e), options);
+    window.addEventListener('pointerup', (e) => this.onPointerUp(e), options);
+    window.addEventListener('pointercancel', (e) => this.onPointerCancel(e), options);
   }
 
   onPointerDown(e) {

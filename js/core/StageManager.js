@@ -3,11 +3,12 @@
  * responsive ölçeklendirme, ızgara (grid) ve hizalama kılavuzlarını yönetir.
  */
 class StageManager {
-  constructor(core, containerEl, stageEl) {
+  constructor(core, containerEl, stageEl, options = {}) {
     this.core = core;
     this.container = containerEl;
     this.stage = stageEl;
     this.svgOverlay = stageEl.querySelector('.stage-svg-overlay');
+    this.signal = options.signal;
 
     this.logicalWidth = 1200;
     this.logicalHeight = 675;
@@ -44,7 +45,7 @@ class StageManager {
       });
       this.resizeObserver.observe(this.container);
     } else {
-      window.addEventListener('resize', () => this.updateScale());
+      window.addEventListener('resize', () => this.updateScale(), this.signal ? { signal: this.signal } : undefined);
     }
   }
 

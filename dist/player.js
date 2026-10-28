@@ -111,11 +111,6 @@ class AudioSynthesizer {
   }
 }
 
-// Universal namespace export
-}
-  window.DND.AudioSynthesizer = AudioSynthesizer;
-}
-
 windowObj.DND.AudioSynthesizer = AudioSynthesizer;
 
 /**
@@ -262,9 +257,6 @@ class ValidationEngine {
   }
 }
 
-// Global namespace
-window.DND.ValidationEngine = ValidationEngine;
-
 windowObj.DND.ValidationEngine = ValidationEngine;
 
 /**
@@ -410,6 +402,43 @@ class ActivityEngine {
     };
   }
 
+  setState(value) {
+    if (!value || typeof value !== 'object' || !value.placedMap || typeof value.placedMap !== 'object') {
+      throw new TypeError('Geçersiz DND oynatıcı durumu.');
+    }
+    const objects = new Map((this.projectData.objects || []).map(object => [object.id, object]));
+    const nextPlaced = {};
+    for (const [dragId, targetId] of Object.entries(value.placedMap)) {
+      const drag = objects.get(dragId);
+      const target = objects.get(targetId);
+      if (drag?.role !== 'draggable' || !['target', 'category', 'sequence_slot'].includes(target?.role)) {
+        throw new TypeError('Oynatıcı durumu bilinmeyen bir nesne içeriyor.');
+      }
+      nextPlaced[dragId] = targetId;
+    }
+    this.prepareItems();
+    this.placedMap = nextPlaced;
+    this.attempts = Number.isSafeInteger(value.attempts) && value.attempts >= 0 ? value.attempts : 0;
+    this.correctCount = 0;
+    for (const [dragId, targetId] of Object.entries(nextPlaced)) {
+      const target = objects.get(targetId);
+      this.snapToTarget(dragId, target);
+      const isCorrect = this.projectData.answerKey?.[dragId] === targetId;
+      const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+      if (isCorrect) {
+        this.correctCount++;
+        dragEl?.classList.add('is-correct');
+        if (this.projectData.settings?.correctAnswerBehavior === 'lock') {
+          dragEl?.classList.add('is-locked');
+          dragEl?.setAttribute('tabindex', '-1');
+        }
+      }
+    }
+    this.isCompleted = this.totalDraggables > 0 && this.correctCount === this.totalDraggables && value.isCompleted === true;
+    this.updateStats();
+    return this.getState();
+  }
+
   renderGameLayout() {
     this.container.innerHTML = `
       <div class="player-wrapper">
@@ -530,6 +559,7 @@ class ActivityEngine {
     this.onResizeBound = () => this.updateScale();
     window.addEventListener('resize', this.onResizeBound);
 
+    if (typeof window !== 'undefined' && window.ResizeObserver && this.viewportEl) {
       this.resizeObserver = new window.ResizeObserver(() => {
         this.updateScale();
       });
@@ -1132,6 +1162,7 @@ class ActivityEngine {
     this.updateStats();
 
     if (correct === this.totalDraggables) {
+      this.isCompleted = true;
       this.audio.playComplete();
       this.showCompletionModal();
     } else {
@@ -1166,9 +1197,6 @@ class ActivityEngine {
       correctCount: this.correctCount
     };
 
-    if (typeof this.options.onComplete === 'function') {
-      this.options.onComplete(payload);
-    }
     this.emit('complete', payload);
   }
 
@@ -1239,11 +1267,6 @@ class ActivityEngine {
   }
 }
 
-// Universal namespace export
-}
-  window.DND.ActivityEngine = ActivityEngine;
-}
-
 windowObj.DND.ActivityEngine = ActivityEngine;
 
 /**
@@ -1262,7 +1285,7 @@ const _unused = () => {
   return null;
 };
 
-export class ActivityPlayer {
+class ActivityPlayer {
   /**
    * @param {Object|string} options Veya doğrudan hedef DOM elementi / seçicisi
    * @param {HTMLElement|string} [options.target] Hedef container elementi veya CSS seçicisi ('#quiz')
@@ -1282,7 +1305,8 @@ export class ActivityPlayer {
       onStep: null,
       onDrop: null,
       onReset: null,
-      onReady: null
+      onReady: null,
+      initialState: null
     }, options);
 
     this.container = null;
@@ -1432,11 +1456,13 @@ export class ActivityPlayer {
     };
 
     // Ses ayarını uygula
-    if (projectData.settings) {
-      projectData.settings.soundEnabled = this.options.sound !== false;
-    }
+    const mountedData = JSON.parse(JSON.stringify(projectData));
+    mountedData.settings = Object.assign({}, mountedData.settings, {
+      soundEnabled: this.options.sound !== false
+    });
 
-    this.engine = new EngineClass(this.container, projectData, engineOptions);
+    this.engine = new EngineClass(this.container, mountedData, engineOptions);
+    if (this.options.initialState) this.engine.setState(this.options.initialState);
 
     if (typeof this.options.onReady === 'function') {
       this.options.onReady(this);
@@ -1467,6 +1493,11 @@ export class ActivityPlayer {
    */
   getState() {
     return this.engine ? this.engine.getState() : null;
+  }
+
+  setState(state) {
+    if (!this.engine) throw new Error('[ActivityPlayer] Oynatıcı henüz başlatılmadı.');
+    return this.engine.setState(state);
   }
 
   /**
@@ -1517,7 +1548,7 @@ export class ActivityPlayer {
 
 // ActivityPlayer doğrudan modül içinde mevcut
 
-export class DNDPlayerElement extends HTMLElement {
+class DNDPlayerElement extends HTMLElement {
   static get observedAttributes() {
     return ['src', 'sound'];
   }

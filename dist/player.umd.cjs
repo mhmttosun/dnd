@@ -115,11 +115,6 @@ class AudioSynthesizer {
   }
 }
 
-// Universal namespace export
-}
-  window.DND.AudioSynthesizer = AudioSynthesizer;
-}
-
   windowObj.DND.AudioSynthesizer = AudioSynthesizer;
 
 /**
@@ -266,9 +261,6 @@ class ValidationEngine {
   }
 }
 
-// Global namespace
-window.DND.ValidationEngine = ValidationEngine;
-
   windowObj.DND.ValidationEngine = ValidationEngine;
 
 /**
@@ -414,6 +406,43 @@ class ActivityEngine {
     };
   }
 
+  setState(value) {
+    if (!value || typeof value !== 'object' || !value.placedMap || typeof value.placedMap !== 'object') {
+      throw new TypeError('Geçersiz DND oynatıcı durumu.');
+    }
+    const objects = new Map((this.projectData.objects || []).map(object => [object.id, object]));
+    const nextPlaced = {};
+    for (const [dragId, targetId] of Object.entries(value.placedMap)) {
+      const drag = objects.get(dragId);
+      const target = objects.get(targetId);
+      if (drag?.role !== 'draggable' || !['target', 'category', 'sequence_slot'].includes(target?.role)) {
+        throw new TypeError('Oynatıcı durumu bilinmeyen bir nesne içeriyor.');
+      }
+      nextPlaced[dragId] = targetId;
+    }
+    this.prepareItems();
+    this.placedMap = nextPlaced;
+    this.attempts = Number.isSafeInteger(value.attempts) && value.attempts >= 0 ? value.attempts : 0;
+    this.correctCount = 0;
+    for (const [dragId, targetId] of Object.entries(nextPlaced)) {
+      const target = objects.get(targetId);
+      this.snapToTarget(dragId, target);
+      const isCorrect = this.projectData.answerKey?.[dragId] === targetId;
+      const dragEl = this.container.querySelector(`[data-id="${dragId}"]`);
+      if (isCorrect) {
+        this.correctCount++;
+        dragEl?.classList.add('is-correct');
+        if (this.projectData.settings?.correctAnswerBehavior === 'lock') {
+          dragEl?.classList.add('is-locked');
+          dragEl?.setAttribute('tabindex', '-1');
+        }
+      }
+    }
+    this.isCompleted = this.totalDraggables > 0 && this.correctCount === this.totalDraggables && value.isCompleted === true;
+    this.updateStats();
+    return this.getState();
+  }
+
   renderGameLayout() {
     this.container.innerHTML = `
       <div class="player-wrapper">
@@ -534,6 +563,7 @@ class ActivityEngine {
     this.onResizeBound = () => this.updateScale();
     window.addEventListener('resize', this.onResizeBound);
 
+    if (typeof window !== 'undefined' && window.ResizeObserver && this.viewportEl) {
       this.resizeObserver = new window.ResizeObserver(() => {
         this.updateScale();
       });
@@ -1136,6 +1166,7 @@ class ActivityEngine {
     this.updateStats();
 
     if (correct === this.totalDraggables) {
+      this.isCompleted = true;
       this.audio.playComplete();
       this.showCompletionModal();
     } else {
@@ -1170,9 +1201,6 @@ class ActivityEngine {
       correctCount: this.correctCount
     };
 
-    if (typeof this.options.onComplete === 'function') {
-      this.options.onComplete(payload);
-    }
     this.emit('complete', payload);
   }
 
@@ -1241,11 +1269,6 @@ class ActivityEngine {
     this.prepareItems();
     this.emit('reset', this.getState());
   }
-}
-
-// Universal namespace export
-}
-  window.DND.ActivityEngine = ActivityEngine;
 }
 
   windowObj.DND.ActivityEngine = ActivityEngine;

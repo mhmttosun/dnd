@@ -128,6 +128,34 @@ Ardından tarayıcınızdan `http://localhost:8000` adresine gidin.
 
 Bu proje hem görsel bir editör hem de diğer JavaScript projelerine (React, Vue, Angular, Svelte, Next.js veya düz Vanilla JS) **kolayca eklenebilen bağımsız bir etkinlik oynatıcısı (Activity Player)** olarak tasarlanmıştır.
 
+### Editörü doğrudan gömme
+
+Editör iframe gerektirmeden bir DOM elemanına bağlanabilir. İç arayüz Shadow DOM
+içinde tutulur; görsel yükleme, bekleyen işlerin tamamlanması ve statik SVG
+önizleme üretimi host uygulamaya açık bir API üzerinden yürütülür.
+
+```js
+import { initializeDndEditor, createDefaultActivity } from '@mhmttosun/dnd/editor';
+
+const editor = initializeDndEditor({
+  container: document.querySelector('#editor'),
+  activity: createDefaultActivity('matching', 'Eşleştirme'),
+  uploadImage: async (file, { signal }) => {
+    const url = await uploadToYourStorage(file, { signal });
+    return { url };
+  },
+  ui: { fileActions: false },
+});
+
+await editor.flush();
+const activity = editor.getActivity();
+const previewSvg = await editor.exportPreview();
+editor.destroy();
+```
+
+`ActivityPlayer` önceki bir denemeyi `initialState` ile geri yükleyebilir; güncel
+durum `getState()` ile alınır ve gerekirse `setState()` ile değiştirilebilir.
+
 ### 1. Kurulum (NPM ile)
 ```bash
 npm install @mhmttosun/dnd

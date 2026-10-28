@@ -3,12 +3,13 @@
  * Nesne taşıma, boyutlandırma, silme, ekleme ve eşleştirme durumlarını kaydeder.
  */
 class HistoryManager {
-  constructor(core, maxHistory = 40) {
+  constructor(core, maxHistory = 40, options = {}) {
     this.core = core;
     this.maxHistory = maxHistory;
     this.undoStack = [];
     this.redoStack = [];
     this.isApplying = false;
+    this.signal = options.signal;
 
     this.init();
   }
@@ -46,7 +47,7 @@ class HistoryManager {
         e.preventDefault();
         this.redo();
       }
-    });
+    }, this.signal ? { signal: this.signal } : undefined);
   }
 
   pushState() {

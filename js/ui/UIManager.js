@@ -1,19 +1,21 @@
 /**
- * UIManager - CNVS arayüzü, üst başlık, ikincil araç çubuğu,
+ * UIManager - DND arayüzü, üst başlık, ikincil araç çubuğu,
  * şablonlar menüsü, mod geçişleri ve bildirimleri yönetir.
  * Yan paneller kaldırılmış, tam ekran tuval düzeni uygulanmıştır.
  */
 class UIManager {
-  constructor(core, stageManager, objectManager, selectionManager, historyManager, exportManager) {
+  constructor(core, stageManager, objectManager, selectionManager, historyManager, exportManager, options = {}) {
     this.core = core;
     this.stageManager = stageManager;
     this.objectManager = objectManager;
     this.selectionManager = selectionManager;
     this.historyManager = historyManager;
     this.exportManager = exportManager;
+    this.options = options;
+    this.root = options.root || document;
 
-    this.previewContainer = document.getElementById('preview-container');
-    this.editorContainer = document.getElementById('editor-layout');
+    this.previewContainer = this.root.getElementById('preview-container');
+    this.editorContainer = this.root.getElementById('editor-layout');
     this.activePlayerInstance = null;
     this.activeTool = 'select'; // 'select' | 'hand'
 
@@ -28,14 +30,14 @@ class UIManager {
     this.bindInlineTextEditing();
 
     this.core.on('historyChanged', ({ canUndo, canRedo }) => {
-      const undoBtn = document.getElementById('btn-undo');
-      const redoBtn = document.getElementById('btn-redo');
+      const undoBtn = this.root.getElementById('btn-undo');
+      const redoBtn = this.root.getElementById('btn-redo');
       if (undoBtn) undoBtn.disabled = !canUndo;
       if (redoBtn) redoBtn.disabled = !canRedo;
     });
 
     this.core.on('projectNameChanged', ({ name }) => {
-      const titleInput = document.getElementById('project-title-input');
+      const titleInput = this.root.getElementById('project-title-input');
       if (titleInput && titleInput.value !== name) {
         titleInput.value = name;
       }
@@ -51,8 +53,8 @@ class UIManager {
   }
 
   updateSaveStatus(isSaved) {
-    const statusBox = document.querySelector('.project-save-status');
-    const statusText = document.getElementById('status-text');
+    const statusBox = this.root.querySelector('.project-save-status');
+    const statusText = this.root.getElementById('status-text');
     if (statusBox && statusText) {
       if (isSaved) {
         statusBox.classList.add('is-saved');
@@ -66,7 +68,7 @@ class UIManager {
 
   bindHeaderActions() {
     // 1. Yeni Proje
-    const btnNew = document.getElementById('btn-new-project');
+    const btnNew = this.root.getElementById('btn-new-project');
     if (btnNew) {
       btnNew.onclick = () => {
         if (confirm('Yeni bir proje başlatmak istiyor musunuz? Kaydedilmemiş değişiklikler kaybolabilir.')) {
@@ -79,8 +81,8 @@ class UIManager {
     }
 
     // 2. Proje Aç (JSON)
-    const btnOpen = document.getElementById('btn-open-project');
-    const fileInput = document.getElementById('file-input-project');
+    const btnOpen = this.root.getElementById('btn-open-project');
+    const fileInput = this.root.getElementById('file-input-project');
     if (btnOpen && fileInput) {
       btnOpen.onclick = () => fileInput.click();
       fileInput.onchange = (e) => {
@@ -104,7 +106,7 @@ class UIManager {
     }
 
     // 3. Projeyi Kaydet (JSON İndir)
-    const btnSave = document.getElementById('btn-save-project');
+    const btnSave = this.root.getElementById('btn-save-project');
     if (btnSave) {
       btnSave.onclick = () => {
         const projectData = this.core.getProjectData();
@@ -130,7 +132,7 @@ class UIManager {
     }
 
     // 4. HTML İndir
-    const btnExport = document.getElementById('btn-export-html');
+    const btnExport = this.root.getElementById('btn-export-html');
     if (btnExport) {
       btnExport.onclick = () => {
         const ok = this.exportManager.exportStandaloneHTML();
@@ -143,8 +145,8 @@ class UIManager {
 
   bindSubToolbar() {
     // Şablonlar Menüsü Aç / Kapa
-    const btnTemplates = document.getElementById('btn-toggle-templates');
-    const menuTemplates = document.getElementById('templates-menu');
+    const btnTemplates = this.root.getElementById('btn-toggle-templates');
+    const menuTemplates = this.root.getElementById('templates-menu');
 
     if (btnTemplates && menuTemplates) {
       btnTemplates.onclick = (e) => {
@@ -155,7 +157,7 @@ class UIManager {
 
       window.addEventListener('click', () => {
         if (menuTemplates) menuTemplates.style.display = 'none';
-      });
+      }, this.options.signal ? { signal: this.options.signal } : undefined);
 
       menuTemplates.querySelectorAll('[data-sample]').forEach(item => {
         item.onclick = (e) => {
@@ -173,8 +175,8 @@ class UIManager {
     }
 
     // Araçlar: Seçim ve El Aracı
-    const toolSelect = document.getElementById('tool-select');
-    const toolHand = document.getElementById('tool-hand');
+    const toolSelect = this.root.getElementById('tool-select');
+    const toolHand = this.root.getElementById('tool-hand');
     if (toolSelect && toolHand) {
       toolSelect.onclick = () => {
         this.activeTool = 'select';
@@ -189,7 +191,7 @@ class UIManager {
     }
 
     // Nesne Ekleme: Metin Kutusu
-    const btnAddText = document.getElementById('btn-add-text');
+    const btnAddText = this.root.getElementById('btn-add-text');
     if (btnAddText) {
       btnAddText.onclick = () => {
         const obj = this.objectManager.createObject('text', 'decorative', {
@@ -210,7 +212,7 @@ class UIManager {
     }
 
     // Nesne Ekleme: Dikdörtgen / Kart
-    const btnAddRect = document.getElementById('btn-add-rect');
+    const btnAddRect = this.root.getElementById('btn-add-rect');
     if (btnAddRect) {
       btnAddRect.onclick = () => {
         const obj = this.objectManager.createObject('rectangle', 'decorative', {
@@ -231,7 +233,7 @@ class UIManager {
     }
 
     // Nesne Ekleme: Daire
-    const btnAddCircle = document.getElementById('btn-add-circle');
+    const btnAddCircle = this.root.getElementById('btn-add-circle');
     if (btnAddCircle) {
       btnAddCircle.onclick = () => {
         const obj = this.objectManager.createObject('circle', 'decorative', {
@@ -249,8 +251,8 @@ class UIManager {
     }
 
     // Nesne Ekleme: Görsel Yükle
-    const btnAddImage = document.getElementById('btn-add-image');
-    const imageInput = document.getElementById('file-input-image');
+    const btnAddImage = this.root.getElementById('btn-add-image');
+    const imageInput = this.root.getElementById('file-input-image');
     if (btnAddImage && imageInput) {
       btnAddImage.onclick = () => imageInput.click();
       imageInput.onchange = (e) => {
@@ -260,11 +262,22 @@ class UIManager {
             alert('Lütfen geçerli bir görsel dosyası seçin.');
             return;
           }
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const dataUrl = ev.target.result;
+          const task = (async () => {
+            const uploaded = typeof this.options.uploadImage === 'function'
+              ? await this.options.uploadImage(file, { signal: this.options.signal })
+              : null;
+            const dataUrl = uploaded?.url || await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (ev) => resolve(ev.target.result);
+              reader.onerror = () => reject(reader.error || new Error('Görsel okunamadı.'));
+              reader.readAsDataURL(file);
+            });
             const img = new Image();
-            img.onload = () => {
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = () => reject(new Error('Görsel yüklenemedi.'));
+              img.src = dataUrl;
+            });
               let w = img.width, h = img.height;
               const maxDim = 320;
               if (w > maxDim || h > maxDim) {
@@ -283,17 +296,18 @@ class UIManager {
                 borderWidth: 0
               });
               this.selectionManager.select(obj.id);
-            };
-            img.src = dataUrl;
-          };
-          reader.readAsDataURL(file);
+          })().catch((error) => {
+            this.showToast(error.message || 'Görsel yüklenemedi.', 'error');
+            throw error;
+          });
+          if (typeof this.options.trackTask === 'function') this.options.trackTask(task);
         }
         imageInput.value = '';
       };
     }
 
     // Çizgi Ekleme (btn-add-target)
-    const btnAddTarget = document.getElementById('btn-add-target');
+    const btnAddTarget = this.root.getElementById('btn-add-target');
     if (btnAddTarget) {
       btnAddTarget.onclick = () => {
         const obj = this.objectManager.createObject('line', 'decorative', {
@@ -310,25 +324,25 @@ class UIManager {
     }
 
     // Geri Al / İleri Al
-    const btnUndo = document.getElementById('btn-undo');
+    const btnUndo = this.root.getElementById('btn-undo');
     if (btnUndo) btnUndo.onclick = () => this.historyManager.undo();
 
-    const btnRedo = document.getElementById('btn-redo');
+    const btnRedo = this.root.getElementById('btn-redo');
     if (btnRedo) btnRedo.onclick = () => this.historyManager.redo();
 
     // Yakınlaştır / Uzaklaştır / Sıfırla
-    const btnZoomIn = document.getElementById('btn-zoom-in');
+    const btnZoomIn = this.root.getElementById('btn-zoom-in');
     if (btnZoomIn) btnZoomIn.onclick = () => this.stageManager.zoomIn();
 
-    const btnZoomOut = document.getElementById('btn-zoom-out');
+    const btnZoomOut = this.root.getElementById('btn-zoom-out');
     if (btnZoomOut) btnZoomOut.onclick = () => this.stageManager.zoomOut();
 
-    const btnZoomReset = document.getElementById('btn-zoom-reset');
+    const btnZoomReset = this.root.getElementById('btn-zoom-reset');
     if (btnZoomReset) btnZoomReset.onclick = () => this.stageManager.fitToScreen();
   }
 
   bindModeSwitcher() {
-    const modeBtns = document.querySelectorAll('.mode-toggle-btn');
+    const modeBtns = this.root.querySelectorAll('.mode-toggle-btn');
     modeBtns.forEach(btn => {
       btn.onclick = () => {
         const mode = btn.getAttribute('data-mode');
@@ -338,7 +352,7 @@ class UIManager {
   }
 
   handleModeChanged(newMode) {
-    document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+    this.root.querySelectorAll('.mode-toggle-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-mode') === newMode);
     });
 
@@ -377,7 +391,7 @@ class UIManager {
   }
 
   bindProjectTitle() {
-    const titleInput = document.getElementById('project-title-input');
+    const titleInput = this.root.getElementById('project-title-input');
     if (titleInput) {
       titleInput.oninput = (e) => {
         this.core.setProjectName(e.target.value);
@@ -391,7 +405,7 @@ class UIManager {
     this.isEditingText = false;
     this.activeEditingObjId = null;
 
-    const stage = document.getElementById('stage');
+    const stage = this.root.getElementById('stage');
     if (!stage) return;
 
     // 1. Çift Tıklama Olayı (Doğrudan nesneye veya seçim çerçevesine çift tıklandığında)
@@ -426,7 +440,7 @@ class UIManager {
         return;
       }
       this.finishInlineEditing();
-    }, true);
+    }, this.options.signal ? { capture: true, signal: this.options.signal } : true);
   }
 
   startInlineEditing(objId) {
@@ -439,7 +453,7 @@ class UIManager {
       this.finishInlineEditing();
     }
 
-    const objEl = document.querySelector(`.stage-object[data-id="${objId}"]`);
+    const objEl = this.root.querySelector(`.stage-object[data-id="${objId}"]`);
     if (!objEl) return;
 
     const contentEl = objEl.querySelector('.object-inner-content');
@@ -502,7 +516,7 @@ class UIManager {
     this.isEditingText = false;
     this.activeEditingObjId = null;
 
-    const objEl = document.querySelector(`.stage-object[data-id="${objId}"]`);
+    const objEl = this.root.querySelector(`.stage-object[data-id="${objId}"]`);
     if (objEl) {
       objEl.classList.remove('is-editing-text');
       const targetEl = objEl.querySelector('.is-editing-text-target') ||
@@ -532,12 +546,12 @@ class UIManager {
   }
 
   showToast(message, type = 'info', duration = 3000) {
-    let toast = document.getElementById('app-toast');
+    let toast = this.root.getElementById('app-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'app-toast';
       toast.className = 'app-toast';
-      document.body.appendChild(toast);
+      (this.root.body || this.root).appendChild(toast);
     }
 
     toast.className = `app-toast toast-${type} is-visible`;

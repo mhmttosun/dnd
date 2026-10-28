@@ -12,6 +12,7 @@ class EditorCore {
 
   createDefaultProject(activityType = 'image-labeling', name = 'Yeni Etkinlik') {
     return {
+      schemaVersion: 1,
       version: '1.0',
       project: {
         id: 'proj_' + Date.now().toString(36),
@@ -92,6 +93,7 @@ class EditorCore {
     );
 
     this.data = {
+      schemaVersion: projectData.schemaVersion || 1,
       version: projectData.version || '1.0',
       project: Object.assign({}, defaults.project, projectData.project),
       stage: Object.assign({}, defaults.stage, projectData.stage),

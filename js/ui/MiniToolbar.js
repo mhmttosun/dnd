@@ -4,12 +4,14 @@
  * Kopyalama, Silme, Katman/Kilit ve Çoklu Hizalama işlemlerini nesne üzerinde yönetir.
  */
 class MiniToolbar {
-  constructor(core, objectManager, selectionManager, layerManager, stageManager) {
+  constructor(core, objectManager, selectionManager, layerManager, stageManager, root = document, options = {}) {
     this.core = core;
     this.objectManager = objectManager;
     this.selectionManager = selectionManager;
     this.layerManager = layerManager;
     this.stageManager = stageManager;
+    this.root = root;
+    this.signal = options.signal;
 
     this.toolbarEl = null;
     this.activePopup = null; // 'role' | 'style' | 'text' | 'layers' | 'align' | null
@@ -106,14 +108,14 @@ class MiniToolbar {
       if (this.toolbarEl && !this.toolbarEl.contains(e.target) && !e.target.closest('.resize-handle, .rotate-handle')) {
         this.closePopup();
       }
-    });
+    }, this.signal ? { signal: this.signal } : undefined);
 
     window.addEventListener('scroll', () => {
       if (this.isVisible()) this.reposition();
-    }, true);
+    }, this.signal ? { capture: true, signal: this.signal } : true);
     window.addEventListener('resize', () => {
       if (this.isVisible()) this.reposition();
-    });
+    }, this.signal ? { signal: this.signal } : undefined);
   }
 
   createDOM() {
@@ -122,7 +124,7 @@ class MiniToolbar {
     this.toolbarEl.className = 'mini-toolbar-container';
     this.toolbarEl.style.display = 'none';
 
-    document.body.appendChild(this.toolbarEl);
+    (this.root.body || this.root).appendChild(this.toolbarEl);
   }
 
   bindEvents() {
@@ -949,7 +951,7 @@ class MiniToolbar {
           paletteSec.style.display = this.showStyleColorPalette ? 'flex' : 'none';
           if (this.showStyleColorPalette) {
             paletteSec.classList.add('is-opening');
-            const titleEl = document.getElementById('mt-style-palette-title');
+            const titleEl = this.root.getElementById('mt-style-palette-title');
             if (titleEl) {
               titleEl.textContent = this.currentTargetProp === 'border' ? 'Kenarlık Rengi' : 'Dolgu Rengi';
             }
