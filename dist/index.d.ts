@@ -63,6 +63,8 @@ export interface ActivityPlayerOptions {
   target?: HTMLElement | string;
   data?: ActivityProject;
   src?: string;
+  file?: File | Blob;
+  jsonString?: string;
   sound?: boolean;
   onComplete?: (stats: ActivityStats) => void;
   onStep?: (state: ActivityState) => void;
@@ -75,6 +77,8 @@ export declare class ActivityPlayer {
   constructor(options?: ActivityPlayerOptions);
   mount(projectData: ActivityProject): void;
   loadFromUrl(url: string): Promise<void>;
+  loadFromFile(file: File | Blob): Promise<void>;
+  loadFromJsonString(jsonString: string): void;
   on(event: 'complete' | 'step' | 'drop' | 'reset' | 'destroy', callback: (data: any) => void): () => void;
   off(event: string, callback: (data: any) => void): void;
   getState(): ActivityState | null;
@@ -86,6 +90,8 @@ export declare class ActivityPlayer {
 export declare class DNDPlayerElement extends HTMLElement {
   data: ActivityProject | null;
   readonly player: ActivityPlayer | null;
+  loadFile(file: File | Blob): void;
+  loadJsonString(jsonString: string): void;
   reset(): void;
   getState(): ActivityState | null;
 }

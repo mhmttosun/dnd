@@ -1294,11 +1294,15 @@ export class ActivityPlayer {
       this.resolveContainer(this.options.target);
     }
 
-    // Veri başlatma (Doğrudan veri veya URL üzerinden yükleme)
+    // Veri başlatma (Doğrudan veri, URL, File veya JSON metni)
     if (this.options.data) {
       this.mount(this.options.data);
     } else if (this.options.src) {
       this.loadFromUrl(this.options.src);
+    } else if (this.options.file) {
+      this.loadFromFile(this.options.file);
+    } else if (this.options.jsonString) {
+      this.loadFromJsonString(this.options.jsonString);
     }
   }
 
@@ -1314,7 +1318,7 @@ export class ActivityPlayer {
   }
 
   /**
-   * JSON dosya URL'sinden veriyi asenkron çekip oynatıcıyı başlatır
+   * JSON dosya URL'sinden veya yolundan veriyi asenkron çekip oynatıcıyı başlatır
    * @param {string} url 
    */
   async loadFromUrl(url) {
@@ -1331,6 +1335,60 @@ export class ActivityPlayer {
         this.container.innerHTML = `
           <div style="padding: 24px; text-align: center; color: #ef4444; font-family: sans-serif;">
             ⚠️ Etkinlik verisi yüklenemedi: ${err.message}
+          </div>
+        `;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Bir File veya Blob nesnesini (örneğin <input type="file"> ile seçilen yerel dosyayı)
+   * doğrudan okuyup etkinliği başlatır
+   * @param {File|Blob} file 
+   */
+  async loadFromFile(file) {
+    if (!file) throw new Error('[ActivityPlayer] Dosya nesnesi boş olamaz.');
+    try {
+      let text = '';
+      if (typeof file.text === 'function') {
+        text = await file.text();
+      } else {
+        text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsText(file, 'utf-8');
+        });
+      }
+      this.loadFromJsonString(text);
+    } catch (err) {
+      console.error('[ActivityPlayer] Dosya okunamadı:', err);
+      if (this.container) {
+        this.container.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: #ef4444; font-family: sans-serif;">
+            ⚠️ Dosya okunamadı: ${err.message}
+          </div>
+        `;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Ham JSON metnini (JSON String) ayrıştırıp etkinliği başlatır
+   * @param {string} jsonString 
+   */
+  loadFromJsonString(jsonString) {
+    try {
+      const data = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+      this.mount(data);
+    } catch (err) {
+      console.error('[ActivityPlayer] JSON ayrıştırma hatası:', err);
+      if (this.container) {
+        this.container.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: #ef4444; font-family: sans-serif;">
+            ⚠️ Geçersiz JSON formatı: ${err.message}
           </div>
         `;
       }
@@ -1551,6 +1609,36 @@ export class DNDPlayerElement extends HTMLElement {
         this.dispatchEvent(new CustomEvent('dnd:ready', { detail: { player: p }, bubbles: true }));
       }
     });
+  }
+
+  /**
+   * Bir File veya Blob nesnesi yükler (<input type="file"> için)
+   */
+  loadFile(file) {
+    if (this._player) {
+      this._player.loadFromFile(file);
+    } else {
+      this._player = new ActivityPlayer({
+        target: this,
+        file: file,
+        sound: this.getAttribute('sound') !== 'false'
+      });
+    }
+  }
+
+  /**
+   * Ham JSON metni yükler
+   */
+  loadJsonString(jsonString) {
+    if (this._player) {
+      this._player.loadFromJsonString(jsonString);
+    } else {
+      this._player = new ActivityPlayer({
+        target: this,
+        jsonString: jsonString,
+        sound: this.getAttribute('sound') !== 'false'
+      });
+    }
   }
 
   /**

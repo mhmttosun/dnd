@@ -105,6 +105,36 @@ export class DNDPlayerElement extends HTMLElement {
   }
 
   /**
+   * Bir File veya Blob nesnesi yükler (<input type="file"> için)
+   */
+  loadFile(file) {
+    if (this._player) {
+      this._player.loadFromFile(file);
+    } else {
+      this._player = new ActivityPlayer({
+        target: this,
+        file: file,
+        sound: this.getAttribute('sound') !== 'false'
+      });
+    }
+  }
+
+  /**
+   * Ham JSON metni yükler
+   */
+  loadJsonString(jsonString) {
+    if (this._player) {
+      this._player.loadFromJsonString(jsonString);
+    } else {
+      this._player = new ActivityPlayer({
+        target: this,
+        jsonString: jsonString,
+        sound: this.getAttribute('sound') !== 'false'
+      });
+    }
+  }
+
+  /**
    * Etkinliği sıfırlama metodu
    */
   reset() {

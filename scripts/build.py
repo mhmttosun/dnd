@@ -131,6 +131,10 @@ umd_player_content = f"""/**
         this.mount(this.options.data);
       }} else if (this.options.src) {{
         this.loadFromUrl(this.options.src);
+      }} else if (this.options.file) {{
+        this.loadFromFile(this.options.file);
+      }} else if (this.options.jsonString) {{
+        this.loadFromJsonString(this.options.jsonString);
       }}
     }}
 
@@ -158,6 +162,44 @@ umd_player_content = f"""/**
         }}
         throw err;
       }}
+    }}
+
+    async loadFromFile(file) {{
+      if (!file) throw new Error('[ActivityPlayer] Dosya nesnesi boş olamaz.');
+      try {{
+        var text = '';
+        if (typeof file.text === 'function') {{
+          text = await file.text();
+        }} else {{
+          text = await new Promise((resolve, reject) => {{
+            var reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsText(file, 'utf-8');
+          }});
+        }}
+        this.loadFromJsonString(text);
+      }} catch (err) {{
+        console.error('[ActivityPlayer] Dosya okunamadı:', err);
+        if (this.container) {{
+          this.container.innerHTML = '<div style="padding:20px;color:red;">⚠️ Dosya okunamadı: ' + err.message + '</div>';
+        }}
+        throw err;
+      }}
+    }}
+
+    loadFromJsonString(jsonString) {{
+      try {{
+        var data = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+        this.mount(data);
+      }} catch (err) {{
+        console.error('[ActivityPlayer] JSON ayrıştırma hatası:', err);
+        if (this.container) {{
+          this.container.innerHTML = '<div style="padding:20px;color:red;">⚠️ Geçersiz JSON: ' + err.message + '</div>';
+        }}
+        throw err;
+      }}
+    }}
     }}
 
     mount(projectData) {{
@@ -269,6 +311,14 @@ umd_player_content = f"""/**
         onReset: (state) => this.dispatchEvent(new CustomEvent('dnd:reset', {{ detail: state, bubbles: true }})),
         onReady: (p) => this.dispatchEvent(new CustomEvent('dnd:ready', {{ detail: {{ player: p }}, bubbles: true }}))
       }});
+    }}
+    loadFile(file) {{
+      if (this._player) this._player.loadFromFile(file);
+      else this._player = new ActivityPlayer({{ target: this, file: file, sound: this.getAttribute('sound') !== 'false' }});
+    }}
+    loadJsonString(str) {{
+      if (this._player) this._player.loadFromJsonString(str);
+      else this._player = new ActivityPlayer({{ target: this, jsonString: str, sound: this.getAttribute('sound') !== 'false' }});
     }}
     reset() {{ if (this._player) this._player.reset(); }}
     getState() {{ return this._player ? this._player.getState() : null; }}
