@@ -68,6 +68,7 @@ export interface ActivityPlayerOptions {
   file?: File | Blob;
   jsonString?: string;
   sound?: boolean;
+  stagePadding?: number | null;
   initialState?: ActivityState;
   onComplete?: (stats: ActivityStats) => void;
   onStep?: (state: ActivityState) => void;

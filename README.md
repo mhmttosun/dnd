@@ -156,6 +156,10 @@ editor.destroy();
 `ActivityPlayer` önceki bir denemeyi `initialState` ile geri yükleyebilir; güncel
 durum `getState()` ile alınır ve gerekirse `setState()` ile değiştirilebilir.
 
+Gömülü arayüzlerde sahneyi kapsayıcı kenarlarına kadar ölçeklemek için
+`stagePadding: 0` verilebilir. Seçenek belirtilmezse bağımsız oynatıcı mevcut
+duyarlı 16/32 px boşluğunu korur.
+
 ### 1. Kurulum (NPM ile)
 ```bash
 npm install @mhmttosun/dnd

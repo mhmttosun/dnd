@@ -280,6 +280,7 @@ class ActivityEngine {
     this.projectData = JSON.parse(JSON.stringify(projectData)); // Orijinal veriyi korumak için derin kopya
     this.options = Object.assign({
       isEmbedded: false,
+      stagePadding: null,
       onComplete: null,
       onExit: null,
       onStep: null,
@@ -694,7 +695,14 @@ class ActivityEngine {
       return;
     }
 
-    const pad = vpRect.width < 600 ? 16 : 32;
+    const requestedPadding = this.options.stagePadding;
+    const numericPadding = Number(requestedPadding);
+    const pad = requestedPadding !== null
+      && requestedPadding !== undefined
+      && Number.isFinite(numericPadding)
+      && numericPadding >= 0
+      ? numericPadding
+      : (vpRect.width < 600 ? 16 : 32);
     // player-controls (~48px) + player-footer (~36px) = ~84px dikey alan payı
     const extraH = 88;
     const availW = Math.max(vpRect.width - pad, 60);
@@ -1513,6 +1521,7 @@ class ActivityEngine {
     constructor(options) {
       this.options = Object.assign({
         sound: true,
+        stagePadding: null,
         onComplete: null,
         onStep: null,
         onDrop: null,
@@ -1601,7 +1610,6 @@ class ActivityEngine {
         throw err;
       }
     }
-    }
 
     mount(projectData) {
       if (this.isDestroyed || !this.container) return;
@@ -1612,6 +1620,7 @@ class ActivityEngine {
 
       var engineOptions = {
         isEmbedded: false,
+        stagePadding: this.options.stagePadding,
         onComplete: (res) => {
           if (typeof this.options.onComplete === 'function') this.options.onComplete(res);
         },

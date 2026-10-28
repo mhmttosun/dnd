@@ -152,6 +152,7 @@ umd_player_content = f"""/**
     constructor(options) {{
       this.options = Object.assign({{
         sound: true,
+        stagePadding: null,
         onComplete: null,
         onStep: null,
         onDrop: null,
@@ -240,7 +241,6 @@ umd_player_content = f"""/**
         throw err;
       }}
     }}
-    }}
 
     mount(projectData) {{
       if (this.isDestroyed || !this.container) return;
@@ -251,6 +251,7 @@ umd_player_content = f"""/**
 
       var engineOptions = {{
         isEmbedded: false,
+        stagePadding: this.options.stagePadding,
         onComplete: (res) => {{
           if (typeof this.options.onComplete === 'function') this.options.onComplete(res);
         }},

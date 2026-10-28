@@ -20,6 +20,7 @@ export class ActivityPlayer {
    * @param {Object} [options.data] Etkinlik JSON veri modeli
    * @param {string} [options.src] Etkinlik JSON dosyasının URL adresi
    * @param {boolean} [options.sound=true] Ses efektleri açık mı
+   * @param {number|null} [options.stagePadding=null] Sahnenin kapsayıcı içindeki toplam yatay/dikey boşluğu
    * @param {Function} [options.onComplete] Etkinlik tamamlandığında çağrılacak callback
    * @param {Function} [options.onStep] Her adımda (drop) çağrılacak callback
    * @param {Function} [options.onDrop] Her bırakma işleminde çağrılacak callback
@@ -30,6 +31,7 @@ export class ActivityPlayer {
     this.options = Object.assign({
       sound: true,
       playMode: 'learning',
+      stagePadding: null,
       onComplete: null,
       onStep: null,
       onDrop: null,
@@ -171,6 +173,7 @@ export class ActivityPlayer {
     const engineOptions = {
       isEmbedded: false,
       playMode: this.options.playMode,
+      stagePadding: this.options.stagePadding,
       onComplete: (res) => {
         if (typeof this.options.onComplete === 'function') this.options.onComplete(res);
       },
