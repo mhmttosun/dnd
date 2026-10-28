@@ -102,6 +102,34 @@ class ExportManager {
       z-index: 100;
     }
 
+    .player-header.player-header-minimal {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      height: auto;
+      min-height: unset;
+      padding: 0;
+      background: transparent;
+      border-bottom: none;
+      backdrop-filter: none;
+      z-index: 500;
+      pointer-events: auto;
+    }
+
+    .player-header.player-header-minimal .exit-btn {
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      border-radius: 9999px;
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
     .player-title-box {
       display: flex;
       align-items: center;
@@ -179,16 +207,20 @@ class ExportManager {
       transform: translateY(0);
     }
 
-    .primary-btn {
+    .primary-btn,
+    .check-answers-btn {
       background: #4f46e5;
       border-color: #6366f1;
+      color: #ffffff;
     }
 
-    .primary-btn:hover {
+    .primary-btn:hover,
+    .check-answers-btn:hover {
       background: #4338ca;
     }
 
     /* OYUN ALANI VE SAHNE */
+    .player-viewport,
     .player-stage-viewport {
       flex: 1 1 0%;
       min-width: 0;
@@ -198,9 +230,21 @@ class ExportManager {
       position: relative;
       overflow: hidden;
       display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 35%, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.98) 100%);
+      touch-action: none;
+    }
+
+    .player-stage-container {
+      flex: 1 1 0%;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.9) 100%);
       touch-action: none;
     }
 
@@ -364,19 +408,112 @@ class ExportManager {
       color: #64748b;
     }
 
+    /* İKİNCİ KONTROL ALANI */
+    .player-controls {
+      flex-shrink: 0;
+      min-height: 52px;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 100;
+    }
+
+    .player-controls .controls-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .player-controls .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* GERİ BİLDİRİM ALANI */
+    .player-feedback {
+      flex: 1 1 auto;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      text-align: center;
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+
+    .player-feedback .feedback-icon {
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .player-feedback .feedback-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .player-feedback.feedback-success {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .player-feedback.feedback-error {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .player-feedback.feedback-warning {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+
+    .player-feedback.feedback-info {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+
     /* ALT BİLGİ VE İPUCU */
     .player-footer {
-      height: 50px;
-      min-height: 44px;
+      height: 38px;
+      min-height: 34px;
       flex-shrink: 0;
       padding: 0 20px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      background: rgba(15, 23, 42, 0.85);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      color: #94a3b8;
-      font-size: 0.85rem;
+      justify-content: center;
+      background: rgba(10, 15, 30, 0.94);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    .player-hint {
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* MODAL VE KUTLAMA */

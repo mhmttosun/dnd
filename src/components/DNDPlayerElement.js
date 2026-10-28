@@ -135,6 +135,22 @@ export class DNDPlayerElement extends HTMLElement {
   }
 
   /**
+   * Kontrol alanındaki geri bildirim mesajını günceller
+   */
+  setFeedback(message, type = 'info', duration = 0) {
+    if (this._player) {
+      this._player.setFeedback(message, type, duration);
+    }
+  }
+
+  /**
+   * Anlık geri bildirim durumunu döner
+   */
+  getFeedback() {
+    return this._player ? this._player.getFeedback() : null;
+  }
+
+  /**
    * Etkinliği sıfırlama metodu
    */
   reset() {

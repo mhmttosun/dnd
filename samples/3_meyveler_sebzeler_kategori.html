@@ -53,6 +53,42 @@
   z-index: 100;
 }
 
+/* Minimal Floating Header (Sadece Editör Önizlemesinde 'Editöre Dön' için) */
+.player-header.player-header-minimal {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  height: auto;
+  min-height: unset;
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
+  backdrop-filter: none;
+  z-index: 500;
+  pointer-events: auto;
+}
+
+.player-header.player-header-minimal .exit-btn {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  border-radius: 9999px;
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-header.player-header-minimal .exit-btn:hover {
+  background: rgba(239, 68, 68, 0.38);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .player-title-box {
   display: flex;
   align-items: center;
@@ -125,6 +161,29 @@
   transform: translateY(-1px);
 }
 
+.player-btn.primary-btn,
+.player-btn.check-answers-btn {
+  background: #4f46e5;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+.player-btn.primary-btn:hover,
+.player-btn.check-answers-btn:hover {
+  background: #4338ca;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4);
+}
+
+.player-btn.pulse-highlight {
+  animation: checkPulse 1.5s infinite;
+}
+
+@keyframes checkPulse {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
 .player-btn.exit-btn {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
@@ -135,19 +194,33 @@
   background: rgba(239, 68, 68, 0.35);
 }
 
-/* OYUN ALANI */
+/* OYUN ALANI (Stage + Kontroller + Footer tek bütün) */
+.player-viewport,
 .player-stage-viewport {
+  width: 100%;
+  height: 100%;
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at 50% 35%, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.98) 100%);
+  touch-action: none;
+}
+
+/* SAHNE ALANI KONTEYNERI (Stage'in en-boy orantılı sığacağı alan) */
+.player-stage-container {
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
   width: 100%;
-  height: 100%;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
   touch-action: none;
 }
 
@@ -313,19 +386,126 @@
   color: #64748b;
 }
 
-/* ALT BİLGİ */
+/* İKİNCİ KONTROL ALANI (Sahnenin hemen altında) */
+.player-controls {
+  flex-shrink: 0;
+  min-height: 52px;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 100;
+}
+
+.player-controls .controls-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.player-controls .controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* GERİ BİLDİRİM ALANI */
+.player-feedback {
+  flex: 1 1 auto;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  text-align: center;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.player-feedback .feedback-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.player-feedback .feedback-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-feedback.feedback-success {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+  animation: feedbackPulse 0.3s ease;
+}
+
+.player-feedback.feedback-error {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  animation: feedbackShake 0.35s ease;
+}
+
+.player-feedback.feedback-warning {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+}
+
+.player-feedback.feedback-info {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+@keyframes feedbackPulse {
+  0% { transform: scale(0.96); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes feedbackShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* ALT BİLGİ (player-viewport içinde) */
 .player-footer {
-  height: 50px;
-  min-height: 44px;
+  height: 38px;
+  min-height: 34px;
   flex-shrink: 0;
   padding: 0 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: rgba(15, 23, 42, 0.88);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
-  font-size: 0.85rem;
+  justify-content: center;
+  background: rgba(10, 15, 30, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.player-hint {
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* BAŞARI MODALI */
@@ -458,9 +638,26 @@
     font-size: 0.75rem;
   }
 
+  .player-controls {
+    min-height: 48px;
+    padding: 6px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .player-feedback {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 0 0;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+  }
+
   .player-footer {
     height: auto;
-    min-height: 38px;
+    min-height: 30px;
     padding: 4px 12px;
   }
 
@@ -789,6 +986,10 @@ class ActivityEngine {
     // Klavye erişilebilirliği için seçili nesne
     this.keyboardSelectedId = null;
 
+    // Geri bildirim durumu ve zamanlayıcısı
+    this.feedbackTimeout = null;
+    this.currentFeedback = null;
+
     // Yaşam döngüsü dinleyici referansları (Bellek sızıntılarını ve duplicate listener'ları önler)
     this.onResizeBound = () => this.updateScale();
     this.onPointerMoveBound = (e) => this.handlePointerMove(e);
@@ -812,6 +1013,10 @@ class ActivityEngine {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+    if (this.feedbackTimeout) {
+      clearTimeout(this.feedbackTimeout);
+      this.feedbackTimeout = null;
     }
     if (this.onResizeBound) {
       window.removeEventListener('resize', this.onResizeBound);
@@ -926,53 +1131,61 @@ class ActivityEngine {
   renderGameLayout() {
     this.container.innerHTML = `
       <div class="player-wrapper">
-        <header class="player-header">
-          <div class="player-title-box">
-            <h1 class="player-title">${window.DND.ValidationEngine.sanitizeText(this.projectData.project.name || 'Etkinlik')}</h1>
-            <span class="player-badge">${this.getActivityTypeLabel()}</span>
-          </div>
-          <div class="player-stats">
-            <div class="stat-pill score-stat" title="Doğru Sayısı">
-              <span class="stat-icon">🎯</span>
-              <span class="stat-value" id="stat-correct">0</span> / <span id="stat-total">0</span>
-            </div>
-            <div class="stat-pill attempts-stat" title="Deneme Sayısı">
-              <span class="stat-icon">⚡</span>
-              <span class="stat-value" id="stat-attempts">0</span> Deneme
-            </div>
-          </div>
-          <div class="player-actions">
-            <button class="player-btn sound-btn" id="btn-toggle-sound" title="Ses Aç/Kapat">
-              ${this.audio.enabled ? '🔊' : '🔇'}
+        ${this.options.isEmbedded ? `
+          <header class="player-header player-header-minimal">
+            <button class="player-btn exit-btn" id="btn-exit-preview" title="Önizlemeden Çık ve Editöre Dön">
+              ✕ Editöre Dön
             </button>
-            <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
-              🔄 Baştan Başla
-            </button>
-            ${this.options.isEmbedded ? `
-              <button class="player-btn exit-btn" id="btn-exit-preview" title="Önizlemeden Çık">
-                ✕ Editöre Dön
+          </header>
+        ` : ''}
+
+        <main class="player-viewport" id="player-viewport">
+          <div class="player-stage-container" id="player-stage-container">
+            <div class="player-stage" id="player-stage">
+              <div class="player-targets-layer" id="player-targets"></div>
+              <div class="player-draggables-layer" id="player-draggables"></div>
+            </div>
+          </div>
+
+          <!-- İkinci Kontrol Alanı (Sahnenin hemen altında) -->
+          <div class="player-controls" id="player-controls">
+            <div class="controls-left">
+              <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
+                🔄 Sıfırla
               </button>
-            ` : ''}
-          </div>
-        </header>
+              <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
+                ✓ Kontrol Et
+              </button>
+              <button class="player-btn sound-btn" id="btn-toggle-sound" title="Ses Aç/Kapat">
+                ${this.audio.enabled ? '🔊' : '🔇'}
+              </button>
+            </div>
 
-        <main class="player-stage-viewport" id="player-viewport">
-          <div class="player-stage" id="player-stage">
-            <div class="player-targets-layer" id="player-targets"></div>
-            <div class="player-draggables-layer" id="player-draggables"></div>
+            <!-- Geri Bildirim Alanı -->
+            <div class="player-feedback" id="player-feedback" role="status" aria-live="polite">
+              <span class="feedback-icon" id="feedback-icon">💬</span>
+              <span class="feedback-text" id="feedback-text">Öğeleri hedeflere sürükleyin</span>
+            </div>
+
+            <div class="controls-right player-stats">
+              <div class="stat-pill score-stat" title="Doğru Sayısı">
+                <span class="stat-icon">🎯</span>
+                <span class="stat-value" id="stat-correct">0</span> / <span id="stat-total">0</span>
+              </div>
+              <div class="stat-pill attempts-stat" title="Deneme Sayısı">
+                <span class="stat-icon">⚡</span>
+                <span class="stat-value" id="stat-attempts">0</span>
+              </div>
+            </div>
           </div>
+
+          <!-- Player Footer (player-viewport içinde) -->
+          <footer class="player-footer" id="player-footer">
+            <div class="player-hint" id="player-hint">
+              💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+            </div>
+          </footer>
         </main>
-
-        <footer class="player-footer">
-          <div class="player-hint" id="player-hint">
-            💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
-          </div>
-          <div class="player-footer-actions">
-            <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" style="display: none;">
-              ✓ Kontrol Et
-            </button>
-          </div>
-        </footer>
 
         <!-- Başarı / Kutlama Modalı -->
         <div class="player-modal-backdrop" id="completion-modal" style="display: none;">
@@ -1039,15 +1252,16 @@ class ActivityEngine {
   setupResizeHandler() {
     this.stageEl = this.container.querySelector('#player-stage');
     this.viewportEl = this.container.querySelector('#player-viewport');
+    this.stageContainerEl = this.container.querySelector('#player-stage-container') || this.viewportEl;
 
     this.onResizeBound = () => this.updateScale();
     window.addEventListener('resize', this.onResizeBound);
 
-    if (typeof window !== 'undefined' && window.ResizeObserver && this.viewportEl) {
+    if (typeof window !== 'undefined' && window.ResizeObserver && this.stageContainerEl) {
       this.resizeObserver = new window.ResizeObserver(() => {
         this.updateScale();
       });
-      this.resizeObserver.observe(this.viewportEl);
+      this.resizeObserver.observe(this.stageContainerEl);
     }
 
     this.updateScale();
@@ -1075,7 +1289,8 @@ class ActivityEngine {
       this.stageEl.style.backgroundRepeat = 'no-repeat';
     }
 
-    const vpRect = this.viewportEl.getBoundingClientRect();
+    const targetContainer = this.stageContainerEl || this.viewportEl;
+    const vpRect = targetContainer.getBoundingClientRect();
     if (vpRect.width === 0 || vpRect.height === 0) {
       if (typeof requestAnimationFrame !== 'undefined') {
         requestAnimationFrame(() => this.updateScale());
@@ -1158,7 +1373,10 @@ class ActivityEngine {
     const isManualCheck = this.projectData.settings?.evaluationMode === 'submit';
     const checkBtn = this.container.querySelector('#btn-check-answers');
     if (checkBtn) {
-      checkBtn.style.display = isManualCheck ? 'inline-block' : 'none';
+      checkBtn.style.display = 'inline-flex';
+      if (isManualCheck) {
+        checkBtn.classList.add('pulse-highlight');
+      }
     }
   }
 
@@ -1518,6 +1736,7 @@ class ActivityEngine {
       this.placedMap[dragId] = targetId;
       this.correctCount++;
       this.updateStats();
+      this.setFeedback('Harika! Doğru eşleştirme.', 'success', 2500);
 
       this.snapToTarget(dragId, targetObj);
 
@@ -1537,6 +1756,7 @@ class ActivityEngine {
     } else {
       // YANLIŞ CEVAP
       this.audio.playWrong();
+      this.setFeedback('Tekrar deneyin! Yanlış eşleştirme.', 'error', 2500);
 
       if (dragEl) {
         dragEl.classList.add('is-incorrect');
@@ -1618,11 +1838,17 @@ class ActivityEngine {
     }, 360);
   }
 
-  // Toplu Değerlendirme (Submit Modu)
+  // Toplu Değerlendirme (Submit Modu veya Buton ile Manuel Kontrol)
   checkAllAnswers() {
     const answerKey = this.projectData.answerKey || {};
     let correct = 0;
     this.attempts++;
+
+    const placedCount = Object.keys(this.placedMap).length;
+    if (placedCount === 0) {
+      this.setFeedback('Henüz bir nesne yerleştirmediniz. Sürükleyip bırakın.', 'warning', 3000);
+      return;
+    }
 
     for (const [dragId, targetId] of Object.entries(this.placedMap)) {
       const isRight = answerKey[dragId] === targetId;
@@ -1647,10 +1873,12 @@ class ActivityEngine {
 
     if (correct === this.totalDraggables) {
       this.isCompleted = true;
+      this.setFeedback('Tebrikler! Tüm eşleştirmeler doğru.', 'success');
       this.audio.playComplete();
       this.showCompletionModal();
     } else {
       this.audio.playWrong();
+      this.setFeedback(`${correct} / ${this.totalDraggables} doğru. Kırmızı ile işaretlenenleri düzeltmeyi deneyin.`, 'warning', 4000);
       this.showHint('Bazı eşleştirmeler hatalı. Kırmızı ile işaretlenenleri düzeltmeyi deneyin.');
     }
   }
@@ -1659,6 +1887,7 @@ class ActivityEngine {
     if (this.correctCount >= this.totalDraggables && this.totalDraggables > 0) {
       if (!this.isCompleted) {
         this.isCompleted = true;
+        this.setFeedback('Tebrikler! Etkinliği başarıyla tamamladınız.', 'success');
         this.audio.playComplete();
         setTimeout(() => this.showCompletionModal(), 400);
       }
@@ -1696,6 +1925,53 @@ class ActivityEngine {
     if (hintEl) {
       hintEl.textContent = `💡 ${msg}`;
     }
+  }
+
+  /**
+   * Kontrol alanındaki geri bildirim mesajını günceller
+   * @param {string} message - Gösterilecek mesaj metni
+   * @param {'info'|'success'|'error'|'warning'} [type='info'] - Mesaj türü
+   * @param {number} [duration=0] - Milisaniye cinsinden otomatik sıfırlanma süresi (0 ise kalıcı)
+   */
+  setFeedback(message, type = 'info', duration = 0) {
+    const fbEl = this.container.querySelector('#player-feedback');
+    const textEl = this.container.querySelector('#feedback-text');
+    const iconEl = this.container.querySelector('#feedback-icon');
+    if (!fbEl || !textEl) return;
+
+    this.currentFeedback = { message, type };
+
+    const icons = {
+      info: '💬',
+      success: '✓',
+      error: '✕',
+      warning: '⚠️'
+    };
+
+    fbEl.className = `player-feedback feedback-${type}`;
+    textEl.textContent = message;
+    if (iconEl) {
+      iconEl.textContent = icons[type] || '💬';
+    }
+
+    if (this.feedbackTimeout) {
+      clearTimeout(this.feedbackTimeout);
+      this.feedbackTimeout = null;
+    }
+
+    if (duration > 0) {
+      this.feedbackTimeout = setTimeout(() => {
+        this.resetFeedback();
+      }, duration);
+    }
+  }
+
+  getFeedback() {
+    return this.currentFeedback || { message: '', type: 'info' };
+  }
+
+  resetFeedback() {
+    this.setFeedback('Öğeleri doğru hedeflere sürükleyin', 'info');
   }
 
   renderLineSVG(obj) {
@@ -1742,6 +2018,9 @@ class ActivityEngine {
     this.attempts = 0;
     this.correctCount = 0;
     this.isCompleted = false;
+
+    this.updateStats();
+    this.resetFeedback();
 
     const modal = this.container.querySelector('#completion-modal');
     if (modal) modal.style.display = 'none';

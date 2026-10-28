@@ -238,6 +238,27 @@ export class ActivityPlayer {
   }
 
   /**
+   * Kontrol alanındaki geri bildirim mesajını günceller
+   * @param {string} message 
+   * @param {'info'|'success'|'error'|'warning'} [type='info'] 
+   * @param {number} [duration=0] 
+   */
+  setFeedback(message, type = 'info', duration = 0) {
+    if (this.engine && typeof this.engine.setFeedback === 'function') {
+      this.engine.setFeedback(message, type, duration);
+    }
+  }
+
+  /**
+   * Anlık geri bildirim durumunu döner
+   */
+  getFeedback() {
+    return (this.engine && typeof this.engine.getFeedback === 'function')
+      ? this.engine.getFeedback()
+      : null;
+  }
+
+  /**
    * Etkinliği sıfırlayıp baştan başlatır
    */
   reset() {
