@@ -591,8 +591,8 @@ assert '#64748b' in mt_code_check, "Renk paletine yeni nötr renk (#64748b) ekle
 
 test_passed("Nesne Görünümü popup'ı kompakt hale getirildi, renkler ikon tıklandığında açılır yapıldı, renk paletine yeni renk eklendi ve kalınlık/köşe ayarları + / - butonlarına dönüştürüldü.")
 
-# [Aşama 5.22] Önizleme Player Bütünleşik Viewport, Kontrol ve Geri Bildirim Alanı Testi
-print("\n[Aşama 5.22] Önizleme Player Bütünleşik Viewport, Kontrol ve Geri Bildirim Alanı Testi")
+# [Aşama 5.22] Önizleme Player Bütünleşik Sahne İçi Kontrol ve Footer Testi
+print("\n[Aşama 5.22] Önizleme Player Bütünleşik Sahne İçi Kontrol ve Footer Testi")
 with open(os.path.join(BASE_DIR, 'js/player/ActivityEngine.js'), 'r', encoding='utf-8') as f:
     ae_player_code = f.read()
 with open(os.path.join(BASE_DIR, 'css/player.css'), 'r', encoding='utf-8') as f:
@@ -601,16 +601,20 @@ with open(os.path.join(BASE_DIR, 'src/ActivityPlayer.js'), 'r', encoding='utf-8'
     ap_code = f.read()
 
 assert 'player-stage-container' in ae_player_code, "ActivityEngine içinde sahne için player-stage-container kapsayıcısı yer almalıdır!"
-assert 'player-controls' in ae_player_code, "ActivityEngine içinde sahnenin altında ikinci kontrol alanı (player-controls) yer almalıdır!"
-assert 'player-feedback' in ae_player_code, "ActivityEngine kontrol alanında dinamik geri bildirim (player-feedback) alanı yer almalıdır!"
+assert 'player-stage-board' in ae_player_code, "ActivityEngine içinde sahne ve kontrolleri bir arada tutan player-stage-board yer almalıdır!"
+assert 'player-controls' in ae_player_code, "ActivityEngine içinde sahnenin altında kontrol alanı (player-controls) yer almalıdır!"
+assert 'player-footer' in ae_player_code, "ActivityEngine içinde player-footer alanı yer almalıdır!"
+assert 'id="btn-toggle-sound"' not in ae_player_code, "player-controls içinden ses butonu kaldırılmış olmalıdır!"
+assert 'controls-right' not in ae_player_code, "player-controls içinden controls-right kaldırılmış olmalıdır!"
+assert 'id="player-feedback"' not in ae_player_code, "player-controls içinden player-feedback alanı kaldırılmış olmalıdır!"
 assert 'player-header-minimal' in ae_player_code, "ActivityEngine sadece editör önizleme durumunda (isEmbedded) minimal floating çıkış başlığı render etmelidir!"
 assert 'setFeedback' in ae_player_code and 'getFeedback' in ae_player_code, "ActivityEngine üzerinde setFeedback ve getFeedback API'leri tanımlı olmalıdır!"
 assert 'setFeedback' in ap_code and 'getFeedback' in ap_code, "ActivityPlayer kütüphane sarmalayıcısında setFeedback ve getFeedback metotları bulunmalıdır!"
 assert '.player-controls' in player_css, "player.css içinde .player-controls stilleri tanımlı olmalıdır!"
-assert '.player-feedback' in player_css, "player.css içinde .player-feedback geri bildirim alanı ve durum stilleri tanımlı olmalıdır!"
+assert '.player-stage-board' in player_css, "player.css içinde .player-stage-board stilleri tanımlı olmalıdır!"
 assert '.player-header.player-header-minimal' in player_css, "player.css içinde minimal floating başlık stili tanımlı olmalıdır!"
 
-test_passed("Player düzeni tek bir bütünleşik player-viewport'a dönüştürüldü, hantal header kaldırıldı, alt kontrol ve geri bildirim alanı eklendi.")
+test_passed("Player kontrolleri ve footer sahne içine taşındı, genişliği sahne ile eşitlendi, ses ve feedback alanları kaldırıldı.")
 
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")

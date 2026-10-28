@@ -2103,18 +2103,40 @@
   position: relative;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   touch-action: none;
 }
 
-.player-stage {
-  position: absolute;
+/* BÜTÜNLEŞİK SAHNE VE KONTROL KARTI (player-stage-board) */
+.player-stage-board {
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   border-radius: 12px;
   overflow: hidden;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* ÖLÇEKLENMİŞ SAHNE TUTUCU */
+.player-stage-scaler {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.player-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
   touch-action: none;
-  transform-origin: center center;
+  transform-origin: top left;
   user-select: none;
   -webkit-user-select: none;
   flex-shrink: 0;
@@ -2270,123 +2292,40 @@
   color: #64748b;
 }
 
-/* İKİNCİ KONTROL ALANI (Sahnenin hemen altında) */
+/* İKİNCİ KONTROL ALANI (Sahne genişliğinde) */
 .player-controls {
   flex-shrink: 0;
-  min-height: 52px;
-  padding: 8px 24px;
+  min-height: 48px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(12px);
+  justify-content: flex-start;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.92);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 100;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-.player-controls .controls-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.player-controls .controls-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-/* GERİ BİLDİRİM ALANI */
-.player-feedback {
-  flex: 1 1 auto;
-  max-width: 480px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  text-align: center;
-  transition: all 0.25s ease;
-  user-select: none;
-}
-
-.player-feedback .feedback-icon {
-  font-size: 1rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.player-feedback .feedback-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-feedback.feedback-success {
-  background: rgba(16, 185, 129, 0.16);
-  border-color: rgba(16, 185, 129, 0.4);
-  color: #6ee7b7;
-  animation: feedbackPulse 0.3s ease;
-}
-
-.player-feedback.feedback-error {
-  background: rgba(239, 68, 68, 0.16);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-  animation: feedbackShake 0.35s ease;
-}
-
-.player-feedback.feedback-warning {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.4);
-  color: #fde68a;
-}
-
-.player-feedback.feedback-info {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-}
-
-@keyframes feedbackPulse {
-  0% { transform: scale(0.96); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-@keyframes feedbackShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
-/* ALT BİLGİ (player-viewport içinde) */
+/* ALT BİLGİ / FOOTER (Sahne genişliğinde) */
 .player-footer {
-  height: 38px;
-  min-height: 34px;
+  height: 36px;
+  min-height: 32px;
   flex-shrink: 0;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(10, 15, 30, 0.94);
+  justify-content: flex-start;
+  background: rgba(10, 15, 30, 0.96);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: #64748b;
   font-size: 0.8rem;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .player-hint {
-  text-align: center;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2523,20 +2462,9 @@
   }
 
   .player-controls {
-    min-height: 48px;
+    min-height: 44px;
     padding: 6px 12px;
     gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .player-feedback {
-    order: 3;
-    width: 100%;
-    max-width: 100%;
-    margin: 4px 0 0 0;
-    padding: 4px 10px;
-    font-size: 0.75rem;
   }
 
   .player-footer {

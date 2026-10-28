@@ -219,18 +219,40 @@
   position: relative;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   touch-action: none;
 }
 
-.player-stage {
-  position: absolute;
+/* BÜTÜNLEŞİK SAHNE VE KONTROL KARTI (player-stage-board) */
+.player-stage-board {
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   border-radius: 12px;
   overflow: hidden;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* ÖLÇEKLENMİŞ SAHNE TUTUCU */
+.player-stage-scaler {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.player-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
   touch-action: none;
-  transform-origin: center center;
+  transform-origin: top left;
   user-select: none;
   -webkit-user-select: none;
   flex-shrink: 0;
@@ -386,123 +408,40 @@
   color: #64748b;
 }
 
-/* İKİNCİ KONTROL ALANI (Sahnenin hemen altında) */
+/* İKİNCİ KONTROL ALANI (Sahne genişliğinde) */
 .player-controls {
   flex-shrink: 0;
-  min-height: 52px;
-  padding: 8px 24px;
+  min-height: 48px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(12px);
+  justify-content: flex-start;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.92);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 100;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-.player-controls .controls-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.player-controls .controls-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-/* GERİ BİLDİRİM ALANI */
-.player-feedback {
-  flex: 1 1 auto;
-  max-width: 480px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  text-align: center;
-  transition: all 0.25s ease;
-  user-select: none;
-}
-
-.player-feedback .feedback-icon {
-  font-size: 1rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.player-feedback .feedback-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-feedback.feedback-success {
-  background: rgba(16, 185, 129, 0.16);
-  border-color: rgba(16, 185, 129, 0.4);
-  color: #6ee7b7;
-  animation: feedbackPulse 0.3s ease;
-}
-
-.player-feedback.feedback-error {
-  background: rgba(239, 68, 68, 0.16);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-  animation: feedbackShake 0.35s ease;
-}
-
-.player-feedback.feedback-warning {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.4);
-  color: #fde68a;
-}
-
-.player-feedback.feedback-info {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-}
-
-@keyframes feedbackPulse {
-  0% { transform: scale(0.96); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-@keyframes feedbackShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
-/* ALT BİLGİ (player-viewport içinde) */
+/* ALT BİLGİ / FOOTER (Sahne genişliğinde) */
 .player-footer {
-  height: 38px;
-  min-height: 34px;
+  height: 36px;
+  min-height: 32px;
   flex-shrink: 0;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(10, 15, 30, 0.94);
+  justify-content: flex-start;
+  background: rgba(10, 15, 30, 0.96);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: #64748b;
   font-size: 0.8rem;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .player-hint {
-  text-align: center;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -639,20 +578,9 @@
   }
 
   .player-controls {
-    min-height: 48px;
+    min-height: 44px;
     padding: 6px 12px;
     gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .player-feedback {
-    order: 3;
-    width: 100%;
-    max-width: 100%;
-    margin: 4px 0 0 0;
-    padding: 4px 10px;
-    font-size: 0.75rem;
   }
 
   .player-footer {
@@ -1141,50 +1069,32 @@ class ActivityEngine {
 
         <main class="player-viewport" id="player-viewport">
           <div class="player-stage-container" id="player-stage-container">
-            <div class="player-stage" id="player-stage">
-              <div class="player-targets-layer" id="player-targets"></div>
-              <div class="player-draggables-layer" id="player-draggables"></div>
+            <div class="player-stage-board" id="player-stage-board">
+              <div class="player-stage-scaler" id="player-stage-scaler">
+                <div class="player-stage" id="player-stage">
+                  <div class="player-targets-layer" id="player-targets"></div>
+                  <div class="player-draggables-layer" id="player-draggables"></div>
+                </div>
+              </div>
+
+              <!-- İkinci Kontrol Alanı (Sahne genişliğinde) -->
+              <div class="player-controls" id="player-controls">
+                <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
+                  🔄 Sıfırla
+                </button>
+                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
+                  ✓ Kontrol Et
+                </button>
+              </div>
+
+              <!-- Alt Bilgi / İpucu Alanı (Sahne genişliğinde) -->
+              <footer class="player-footer" id="player-footer">
+                <div class="player-hint" id="player-hint">
+                  💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+                </div>
+              </footer>
             </div>
           </div>
-
-          <!-- İkinci Kontrol Alanı (Sahnenin hemen altında) -->
-          <div class="player-controls" id="player-controls">
-            <div class="controls-left">
-              <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
-                🔄 Sıfırla
-              </button>
-              <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
-                ✓ Kontrol Et
-              </button>
-              <button class="player-btn sound-btn" id="btn-toggle-sound" title="Ses Aç/Kapat">
-                ${this.audio.enabled ? '🔊' : '🔇'}
-              </button>
-            </div>
-
-            <!-- Geri Bildirim Alanı -->
-            <div class="player-feedback" id="player-feedback" role="status" aria-live="polite">
-              <span class="feedback-icon" id="feedback-icon">💬</span>
-              <span class="feedback-text" id="feedback-text">Öğeleri hedeflere sürükleyin</span>
-            </div>
-
-            <div class="controls-right player-stats">
-              <div class="stat-pill score-stat" title="Doğru Sayısı">
-                <span class="stat-icon">🎯</span>
-                <span class="stat-value" id="stat-correct">0</span> / <span id="stat-total">0</span>
-              </div>
-              <div class="stat-pill attempts-stat" title="Deneme Sayısı">
-                <span class="stat-icon">⚡</span>
-                <span class="stat-value" id="stat-attempts">0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Player Footer (player-viewport içinde) -->
-          <footer class="player-footer" id="player-footer">
-            <div class="player-hint" id="player-hint">
-              💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
-            </div>
-          </footer>
         </main>
 
         <!-- Başarı / Kutlama Modalı -->
@@ -1215,14 +1125,6 @@ class ActivityEngine {
     `;
 
     // Buton dinleyicileri
-    const soundBtn = this.container.querySelector('#btn-toggle-sound');
-    if (soundBtn) {
-      soundBtn.onclick = () => {
-        this.audio.setEnabled(!this.audio.enabled);
-        soundBtn.textContent = this.audio.enabled ? '🔊' : '🔇';
-      };
-    }
-
     const resetBtn = this.container.querySelector('#btn-reset-game');
     if (resetBtn) resetBtn.onclick = () => this.resetGame();
 
@@ -1251,6 +1153,8 @@ class ActivityEngine {
 
   setupResizeHandler() {
     this.stageEl = this.container.querySelector('#player-stage');
+    this.stageScalerEl = this.container.querySelector('#player-stage-scaler');
+    this.stageBoardEl = this.container.querySelector('#player-stage-board');
     this.viewportEl = this.container.querySelector('#player-viewport');
     this.stageContainerEl = this.container.querySelector('#player-stage-container') || this.viewportEl;
 
@@ -1299,12 +1203,26 @@ class ActivityEngine {
     }
 
     const pad = vpRect.width < 600 ? 16 : 32;
+    // player-controls (~48px) + player-footer (~36px) = ~84px dikey alan payı
+    const extraH = 88;
     const availW = Math.max(vpRect.width - pad, 60);
-    const availH = Math.max(vpRect.height - pad, 60);
+    const availH = Math.max(vpRect.height - pad - extraH, 60);
 
     this.currentScale = Math.min(availW / stageW, availH / stageH);
+    const scaledW = Math.round(stageW * this.currentScale);
+    const scaledH = Math.round(stageH * this.currentScale);
+
+    if (this.stageScalerEl) {
+      this.stageScalerEl.style.width = `${scaledW}px`;
+      this.stageScalerEl.style.height = `${scaledH}px`;
+    }
+
+    if (this.stageBoardEl) {
+      this.stageBoardEl.style.width = `${scaledW}px`;
+    }
+
     this.stageEl.style.transform = `scale(${this.currentScale})`;
-    this.stageEl.style.transformOrigin = 'center center';
+    this.stageEl.style.transformOrigin = 'top left';
   }
 
   clientToStage(clientX, clientY) {
@@ -1328,9 +1246,12 @@ class ActivityEngine {
     const nonDraggables = objects.filter(o => o.role !== 'draggable');
 
     this.totalDraggables = draggables.length;
-    this.container.querySelector('#stat-total').textContent = this.totalDraggables;
-    this.container.querySelector('#stat-correct').textContent = '0';
-    this.container.querySelector('#stat-attempts').textContent = '0';
+    const statTotal = this.container.querySelector('#stat-total');
+    if (statTotal) statTotal.textContent = this.totalDraggables;
+    const statCorrect = this.container.querySelector('#stat-correct');
+    if (statCorrect) statCorrect.textContent = '0';
+    const statAttempts = this.container.querySelector('#stat-attempts');
+    if (statAttempts) statAttempts.textContent = '0';
 
     // Sabit, hedef ve dekoratif nesneleri çiz
     nonDraggables.forEach(obj => {

@@ -464,50 +464,32 @@ class ActivityEngine {
 
         <main class="player-viewport" id="player-viewport">
           <div class="player-stage-container" id="player-stage-container">
-            <div class="player-stage" id="player-stage">
-              <div class="player-targets-layer" id="player-targets"></div>
-              <div class="player-draggables-layer" id="player-draggables"></div>
+            <div class="player-stage-board" id="player-stage-board">
+              <div class="player-stage-scaler" id="player-stage-scaler">
+                <div class="player-stage" id="player-stage">
+                  <div class="player-targets-layer" id="player-targets"></div>
+                  <div class="player-draggables-layer" id="player-draggables"></div>
+                </div>
+              </div>
+
+              <!-- İkinci Kontrol Alanı (Sahne genişliğinde) -->
+              <div class="player-controls" id="player-controls">
+                <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
+                  🔄 Sıfırla
+                </button>
+                <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
+                  ✓ Kontrol Et
+                </button>
+              </div>
+
+              <!-- Alt Bilgi / İpucu Alanı (Sahne genişliğinde) -->
+              <footer class="player-footer" id="player-footer">
+                <div class="player-hint" id="player-hint">
+                  💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
+                </div>
+              </footer>
             </div>
           </div>
-
-          <!-- İkinci Kontrol Alanı (Sahnenin hemen altında) -->
-          <div class="player-controls" id="player-controls">
-            <div class="controls-left">
-              <button class="player-btn reset-btn" id="btn-reset-game" title="Yeniden Başlat">
-                🔄 Sıfırla
-              </button>
-              <button class="player-btn primary-btn check-answers-btn" id="btn-check-answers" title="Cevapları Kontrol Et">
-                ✓ Kontrol Et
-              </button>
-              <button class="player-btn sound-btn" id="btn-toggle-sound" title="Ses Aç/Kapat">
-                ${this.audio.enabled ? '🔊' : '🔇'}
-              </button>
-            </div>
-
-            <!-- Geri Bildirim Alanı -->
-            <div class="player-feedback" id="player-feedback" role="status" aria-live="polite">
-              <span class="feedback-icon" id="feedback-icon">💬</span>
-              <span class="feedback-text" id="feedback-text">Öğeleri hedeflere sürükleyin</span>
-            </div>
-
-            <div class="controls-right player-stats">
-              <div class="stat-pill score-stat" title="Doğru Sayısı">
-                <span class="stat-icon">🎯</span>
-                <span class="stat-value" id="stat-correct">0</span> / <span id="stat-total">0</span>
-              </div>
-              <div class="stat-pill attempts-stat" title="Deneme Sayısı">
-                <span class="stat-icon">⚡</span>
-                <span class="stat-value" id="stat-attempts">0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Player Footer (player-viewport içinde) -->
-          <footer class="player-footer" id="player-footer">
-            <div class="player-hint" id="player-hint">
-              💡 İpucu: Öğeleri doğru hedeflere sürükleyip bırakın. (Klavyeyle: Boşluk ile tut, hedefe git, Boşluk ile bırak)
-            </div>
-          </footer>
         </main>
 
         <!-- Başarı / Kutlama Modalı -->
@@ -538,14 +520,6 @@ class ActivityEngine {
     `;
 
     // Buton dinleyicileri
-    const soundBtn = this.container.querySelector('#btn-toggle-sound');
-    if (soundBtn) {
-      soundBtn.onclick = () => {
-        this.audio.setEnabled(!this.audio.enabled);
-        soundBtn.textContent = this.audio.enabled ? '🔊' : '🔇';
-      };
-    }
-
     const resetBtn = this.container.querySelector('#btn-reset-game');
     if (resetBtn) resetBtn.onclick = () => this.resetGame();
 
@@ -574,6 +548,8 @@ class ActivityEngine {
 
   setupResizeHandler() {
     this.stageEl = this.container.querySelector('#player-stage');
+    this.stageScalerEl = this.container.querySelector('#player-stage-scaler');
+    this.stageBoardEl = this.container.querySelector('#player-stage-board');
     this.viewportEl = this.container.querySelector('#player-viewport');
     this.stageContainerEl = this.container.querySelector('#player-stage-container') || this.viewportEl;
 
@@ -622,12 +598,26 @@ class ActivityEngine {
     }
 
     const pad = vpRect.width < 600 ? 16 : 32;
+    // player-controls (~48px) + player-footer (~36px) = ~84px dikey alan payı
+    const extraH = 88;
     const availW = Math.max(vpRect.width - pad, 60);
-    const availH = Math.max(vpRect.height - pad, 60);
+    const availH = Math.max(vpRect.height - pad - extraH, 60);
 
     this.currentScale = Math.min(availW / stageW, availH / stageH);
+    const scaledW = Math.round(stageW * this.currentScale);
+    const scaledH = Math.round(stageH * this.currentScale);
+
+    if (this.stageScalerEl) {
+      this.stageScalerEl.style.width = `${scaledW}px`;
+      this.stageScalerEl.style.height = `${scaledH}px`;
+    }
+
+    if (this.stageBoardEl) {
+      this.stageBoardEl.style.width = `${scaledW}px`;
+    }
+
     this.stageEl.style.transform = `scale(${this.currentScale})`;
-    this.stageEl.style.transformOrigin = 'center center';
+    this.stageEl.style.transformOrigin = 'top left';
   }
 
   clientToStage(clientX, clientY) {
@@ -651,9 +641,12 @@ class ActivityEngine {
     const nonDraggables = objects.filter(o => o.role !== 'draggable');
 
     this.totalDraggables = draggables.length;
-    this.container.querySelector('#stat-total').textContent = this.totalDraggables;
-    this.container.querySelector('#stat-correct').textContent = '0';
-    this.container.querySelector('#stat-attempts').textContent = '0';
+    const statTotal = this.container.querySelector('#stat-total');
+    if (statTotal) statTotal.textContent = this.totalDraggables;
+    const statCorrect = this.container.querySelector('#stat-correct');
+    if (statCorrect) statCorrect.textContent = '0';
+    const statAttempts = this.container.querySelector('#stat-attempts');
+    if (statAttempts) statAttempts.textContent = '0';
 
     // Sabit, hedef ve dekoratif nesneleri çiz
     nonDraggables.forEach(obj => {
