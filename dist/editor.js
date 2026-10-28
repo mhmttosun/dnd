@@ -7578,37 +7578,94 @@ const shell = () => `
       </div>
     </header>
     <nav class="app-sub-toolbar">
-      <div class="sub-toolbar-cluster">
-        <div class="mode-pill-group">
-          <button class="mode-toggle-btn active" data-mode="design" type="button" title="Tasarım">✎</button>
-          <button class="mode-toggle-btn" data-mode="answer-key" type="button" title="Cevap anahtarı">✓</button>
-          <button class="mode-toggle-btn" data-mode="preview" type="button" title="Önizleme">▶</button>
-        </div>
-        <div class="template-dropdown-wrapper">
-          <button id="btn-toggle-templates" class="sub-tool-btn" type="button" title="Şablonlar">▦</button>
-          <div id="templates-menu" class="templates-menu" style="display:none">
-            <button data-sample="matching" type="button">Eşleştirme</button>
-          </div>
-        </div>
-        <button id="tool-select" class="sub-tool-btn active" type="button" title="Seç">↖</button>
-        <button id="tool-hand" class="sub-tool-btn" type="button" title="El">✋</button>
-        <span class="sub-divider"></span>
-        <button id="btn-add-text" class="sub-tool-btn" type="button" title="Metin">T</button>
-        <button id="btn-add-rect" class="sub-tool-btn" type="button" title="Kutu">□</button>
-        <button id="btn-add-circle" class="sub-tool-btn" type="button" title="Daire">○</button>
-        <button id="btn-add-image" class="sub-tool-btn" type="button" title="Görsel">▧</button>
-        <input id="file-input-image" type="file" accept="image/*" hidden>
-        <button id="btn-add-target" class="sub-tool-btn" type="button" title="Çizgi">╱</button>
+    <!-- Sol Mod Kümesi -->
+    <div class="sub-toolbar-cluster">
+      <div class="mode-pill-group">
+        <button type="button" class="mode-toggle-btn active" data-mode="design" title="Tasarım Modu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button type="button" class="mode-toggle-btn" data-mode="answer-key" title="Cevap Anahtarı Modu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+        </button>
+        <button type="button" class="mode-toggle-btn" data-mode="preview" title="Önizleme Modu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
       </div>
-      <div class="sub-toolbar-cluster">
-        <button id="btn-undo" class="sub-tool-btn" type="button" disabled title="Geri al">↶</button>
-        <button id="btn-redo" class="sub-tool-btn" type="button" disabled title="İleri al">↷</button>
-        <span class="sub-divider"></span>
-        <button id="btn-zoom-out" class="sub-tool-btn" type="button">−</button>
-        <button id="btn-zoom-reset" class="sub-tool-btn" type="button">Fit</button>
-        <button id="btn-zoom-in" class="sub-tool-btn" type="button">＋</button>
+
+      <!-- Şablon Seçici Menü -->
+      <div class="template-dropdown-wrapper">
+        <button type="button" class="sub-tool-btn" id="btn-toggle-templates" title="Örnek Etkinlik Şablonları">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+        <div class="templates-menu" id="templates-menu" style="display: none;">
+          <div class="menu-title">Örnek Şablonlar</div>
+          <button type="button" class="template-menu-item" data-sample="matching">1. Eşleştirme (Kavram ve Tanım)</button>
+          <button type="button" class="template-menu-item" data-sample="image-labeling">2. Görsel Etiketleme (İnsan Anatomisi)</button>
+          <button type="button" class="template-menu-item" data-sample="categorization">3. Kategorilere Ayırma (Meyve/Sebze)</button>
+          <button type="button" class="template-menu-item" data-sample="sequencing">4. Sıralama (Kelebek Yaşam Döngüsü)</button>
+        </div>
       </div>
-    </nav>
+    </div>
+
+    <!-- Orta Araç Kümesi -->
+    <div class="sub-toolbar-cluster">
+      <button type="button" class="sub-tool-btn active" id="tool-select" title="Seçim Aracı">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 3-7 7-3L3 3z"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="tool-hand" title="Kaydırma (El) Aracı">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M6 14v-2a2 2 0 0 0-4 0v5a7 7 0 0 0 7 7h3a7 7 0 0 0 7-7v-3a2 2 0 0 0-4 0"/></svg>
+      </button>
+
+      <div class="sub-divider"></div>
+
+      <button type="button" class="sub-tool-btn" id="btn-add-text" title="Metin Kutusu Ekle">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-add-rect" title="Kutu / Kart Ekle">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-add-circle" title="Daire Şekli Ekle">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-add-image" title="Bilgisayardan Görsel Yükle">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <input type="file" id="file-input-image" accept="image/*" style="display: none;">
+
+      <button type="button" class="sub-tool-btn" id="btn-add-target" title="Çizgi Ekle">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="20" x2="20" y2="4"/></svg>
+      </button>
+    </div>
+
+    <!-- Sağ Geçmiş & Yakınlaştırma Kümesi -->
+    <div class="sub-toolbar-cluster">
+      <button type="button" class="sub-tool-btn" id="btn-undo" title="Geri Al (Ctrl+Z)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-redo" title="İleri Al (Ctrl+Y)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+      </button>
+
+      <div class="sub-divider"></div>
+
+      <button type="button" class="sub-tool-btn" id="btn-zoom-out" title="Uzaklaştır">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-zoom-reset" title="Ekrana Sığdır">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+
+      <button type="button" class="sub-tool-btn" id="btn-zoom-in" title="Yakınlaştır">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+    </div>
+  </nav>
     <main id="editor-layout" class="editor-workspace">
       <div id="stage-viewport" class="stage-viewport"><div id="stage" class="stage grid-visible mode-design">
         <svg class="stage-svg-overlay" id="svg-overlay"><g id="svg-connections"></g></svg>

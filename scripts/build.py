@@ -68,7 +68,19 @@ editor_sources = [
     'js/ui/UIManager.js',
     'js/data/SampleProjects.js',
 ]
-editor_api = read_file('src/DNDEditor.js').replace(
+standalone_html = read_file('index.html')
+toolbar_pattern = r'<nav class="app-sub-toolbar">.*?</nav>'
+standalone_toolbar_match = re.search(toolbar_pattern, standalone_html, flags=re.DOTALL)
+editor_api_source = read_file('src/DNDEditor.js')
+editor_toolbar_match = re.search(toolbar_pattern, editor_api_source, flags=re.DOTALL)
+if not standalone_toolbar_match or not editor_toolbar_match:
+    raise RuntimeError('DND toolbar şablonu index.html veya src/DNDEditor.js içinde bulunamadı.')
+editor_api_source = (
+    editor_api_source[:editor_toolbar_match.start()]
+    + standalone_toolbar_match.group(0)
+    + editor_api_source[editor_toolbar_match.end():]
+)
+editor_api = editor_api_source.replace(
     "const EDITOR_CSS = globalThis.__DND_EDITOR_CSS__ || '';",
     'const EDITOR_CSS = ' + json.dumps(editor_css) + ';'
 )
