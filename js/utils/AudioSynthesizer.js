@@ -89,8 +89,23 @@ class AudioSynthesizer {
       this.playTone(n.f, 'triangle', n.d, n.t, 0.2);
     });
   }
+
+  // Web Audio Context kapatma ve bellek temizliği (Lifecycle Destroy)
+  close() {
+    if (this.ctx && typeof this.ctx.close === 'function') {
+      try {
+        this.ctx.close();
+      } catch (e) {}
+      this.ctx = null;
+    }
+  }
 }
 
-// Global namespace
-window.DND = window.DND || {};
-window.DND.AudioSynthesizer = AudioSynthesizer;
+// Universal namespace export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { AudioSynthesizer };
+}
+if (typeof window !== 'undefined') {
+  window.DND = window.DND || {};
+  window.DND.AudioSynthesizer = AudioSynthesizer;
+}

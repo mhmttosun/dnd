@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DND Player • Vanilla JS Entegrasyon Örneği</title>
+  <!-- Oynatıcı Stilleri -->
+  <link rel="stylesheet" href="../dist/player.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 30px;
+    }
+    .card {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #player-container {
+      height: 600px;
+      background: #fafafa;
+    }
+    .log-box {
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      border-top: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="header">
+      <h2 style="margin: 0; font-size: 18px;">Harici Web Sayfasına Gömülü Etkinlik (Vanilla JS API)</h2>
+      <button id="btn-reset" style="padding: 8px 16px; cursor: pointer; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600;">🔄 Sıfırla</button>
+    </div>
+
+    <!-- Oynatıcı bu div içine monte edilir -->
+    <div id="player-container"></div>
+
+    <div class="log-box" id="event-log">
+      > Olay günlüğü burada görüntülenecek...
+    </div>
+  </div>
+
+  <!-- UMD Dağıtımı -->
+  <script src="../dist/player.umd.cjs"></script>
+  <script>
+    const logBox = document.getElementById('event-log');
+    function log(msg) {
+      logBox.innerHTML += `<br>> ${new Date().toLocaleTimeString()} - ${msg}`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // 1. Oynatıcıyı Başlat (Mount)
+    const player = new DND.ActivityPlayer({
+      target: '#player-container',
+      src: '../samples/2_hayvanlar_eslestirme.json',
+      sound: true,
+      onComplete: (stats) => {
+        log(`🎉 ETKİNLİK BİTTİ! Başarı: %${stats.score}, Toplam Deneme: ${stats.attempts}`);
+      },
+      onDrop: (drop) => {
+        log(`🎯 Bırakma: Nesne=${drop.dragId} -> Hedef=${drop.targetId} (Doğru mu: ${drop.isCorrect})`);
+      },
+      onStep: (state) => {
+        log(`⚡ Adım: ${state.correctCount}/${state.totalDraggables} doğru tamamlandı.`);
+      }
+    });
+
+    document.getElementById('btn-reset').onclick = () => {
+      player.reset();
+      log('Etkinlik baştan başlatıldı.');
+    };
+  </script>
+</body>
+</html>

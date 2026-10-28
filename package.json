@@ -1,19 +1,51 @@
 {
-  "name": "dnd-activity-editor",
+  "name": "@mhmttosun/dnd",
   "version": "1.0.0",
-  "description": "HTML Tabanlı Görsel Sürükle-Bırak Etkinlik Editörü (100% DOM/SVG, Zero Canvas, Bağımsız Çevrimdışı Tek Parça HTML İhracı)",
-  "main": "index.html",
+  "description": "HTML Tabanlı Görsel Sürükle-Bırak Etkinlik Editörü ve Oynatıcısı (100% DOM/SVG, Zero Canvas, Bağımsız Çevrimdışı Tek Parça HTML İhracı, React/Vue/Web-Component Entegrasyonu)",
+  "main": "./dist/player.umd.cjs",
+  "module": "./dist/player.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/player.js",
+      "require": "./dist/player.umd.cjs"
+    },
+    "./player": {
+      "types": "./dist/player.d.ts",
+      "import": "./dist/player.js",
+      "require": "./dist/player.umd.cjs"
+    },
+    "./web-component": {
+      "import": "./dist/dnd-player-element.js"
+    },
+    "./player.css": "./dist/player.css",
+    "./editor.css": "./dist/editor.css"
+  },
+  "files": [
+    "dist",
+    "src",
+    "css",
+    "js",
+    "index.html",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "python3 -m http.server 8000",
+    "build": "python3 scripts/build.py",
     "test": "python3 tests/run_tests.py"
   },
   "keywords": [
     "drag-and-drop",
     "activity-editor",
+    "activity-player",
+    "web-component",
     "education",
     "edtech",
     "interactive-learning",
     "vanilla-js",
+    "react-dnd",
     "no-canvas",
     "svg",
     "offline-first"

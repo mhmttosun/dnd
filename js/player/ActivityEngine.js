@@ -16,9 +16,13 @@ class ActivityEngine {
     this.options = Object.assign({
       isEmbedded: false,
       onComplete: null,
-      onExit: null
+      onExit: null,
+      onStep: null,
+      onDrop: null,
+      onReset: null
     }, options);
 
+    this.eventListeners = {};
     this.audio = new window.DND.AudioSynthesizer();
     this.audio.setEnabled(this.projectData.settings?.soundEnabled !== false);
 
@@ -40,6 +44,13 @@ class ActivityEngine {
     // Klavye erişilebilirliği için seçili nesne
     this.keyboardSelectedId = null;
 
+    // Yaşam döngüsü dinleyici referansları (Bellek sızıntılarını ve duplicate listener'ları önler)
+    this.onResizeBound = () => this.updateScale();
+    this.onPointerMoveBound = (e) => this.handlePointerMove(e);
+    this.onPointerUpBound = (e) => this.handlePointerUp(e);
+    this.onPointerCancelBound = (e) => this.handlePointerCancel(e);
+    this.onKeyDownBound = (e) => this.handleKeyDown(e);
+
     this.init();
   }
 
@@ -51,11 +62,79 @@ class ActivityEngine {
     this.prepareItems();
   }
 
+  // Yaşam döngüsü temizliği: SPA, React, Vue unmount durumlarında tüm dinleyicileri ve sesi temizler
   destroy() {
-    window.removeEventListener('resize', this.onResizeBound);
+    if (this.onResizeBound) {
+      window.removeEventListener('resize', this.onResizeBound);
+    }
+    if (this.onPointerMoveBound) {
+      window.removeEventListener('pointermove', this.onPointerMoveBound);
+    }
+    if (this.onPointerUpBound) {
+      window.removeEventListener('pointerup', this.onPointerUpBound);
+    }
+    if (this.onPointerCancelBound) {
+      window.removeEventListener('pointercancel', this.onPointerCancelBound);
+    }
+    if (this.container && this.onKeyDownBound) {
+      this.container.removeEventListener('keydown', this.onKeyDownBound);
+    }
+    if (this.audio && typeof this.audio.close === 'function') {
+      this.audio.close();
+    }
+    this.emit('destroy');
+    this.eventListeners = {};
     if (this.container) {
       this.container.innerHTML = '';
     }
+    this.isDestroyed = true;
+  }
+
+  // Olay Dinleme ve Yayınlama (Event Emitter API)
+  on(event, callback) {
+    if (!this.eventListeners[event]) this.eventListeners[event] = [];
+    this.eventListeners[event].push(callback);
+    return () => this.off(event, callback);
+  }
+
+  off(event, callback) {
+    if (!this.eventListeners || !this.eventListeners[event]) return;
+    this.eventListeners[event] = this.eventListeners[event].filter(cb => cb !== callback);
+  }
+
+  emit(event, data) {
+    const handlerName = 'on' + event.charAt(0).toUpperCase() + event.slice(1);
+    if (this.options && typeof this.options[handlerName] === 'function') {
+      try {
+        this.options[handlerName](data);
+      } catch (err) {
+        console.error(`[ActivityEngine] Options callback error in ${event}:`, err);
+      }
+    }
+    if (this.eventListeners && this.eventListeners[event]) {
+      this.eventListeners[event].forEach(cb => {
+        try {
+          cb(data);
+        } catch (err) {
+          console.error(`[ActivityEngine] Event listener error in ${event}:`, err);
+        }
+      });
+    }
+  }
+
+  // Anlık etkinlik durumunu döner
+  getState() {
+    const accuracy = this.totalDraggables > 0
+      ? Math.round((this.correctCount / this.totalDraggables) * 100)
+      : 0;
+    return {
+      isCompleted: this.isCompleted,
+      score: accuracy,
+      attempts: this.attempts,
+      correctCount: this.correctCount,
+      totalDraggables: this.totalDraggables,
+      placedMap: Object.assign({}, this.placedMap)
+    };
   }
 
   renderGameLayout() {
@@ -433,48 +512,55 @@ class ActivityEngine {
       this.audio.playPickup();
     });
 
-    window.addEventListener('pointermove', (e) => {
-      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+    window.addEventListener('pointermove', this.onPointerMoveBound);
+    window.addEventListener('pointerup', this.onPointerUpBound);
+    window.addEventListener('pointercancel', this.onPointerCancelBound);
+  }
 
-      const itemEl = this.container.querySelector(`[data-id="${this.activeDragId}"]`);
-      if (!itemEl) return;
+  handlePointerMove(e) {
+    if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
 
-      const currentStagePos = this.clientToStage(e.clientX, e.clientY);
-      const dx = currentStagePos.x - this.dragStartPos.x;
-      const dy = currentStagePos.y - this.dragStartPos.y;
+    const itemEl = this.container.querySelector(`[data-id="${this.activeDragId}"]`);
+    if (!itemEl) return;
 
-      const objData = this.getObj(this.activeDragId);
-      const stageW = (this.projectData.stage && this.projectData.stage.width) || 1200;
-      const stageH = (this.projectData.stage && this.projectData.stage.height) || 675;
-      const objW = (objData && objData.width) || 60;
-      const objH = (objData && objData.height) || 40;
+    const currentStagePos = this.clientToStage(e.clientX, e.clientY);
+    const dx = currentStagePos.x - this.dragStartPos.x;
+    const dy = currentStagePos.y - this.dragStartPos.y;
 
-      const nextX = Math.round(Math.max(0, Math.min(stageW - objW, this.dragElemStart.x + dx)));
-      const nextY = Math.round(Math.max(0, Math.min(stageH - objH, this.dragElemStart.y + dy)));
+    const objData = this.getObj(this.activeDragId);
+    const stageW = (this.projectData.stage && this.projectData.stage.width) || 1200;
+    const stageH = (this.projectData.stage && this.projectData.stage.height) || 675;
+    const objW = (objData && objData.width) || 60;
+    const objH = (objData && objData.height) || 40;
 
-      itemEl.style.transform = `translate(${nextX}px, ${nextY}px) scale(1.05)`;
+    const nextX = Math.round(Math.max(0, Math.min(stageW - objW, this.dragElemStart.x + dx)));
+    const nextY = Math.round(Math.max(0, Math.min(stageH - objH, this.dragElemStart.y + dy)));
 
-      // Hedef algılama ve vurgulama (Hover highlight)
-      const dropTarget = this.findDropTarget(nextX, nextY, (objData && objData.width) || 60, (objData && objData.height) || 40);
-      this.highlightHoverTarget(dropTarget ? dropTarget.id : null);
-    });
+    itemEl.style.transform = `translate(${nextX}px, ${nextY}px) scale(1.05)`;
 
-    window.addEventListener('pointerup', (e) => {
-      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
-      this.finalizeDrop();
-    });
+    // Hedef algılama ve vurgulama (Hover highlight)
+    const dropTarget = this.findDropTarget(nextX, nextY, (objData && objData.width) || 60, (objData && objData.height) || 40);
+    this.highlightHoverTarget(dropTarget ? dropTarget.id : null);
+  }
 
-    window.addEventListener('pointercancel', (e) => {
-      if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
-      this.finalizeDrop();
-    });
+  handlePointerUp(e) {
+    if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+    this.finalizeDrop();
+  }
+
+  handlePointerCancel(e) {
+    if (!this.activeDragId || this.activePointerId !== e.pointerId) return;
+    this.finalizeDrop();
   }
 
   // Klavye Erişilebilirliği (Space/Enter ile seç, hedefte bırak)
   setupKeyboardEvents() {
-    this.container.addEventListener('keydown', (e) => {
-      const activeEl = document.activeElement;
-      if (!activeEl) return;
+    this.container.addEventListener('keydown', this.onKeyDownBound);
+  }
+
+  handleKeyDown(e) {
+    const activeEl = document.activeElement;
+    if (!activeEl) return;
 
       if (e.key === ' ' || e.key === 'Enter') {
         if (activeEl.classList.contains('is-draggable') && !activeEl.classList.contains('is-locked')) {
@@ -504,8 +590,7 @@ class ActivityEngine {
           this.keyboardSelectedId = null;
         }
       }
-    });
-  }
+    }
 
   finalizeDrop() {
     const itemEl = this.container.querySelector(`[data-id="${this.activeDragId}"]`);
@@ -610,6 +695,8 @@ class ActivityEngine {
       this.snapToTarget(dragId, targetObj);
       this.placedMap[dragId] = targetId;
       this.audio.playDrop();
+      this.emit('drop', { dragId, targetId, isPending: true });
+      this.emit('step', this.getState());
     }
   }
 
@@ -639,6 +726,8 @@ class ActivityEngine {
         }
       }
 
+      this.emit('drop', { dragId, targetId, isCorrect: true });
+      this.emit('step', this.getState());
       this.checkCompletion();
     } else {
       // YANLIŞ CEVAP
@@ -658,6 +747,9 @@ class ActivityEngine {
         this.snapToTarget(dragId, targetObj);
         this.placedMap[dragId] = targetId;
       }
+
+      this.emit('drop', { dragId, targetId, isCorrect: false });
+      this.emit('step', this.getState());
     }
   }
 
@@ -777,13 +869,16 @@ class ActivityEngine {
 
     modal.style.display = 'flex';
 
+    const payload = {
+      score: accuracy,
+      attempts: this.attempts,
+      correctCount: this.correctCount
+    };
+
     if (typeof this.options.onComplete === 'function') {
-      this.options.onComplete({
-        score: accuracy,
-        attempts: this.attempts,
-        correctCount: this.correctCount
-      });
+      this.options.onComplete(payload);
     }
+    this.emit('complete', payload);
   }
 
   updateStats() {
@@ -849,9 +944,15 @@ class ActivityEngine {
     if (modal) modal.style.display = 'none';
 
     this.prepareItems();
+    this.emit('reset', this.getState());
   }
 }
 
-// Global namespace
-window.DND = window.DND || {};
-window.DND.ActivityEngine = ActivityEngine;
+// Universal namespace export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { ActivityEngine };
+}
+if (typeof window !== 'undefined') {
+  window.DND = window.DND || {};
+  window.DND.ActivityEngine = ActivityEngine;
+}

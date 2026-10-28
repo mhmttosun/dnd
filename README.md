@@ -124,6 +124,117 @@ Ardından tarayıcınızdan `http://localhost:8000` adresine gidin.
 
 ---
 
+## 📦 Başka JS Projelerine Entegrasyon (Kütüphane Kullanımı)
+
+Bu proje hem görsel bir editör hem de diğer JavaScript projelerine (React, Vue, Angular, Svelte, Next.js veya düz Vanilla JS) **kolayca eklenebilen bağımsız bir etkinlik oynatıcısı (Activity Player)** olarak tasarlanmıştır.
+
+### 1. Kurulum (NPM ile)
+```bash
+npm install @mhmttosun/dnd
+```
+
+---
+
+### 2. Kullanım Senaryoları
+
+#### A. W3C Standart Web Component (`<dnd-player>`)
+Hiçbir framework bağımlılığı olmadan, HTML'e doğrudan standart etiket olarak eklenir:
+
+```html
+<!-- CSS ve Script dahil edilir -->
+<link rel="stylesheet" href="node_modules/@mhmttosun/dnd/dist/player.css">
+<script src="node_modules/@mhmttosun/dnd/dist/dnd-player-element.js"></script>
+
+<!-- Standart HTML Etiketi -->
+<dnd-player 
+  src="/path/to/activity.json" 
+  sound="true"
+  style="height: 600px;">
+</dnd-player>
+
+<script>
+  const playerEl = document.querySelector('dnd-player');
+  playerEl.addEventListener('dnd:complete', (e) => {
+    console.log('Etkinlik Bitti! Skor:', e.detail.score, 'Deneme:', e.detail.attempts);
+  });
+</script>
+```
+
+#### B. React Entegrasyonu (React Component & Lifecycle)
+```jsx
+import React, { useEffect, useRef } from 'react';
+import { ActivityPlayer } from '@mhmttosun/dnd/player';
+import '@mhmttosun/dnd/player.css';
+
+export function ActivityView({ activityData, onFinished }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    // 1. Oynatıcıyı Başlat (Mount)
+    const player = new ActivityPlayer({
+      target: containerRef.current,
+      data: activityData,
+      sound: true,
+      onComplete: (stats) => onFinished(stats)
+    });
+
+    // 2. Bellek Temizliği (Unmount Destroy)
+    return () => player.destroy();
+  }, [activityData]);
+
+  return <div ref={containerRef} style={{ width: '100%', height: '600px' }} />;
+}
+```
+
+#### C. Vue 3 (Composition API)
+```vue
+<template>
+  <div ref="container" style="width: 100%; height: 600px;"></div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+import { ActivityPlayer } from '@mhmttosun/dnd/player';
+import '@mhmttosun/dnd/player.css';
+
+const props = defineProps({ activityData: Object });
+const emit = defineEmits(['complete']);
+const container = ref(null);
+let player = null;
+
+onMounted(() => {
+  player = new ActivityPlayer({
+    target: container.value,
+    data: props.activityData,
+    onComplete: (stats) => emit('complete', stats)
+  });
+});
+
+onUnmounted(() => {
+  if (player) player.destroy();
+});
+</script>
+```
+
+#### D. Vanilla JS (Düz Web Sayfası)
+```javascript
+import { ActivityPlayer } from '@mhmttosun/dnd/player';
+import '@mhmttosun/dnd/player.css';
+
+const player = new ActivityPlayer({
+  target: '#my-container',
+  src: 'samples/2_hayvanlar_eslestirme.json',
+  sound: true,
+  onComplete: (stats) => alert(`Tebrikler! Puan: %${stats.score}`)
+});
+
+// İstenildiğinde:
+// player.reset();
+// player.destroy();
+```
+
+---
+
 ## 🧪 Otomatik Testleri Çalıştırma
 
 Proje; mimari bütünlüğü, Canvas kullanılmama kuralını, matematiksel koordinat dönüşümlerini, mini araç çubuğunun tüm popup ve stepper özelliklerini doğrulayan 27 aşamalı test paketine sahiptir.
