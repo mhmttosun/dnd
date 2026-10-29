@@ -84,11 +84,17 @@ const shell = () => `
       </div>
     </nav>
     <main id="editor-layout" class="editor-workspace">
-      <div id="stage-viewport" class="stage-viewport"><div id="stage" class="stage grid-visible mode-design">
-        <svg class="stage-svg-overlay" id="svg-overlay"><g id="svg-connections"></g></svg>
-        <div class="stage-objects" id="stage-objects"></div>
-        <div class="selection-box" id="selection-overlay"></div>
-      </div></div>
+      <div id="stage-viewport" class="stage-viewport">
+        <div id="stage-container" class="stage-container">
+          <div id="stage-scaler" class="stage-scaler">
+            <div id="stage" class="stage grid-visible mode-design">
+              <svg class="stage-svg-overlay" id="svg-overlay"><g id="svg-connections"></g></svg>
+              <div class="stage-objects" id="stage-objects"></div>
+              <div class="selection-box" id="selection-overlay"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
     <div id="preview-container"></div>
   </div>`;

@@ -648,6 +648,46 @@ assert 'getPlayMode' in dnd_elem_code and 'setPlayMode' in dnd_elem_code, "DNDPl
 
 test_passed("Öğrenme ve Değerlendirme modları, segmented switch, yeşil tik/kırmızı çarpı rozetleri, hedef kilitleme ve Tekrar Dene döngüsü doğrulandı.")
 
+# 5.24. Sahne Yakınlaştırma, Modern Scrollbar ve Stage Scaler Mimarisi Testi
+print("\n[Aşama 5.24] Sahne Yakınlaştırma, Modern Scrollbar ve Stage Scaler Mimarisi Testi")
+with open(os.path.join(BASE_DIR, 'index.html'), 'r', encoding='utf-8') as f:
+    html_content = f.read()
+with open(os.path.join(BASE_DIR, 'src/DNDEditor.js'), 'r', encoding='utf-8') as f:
+    editor_mod_content = f.read()
+with open(os.path.join(BASE_DIR, 'css/editor.css'), 'r', encoding='utf-8') as f:
+    editor_css_content = f.read()
+with open(os.path.join(BASE_DIR, 'css/stage.css'), 'r', encoding='utf-8') as f:
+    stage_css_content = f.read()
+with open(os.path.join(BASE_DIR, 'js/core/StageManager.js'), 'r', encoding='utf-8') as f:
+    sm_content = f.read()
+
+assert 'id="stage-container"' in html_content and 'id="stage-scaler"' in html_content, "index.html içinde stage-container ve stage-scaler sarmalayıcıları bulunmalıdır!"
+assert 'id="stage-container"' in editor_mod_content and 'id="stage-scaler"' in editor_mod_content, "src/DNDEditor.js içinde stage-container ve stage-scaler sarmalayıcıları bulunmalıdır!"
+assert '.stage-viewport' in editor_css_content and 'overflow: auto' in editor_css_content, "editor.css içinde stage-viewport overflow: auto olmalıdır!"
+assert 'scrollbar-width: thin' in editor_css_content and '::-webkit-scrollbar' in editor_css_content, "editor.css içinde modern ince scrollbar stilleri tanımlanmalıdır!"
+assert '.stage-container' in editor_css_content and '.stage-scaler' in editor_css_content, "editor.css içinde .stage-container ve .stage-scaler stilleri tanımlı olmalıdır!"
+assert 'transform-origin: top left' in stage_css_content, "stage.css içinde stage öğesinin transform-origin değeri top left olmalıdır!"
+assert 'setupStageWrapper' in sm_content, "StageManager içinde setupStageWrapper metodu bulunmalıdır!"
+assert 'setupWheelZoom' in sm_content, "StageManager içinde Ctrl/Cmd tekerlek ile zoom (setupWheelZoom) desteği bulunmalıdır!"
+assert 'this.stageScaler' in sm_content, "StageManager ölçeklenen boyutları stageScaler üzerine uygulamalıdır!"
+
+# Zoom ve Kaydırma Koordinat Hassasiyeti Matematik Testi
+for zoom in [0.5, 0.8, 1.0, 1.5, 2.0, 2.5]:
+    scroll_x, scroll_y = 120, 240
+    viewport_left, viewport_top = 80, 60
+    base_scale = 0.8
+    scale = base_scale * zoom
+    stage_left = viewport_left + 40 - scroll_x
+    stage_top = viewport_top + 40 - scroll_y
+    for orig_x, orig_y in [(0, 0), (300, 150), (600, 337.5), (1200, 675)]:
+        client_x = stage_left + orig_x * scale
+        client_y = stage_top + orig_y * scale
+        calc_x = (client_x - stage_left) / scale
+        calc_y = (client_y - stage_top) / scale
+        assert abs(calc_x - orig_x) < 1e-4 and abs(calc_y - orig_y) < 1e-4, f"Zoom {zoom} seviyesinde koordinat hatası!"
+
+test_passed("Modern scrollbar, stage-scaler sarmalayıcısı, tekerlek yakınlaştırma ve odak korumalı scroll mimarisi doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

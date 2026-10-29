@@ -7,13 +7,15 @@ class StageManager {
     this.core = core;
     this.container = containerEl;
     this.stage = stageEl;
-    this.svgOverlay = stageEl.querySelector('.stage-svg-overlay');
+    this.stageScaler = null;
+    this.stageContainer = null;
+    this.svgOverlay = stageEl ? stageEl.querySelector('.stage-svg-overlay') : null;
     this.signal = options.signal;
 
     this.logicalWidth = 1200;
     this.logicalHeight = 675;
 
-    this.zoomLevel = 1.0; // 0.4 - 2.0
+    this.zoomLevel = 1.0; // 0.4 - 2.5
     this.currentScale = 1.0;
     this.showGrid = true;
     this.snapToGrid = false;
@@ -25,6 +27,8 @@ class StageManager {
   }
 
   init() {
+    this.setupStageWrapper();
+    this.setupWheelZoom();
     this.setupResizeObserver();
     this.renderGrid();
     this.updateDimensions();
@@ -36,6 +40,48 @@ class StageManager {
       this.applyStageStyles();
       this.fitToScreen();
     });
+  }
+
+  setupStageWrapper() {
+    if (!this.stage) return;
+    let scaler = this.stage.closest ? this.stage.closest('.stage-scaler') : null;
+    if (!scaler && this.stage.parentElement && this.stage.parentElement.classList.contains('stage-scaler')) {
+      scaler = this.stage.parentElement;
+    }
+    if (!scaler) {
+      let container = this.container ? this.container.querySelector('.stage-container') : null;
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'stage-container';
+        container.id = 'stage-container';
+        if (this.container && this.stage.parentNode) {
+          this.stage.parentNode.insertBefore(container, this.stage);
+        }
+      }
+      scaler = document.createElement('div');
+      scaler.className = 'stage-scaler';
+      scaler.id = 'stage-scaler';
+      scaler.appendChild(this.stage);
+      if (container) {
+        container.appendChild(scaler);
+      }
+    }
+    this.stageScaler = scaler;
+    this.stageContainer = scaler ? scaler.parentElement : null;
+  }
+
+  setupWheelZoom() {
+    if (!this.container) return;
+    const onWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = -e.deltaY;
+        const step = Math.sign(delta) * 0.1;
+        this.setZoom(Math.round((this.zoomLevel + step) * 100) / 100);
+      }
+    };
+    const opts = this.signal ? { passive: false, signal: this.signal } : { passive: false };
+    this.container.addEventListener('wheel', onWheel, opts);
   }
 
   setupResizeObserver() {
@@ -75,8 +121,13 @@ class StageManager {
   }
 
   updateScale() {
+    if (!this.container || !this.stage) return;
+    if (!this.stageScaler) {
+      this.setupStageWrapper();
+    }
+
     const containerRect = this.container.getBoundingClientRect();
-    const padding = 40;
+    const padding = 80;
     const availableW = Math.max(containerRect.width - padding, 200);
     const availableH = Math.max(containerRect.height - padding, 200);
 
@@ -85,9 +136,42 @@ class StageManager {
       availableH / this.logicalHeight
     );
 
+    const hasScroll = this.container.scrollWidth > this.container.clientWidth || this.container.scrollHeight > this.container.clientHeight;
+    let focusRatioX = 0.5;
+    let focusRatioY = 0.5;
+    if (hasScroll && this.container.scrollWidth > 0 && this.container.scrollHeight > 0) {
+      focusRatioX = (this.container.scrollLeft + this.container.clientWidth / 2) / this.container.scrollWidth;
+      focusRatioY = (this.container.scrollTop + this.container.clientHeight / 2) / this.container.scrollHeight;
+    }
+
     this.currentScale = baseScale * this.zoomLevel;
+
+    const scaledW = Math.round(this.logicalWidth * this.currentScale);
+    const scaledH = Math.round(this.logicalHeight * this.currentScale);
+
+    if (this.stageScaler) {
+      this.stageScaler.style.width = `${scaledW}px`;
+      this.stageScaler.style.height = `${scaledH}px`;
+    }
+
+    this.stage.style.width = `${this.logicalWidth}px`;
+    this.stage.style.height = `${this.logicalHeight}px`;
     this.stage.style.transform = `scale(${this.currentScale})`;
-    this.stage.style.transformOrigin = 'center center';
+    this.stage.style.transformOrigin = 'top left';
+
+    if (this.zoomLevel > 1.0) {
+      if (hasScroll) {
+        requestAnimationFrame(() => {
+          if (this.container) {
+            this.container.scrollLeft = Math.max(0, focusRatioX * this.container.scrollWidth - this.container.clientWidth / 2);
+            this.container.scrollTop = Math.max(0, focusRatioY * this.container.scrollHeight - this.container.clientHeight / 2);
+          }
+        });
+      }
+    } else {
+      this.container.scrollLeft = 0;
+      this.container.scrollTop = 0;
+    }
 
     this.core.emit('stageScaleChanged', {
       scale: this.currentScale,
@@ -96,7 +180,7 @@ class StageManager {
   }
 
   setZoom(zoom) {
-    this.zoomLevel = Math.max(0.4, Math.min(2.5, zoom));
+    this.zoomLevel = Math.max(0.4, Math.min(2.5, Math.round(zoom * 100) / 100));
     this.updateScale();
   }
 
@@ -109,12 +193,22 @@ class StageManager {
   }
 
   resetZoom() {
-    this.setZoom(1.0);
+    this.fitToScreen();
   }
 
   fitToScreen() {
     this.zoomLevel = 1.0;
     this.updateScale();
+    if (this.container) {
+      this.container.scrollLeft = 0;
+      this.container.scrollTop = 0;
+    }
+  }
+
+  destroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
   }
 
   // Koordinat Dönüşümleri

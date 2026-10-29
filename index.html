@@ -152,17 +152,21 @@
        ========================================== -->
   <main class="editor-workspace" id="editor-layout">
     <div class="stage-viewport" id="stage-viewport">
-      <div class="stage grid-visible mode-design" id="stage">
-        <!-- SVG Bağlantı ve Çizim Katmanı -->
-        <svg class="stage-svg-overlay" id="svg-overlay">
-          <g id="svg-connections"></g>
-        </svg>
+      <div class="stage-container" id="stage-container">
+        <div class="stage-scaler" id="stage-scaler">
+          <div class="stage grid-visible mode-design" id="stage">
+            <!-- SVG Bağlantı ve Çizim Katmanı -->
+            <svg class="stage-svg-overlay" id="svg-overlay">
+              <g id="svg-connections"></g>
+            </svg>
 
-        <!-- Sahne Nesneleri Katmanı -->
-        <div class="stage-objects" id="stage-objects"></div>
+            <!-- Sahne Nesneleri Katmanı -->
+            <div class="stage-objects" id="stage-objects"></div>
 
-        <!-- Seçim ve Boyutlandırma Çerçevesi -->
-        <div class="selection-box" id="selection-overlay"></div>
+            <!-- Seçim ve Boyutlandırma Çerçevesi -->
+            <div class="selection-box" id="selection-overlay"></div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
