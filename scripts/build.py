@@ -32,7 +32,7 @@ editor_css = editor_css.replace(':root', '.dnd-editor-root')
 editor_css = editor_css.replace('body.is-embedded', '.dnd-editor-root.is-embedded')
 editor_css = editor_css.replace('body {', '.dnd-editor-root {')
 editor_css += '''
-:host { display: block; width: 100%; height: 100%; min-height: 620px; }
+:host { display: block; width: 100%; height: 100%; min-height: 0; }
 .dnd-editor-root { width: 100%; height: 100%; min-height: 620px; position: relative; }
 .dnd-editor-root.hide-file-actions .top-header-right { display: none; }
 .dnd-editor-root #preview-container { position: absolute; inset: 0; }

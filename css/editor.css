@@ -75,8 +75,14 @@ body.is-embedded .app-top-header {
   display: none !important;
 }
 
+body.is-embedded {
+  min-height: 0;
+}
+
 body.is-embedded .editor-workspace {
-  height: calc(100vh - 48px);
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
 }
 
 .top-header-left {

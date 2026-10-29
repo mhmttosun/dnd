@@ -155,6 +155,7 @@ export function initializeDndEditor(options = {}) {
   const root = shadow;
   const host = root.querySelector('.dnd-editor-root');
   if (options.ui?.fileActions === false) host.classList.add('hide-file-actions');
+  if (options.ui?.embedded === true) host.classList.add('is-embedded');
 
   const stageViewport = root.getElementById('stage-viewport');
   const stageEl = root.getElementById('stage');
