@@ -17,7 +17,6 @@ class UIManager {
     this.previewContainer = this.root.getElementById('preview-container');
     this.editorContainer = this.root.getElementById('editor-layout');
     this.activePlayerInstance = null;
-    this.activeTool = 'select'; // 'select' | 'hand'
 
     this.init();
   }
@@ -172,22 +171,6 @@ class UIManager {
           menuTemplates.style.display = 'none';
         };
       });
-    }
-
-    // Araçlar: Seçim ve El Aracı
-    const toolSelect = this.root.getElementById('tool-select');
-    const toolHand = this.root.getElementById('tool-hand');
-    if (toolSelect && toolHand) {
-      toolSelect.onclick = () => {
-        this.activeTool = 'select';
-        toolSelect.classList.add('active');
-        toolHand.classList.remove('active');
-      };
-      toolHand.onclick = () => {
-        this.activeTool = 'hand';
-        toolHand.classList.add('active');
-        toolSelect.classList.remove('active');
-      };
     }
 
     // Nesne Ekleme: Metin Kutusu

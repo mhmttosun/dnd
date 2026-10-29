@@ -6120,7 +6120,6 @@ class UIManager {
     this.previewContainer = this.root.getElementById('preview-container');
     this.editorContainer = this.root.getElementById('editor-layout');
     this.activePlayerInstance = null;
-    this.activeTool = 'select'; // 'select' | 'hand'
 
     this.init();
   }
@@ -6275,22 +6274,6 @@ class UIManager {
           menuTemplates.style.display = 'none';
         };
       });
-    }
-
-    // Araçlar: Seçim ve El Aracı
-    const toolSelect = this.root.getElementById('tool-select');
-    const toolHand = this.root.getElementById('tool-hand');
-    if (toolSelect && toolHand) {
-      toolSelect.onclick = () => {
-        this.activeTool = 'select';
-        toolSelect.classList.add('active');
-        toolHand.classList.remove('active');
-      };
-      toolHand.onclick = () => {
-        this.activeTool = 'hand';
-        toolHand.classList.add('active');
-        toolSelect.classList.remove('active');
-      };
     }
 
     // Nesne Ekleme: Metin Kutusu
@@ -7607,18 +7590,8 @@ const shell = () => `
       </div>
     </div>
 
-    <!-- Orta Araç Kümesi -->
+    <!-- Orta Araç Kümesi (Nesne Ekleme) -->
     <div class="sub-toolbar-cluster">
-      <button type="button" class="sub-tool-btn active" id="tool-select" title="Seçim Aracı">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 3-7 7-3L3 3z"/></svg>
-      </button>
-
-      <button type="button" class="sub-tool-btn" id="tool-hand" title="Kaydırma (El) Aracı">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M6 14v-2a2 2 0 0 0-4 0v5a7 7 0 0 0 7 7h3a7 7 0 0 0 7-7v-3a2 2 0 0 0-4 0"/></svg>
-      </button>
-
-      <div class="sub-divider"></div>
-
       <button type="button" class="sub-tool-btn" id="btn-add-text" title="Metin Kutusu Ekle">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>
       </button>
