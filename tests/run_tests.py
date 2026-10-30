@@ -704,8 +704,9 @@ with open(os.path.join(BASE_DIR, 'src/DNDEditor.js'), 'r', encoding='utf-8') as 
 # 1. Eski kaybolan toast yönergesinin kaldırıldığının denetimi
 assert "this.showToast('🔑 Cevap Anahtarı:" not in ui_mgr_code, "Cevap Anahtarı modundaki eski geçici toast yönergesi kaldırılmalıdır!"
 
-# 2. HTML ve Editor şablonlarında rehber çubuğunun varlığı ve sayaç bloğunun kaldırılması
-assert 'id="answer-key-guide-bar"' in index_html and 'class="answer-key-guide-bar"' in index_html, "index.html içinde answer-key-guide-bar bulunmalıdır!"
+# 2. HTML ve Editor şablonlarında rehber çubuğunun toolbar içine entegre edilmesi ve sayaç bloğunun kaldırılması
+assert 'id="answer-key-guide-bar"' in index_html and 'class="answer-key-toolbar-guide"' in index_html, "index.html içinde toolbar içi answer-key-guide-bar bulunmalıdır!"
+assert 'ak-toolbar-divider' in index_html and 'ak-toolbar-content' in index_html, "index.html içinde dikey ayraç ve rehber içerik bloğu bulunmalıdır!"
 assert 'id="ak-guide-title"' in index_html and 'id="ak-guide-instruction"' in index_html, "index.html içinde rehber başlık ve talimat öğeleri bulunmalıdır!"
 assert 'id="answer-key-guide-bar"' in editor_js and 'id="ak-guide-title"' in editor_js, "src/DNDEditor.js içinde answer-key-guide-bar ve ak-guide-title bulunmalıdır!"
 assert 'ak-guide-counter' not in index_html and 'ak-guide-counter' not in editor_js, "Rehber çubuğundaki sağ sayaç bloğu (4 / 4 Eşleşti vb.) kaldırılmış olmalıdır!"
@@ -717,12 +718,9 @@ assert 'cluster-add-objects' in editor_js and 'cluster-history-zoom' in editor_j
 assert '.cluster-add-objects' in ak_css_code and '.cluster-history-zoom' in ak_css_code, "css/answer-key.css içinde cevap anahtarı modunda araç kümelerini gizleme stilleri tanımlı olmalıdır!"
 assert 'clusterAdd' in ui_mgr_code and 'clusterHistoryZoom' in ui_mgr_code, "UIManager içinde cevap anahtarı modunda araç kümeleri gizlenmelidir!"
 
-# 3. CSS yükseklik ve stil denetimi (yaklaşık 56-64px)
-assert '.answer-key-guide-bar' in ak_css_code, "css/answer-key.css içinde .answer-key-guide-bar tanımlı olmalıdır!"
-height_match = re.search(r'\.answer-key-guide-bar\s*\{[^}]*height:\s*(\d+)px', ak_css_code)
-assert height_match, "Rehber çubuğunun yüksekliği px cinsinden tanımlanmalıdır!"
-bar_height = int(height_match.group(1))
-assert 56 <= bar_height <= 64, f"Rehber çubuğunun yüksekliği 56-64px aralığında olmalıdır! (Mevcut: {bar_height}px)"
+# 3. Toolbar içi rehber CSS ve dikey ayraç denetimi (Toolbar yüksekliği 48px sabit)
+assert '.answer-key-toolbar-guide' in ak_css_code, "css/answer-key.css içinde .answer-key-toolbar-guide tanımlı olmalıdır!"
+assert '.ak-toolbar-divider' in ak_css_code, "css/answer-key.css içinde .ak-toolbar-divider dikey ayracı tanımlı olmalıdır!"
 
 # 4. AnswerKeyManager içindeki metotlar ve 3 durum mantığı
 assert 'getGuideBar' in ak_mgr_code, "AnswerKeyManager içinde getGuideBar metodu bulunmalıdır!"

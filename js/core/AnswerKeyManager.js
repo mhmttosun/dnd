@@ -89,16 +89,16 @@ class AnswerKeyManager {
     });
 
     // 1. Sahne açıldığında, tüm eşleştirmeler yapılmışsa:
-    //    Tüm eşleşmeler tamamlandı / Cevap anahtarını kontrol edebilirsin
+    //    Eşleştirmeler tamamlandı (Tüm eşleşmeler tamamlandı) / X/Y eşleşme · Cevap anahtarını kontrol et
     // 2. Eşleştirmeler hiç yapılmamışsa:
-    //    Cevap anahtarı oluştur / Seçerek eşleştirmeye başla
+    //    Cevap anahtarı oluştur / 0/Y eşleşme · Seçerek eşleştirmeye başla
     // 3. Eşleştirme eksikse:
-    //    Eşleştirmeye devam et / Sıradaki nesneyi seçerek devam et.
+    //    Eşleştirmeye devam et / X/Y eşleşme · Sıradaki nesneyi seçerek devam et.
     if (totalDraggables > 0 && matchedCount >= totalDraggables) {
       return {
         status: 'all-completed',
-        title: 'Tüm eşleşmeler tamamlandı',
-        instruction: 'Cevap anahtarını kontrol edebilirsin',
+        title: 'Eşleştirmeler tamamlandı', // Tüm eşleşmeler tamamlandı
+        instruction: `${matchedCount}/${totalDraggables} eşleşme · Cevap anahtarını kontrol et`, // Cevap anahtarını kontrol edebilirsin
         matchedCount,
         totalDraggables
       };
@@ -106,7 +106,9 @@ class AnswerKeyManager {
       return {
         status: 'none-completed',
         title: 'Cevap anahtarı oluştur',
-        instruction: this.activeSourceId ? 'Hedef nesneyi seçerek eşleştirmeyi tamamla' : 'Seçerek eşleştirmeye başla',
+        instruction: this.activeSourceId
+          ? `${matchedCount}/${totalDraggables} eşleşme · Hedef nesneyi seçerek eşleştirmeyi tamamla`
+          : `${matchedCount}/${totalDraggables} eşleşme · Seçerek eşleştirmeye başla`,
         matchedCount,
         totalDraggables
       };
@@ -114,7 +116,9 @@ class AnswerKeyManager {
       return {
         status: 'incomplete',
         title: 'Eşleştirmeye devam et',
-        instruction: this.activeSourceId ? 'Hedef nesneyi seçerek eşleştirmeyi tamamla' : 'Sıradaki nesneyi seçerek devam et.',
+        instruction: this.activeSourceId
+          ? `${matchedCount}/${totalDraggables} eşleşme · Hedef nesneyi seçerek eşleştirmeyi tamamla`
+          : `${matchedCount}/${totalDraggables} eşleşme · Sıradaki nesneyi seçerek devam et.`,
         matchedCount,
         totalDraggables
       };
@@ -134,13 +138,32 @@ class AnswerKeyManager {
 
     const titleEl = bar.querySelector('#ak-guide-title');
     const instructionEl = bar.querySelector('#ak-guide-instruction');
-    const iconBadge = bar.querySelector('.ak-guide-icon-badge');
+    const iconContainer = bar.querySelector('#ak-status-icon');
 
     if (titleEl) titleEl.textContent = state.title;
     if (instructionEl) instructionEl.textContent = state.instruction;
 
-    if (iconBadge) {
-      iconBadge.classList.toggle('is-complete', state.status === 'all-completed');
+    if (iconContainer) {
+      if (state.status === 'all-completed') {
+        iconContainer.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="9 12 12 15 16 10"/>
+          </svg>`;
+      } else if (state.status === 'incomplete') {
+        iconContainer.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>`;
+      } else {
+        iconContainer.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>`;
+      }
     }
 
     bar.setAttribute('data-guide-state', state.status);

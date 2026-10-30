@@ -346,8 +346,10 @@ class UIManager {
 
     const clusterAdd = this.root.querySelector('.cluster-add-objects') || this.root.getElementById('cluster-add-objects');
     const clusterHistoryZoom = this.root.querySelector('.cluster-history-zoom') || this.root.getElementById('cluster-history-zoom');
+    const templateDropdown = this.root.querySelector('.template-dropdown-wrapper');
     if (clusterAdd) clusterAdd.style.display = newMode === 'answer-key' ? 'none' : 'flex';
     if (clusterHistoryZoom) clusterHistoryZoom.style.display = newMode === 'answer-key' ? 'none' : 'flex';
+    if (templateDropdown) templateDropdown.style.display = newMode === 'answer-key' ? 'none' : '';
 
     if (newMode === 'preview') {
       this.editorContainer.style.display = 'none';

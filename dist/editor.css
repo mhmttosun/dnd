@@ -1947,90 +1947,83 @@
 }
 
 /* ==========================================================================
-   Cevap Anahtarı Üst Rehber Çubuğu (Answer Key Guide Bar)
-   Üst araç çubuğunun hemen altında, 56–64px yüksekliğinde, şık ve minimalist
+   Cevap Anahtarı Toolbar İçi Rehber Bloğu (Answer Key Toolbar Guide)
+   Toolbar yüksekliğini değiştirmeden sol mod kümesinden sonra dikey ayraçla yerleşir
    ========================================================================== */
-.answer-key-guide-bar {
-  height: 60px;
-  min-height: 60px;
-  background-color: #ffffff;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+.answer-key-toolbar-guide {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 0 24px;
-  box-sizing: border-box;
-  z-index: 45;
+  height: 100%;
   user-select: none;
-  animation: akSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: akFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes akSlideDown {
+@keyframes akFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateX(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
-.ak-guide-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.ak-guide-icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ak-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-color, #e2e8f0);
+  margin: 0 14px 0 10px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
 }
 
-.ak-guide-icon-badge.is-complete {
-  background: #ecfdf5;
-  color: #059669;
-  border-color: #a7f3d0;
-}
-
-.ak-guide-content {
+.ak-toolbar-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
+}
+
+.ak-toolbar-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.15;
+}
+
+.ak-toolbar-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .ak-guide-title {
-  font-size: 0.94rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #0f172a;
-  line-height: 1.25;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .ak-guide-instruction {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 500;
   color: #64748b;
-  line-height: 1.2;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
-/* Cevap Anahtarı Modunda Orta (Nesne Ekleme) ve Sağ (Geçmiş & Zoom) Araç Kümelerini Gizle */
+/* Cevap Anahtarı Modunda Orta (Nesne Ekleme), Sağ (Geçmiş & Zoom) ve Şablon Kümelerini Gizle */
 .app-sub-toolbar.mode-answer-key .cluster-add-objects,
 .app-sub-toolbar.mode-answer-key .cluster-history-zoom,
+.app-sub-toolbar.mode-answer-key .template-dropdown-wrapper,
 body.mode-answer-key .app-sub-toolbar .cluster-add-objects,
 body.mode-answer-key .app-sub-toolbar .cluster-history-zoom,
+body.mode-answer-key .app-sub-toolbar .template-dropdown-wrapper,
 .dnd-editor-root.mode-answer-key .app-sub-toolbar .cluster-add-objects,
-.dnd-editor-root.mode-answer-key .app-sub-toolbar .cluster-history-zoom {
+.dnd-editor-root.mode-answer-key .app-sub-toolbar .cluster-history-zoom,
+.dnd-editor-root.mode-answer-key .app-sub-toolbar .template-dropdown-wrapper {
   display: none !important;
 }
 
