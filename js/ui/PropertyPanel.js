@@ -594,11 +594,17 @@ class PropertyPanel {
 
       const update = (props) => {
         const targets = this.selectionManager.getSelectedObjects();
+
         if (targets.length > 1) {
-          targets.forEach(o => this.objectManager.updateObject(o.id, props, true));
+          targets.forEach(object => {
+            this.objectManager.updateObject(object.id, props, false);
+          });
+
+          this.core.pushHistoryState('Seçili Nesneleri Güncelle');
         } else {
           this.objectManager.updateObject(id, props, true);
         }
+
         this.selectionManager.updateSelectionBox();
       };
 

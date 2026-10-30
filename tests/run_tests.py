@@ -950,6 +950,7 @@ history_js_path = os.path.join(BASE_DIR, 'js/core/HistoryManager.js')
 core_js_path = os.path.join(BASE_DIR, 'js/core/EditorCore.js')
 obj_js_path = os.path.join(BASE_DIR, 'js/core/ObjectManager.js')
 sel_js_path = os.path.join(BASE_DIR, 'js/core/SelectionManager.js')
+prop_panel_path = os.path.join(BASE_DIR, 'js/ui/PropertyPanel.js')
 
 with open(history_js_path, 'r', encoding='utf-8') as f:
     history_js_code = f.read()
@@ -959,6 +960,8 @@ with open(obj_js_path, 'r', encoding='utf-8') as f:
     obj_js_code = f.read()
 with open(sel_js_path, 'r', encoding='utf-8') as f:
     sel_js_code = f.read()
+with open(prop_panel_path, 'r', encoding='utf-8') as f:
+    prop_panel_code = f.read()
 
 # 1. EditorCore merkezi geçmiş API'si kontrolü
 assert 'pushHistoryState(description' in core_js_code, "EditorCore içinde pushHistoryState metodu bulunmalıdır!"
@@ -973,13 +976,16 @@ assert 'requestHistoryPush' in history_js_code, "HistoryManager açık geçmiş 
 assert 'objectAdded' in history_js_code and 'objectDeleted' in history_js_code and 'objectUpdated' in history_js_code, "HistoryManager nesne ekleme, silme ve güncelleme olaylarını dinlemelidir!"
 assert 'layerChanged' in history_js_code and 'answerKeyChanged' in history_js_code, "HistoryManager katman ve cevap anahtarı değişimlerini dinlemelidir!"
 
-# 3. ObjectManager ve SelectionManager saveHistory entegrasyonu
+# 3. ObjectManager, SelectionManager ve PropertyPanel saveHistory entegrasyonu
 assert "createObject(type, role = 'decorative', extra = {}, saveHistory = true)" in obj_js_code, "ObjectManager.createObject saveHistory parametresini desteklemelidir!"
 assert "deleteObject(id, saveHistory = true)" in obj_js_code, "ObjectManager.deleteObject saveHistory parametresini desteklemelidir!"
 assert "duplicateObject(id, saveHistory = true)" in obj_js_code, "ObjectManager.duplicateObject saveHistory parametresini desteklemelidir!"
 assert 'deleteSelected' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager toplu silme sonrasında pushHistoryState çağırmalıdır!"
 assert 'duplicateSelected' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager toplu çoğaltma sonrasında pushHistoryState çağırmalıdır!"
 assert 'paste' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager yapıştırma sonrasında pushHistoryState çağırmalıdır!"
+assert "this.objectManager.updateObject(object.id, props, false);" in prop_panel_code, "PropertyPanel çoklu güncellemede saveHistory: false kullanmalıdır!"
+assert "this.core.pushHistoryState('Seçili Nesneleri Güncelle');" in prop_panel_code, "PropertyPanel çoklu güncelleme sonunda pushHistoryState çağırmalıdır!"
+assert "this.objectManager.updateObject(id, props, true);" in prop_panel_code, "PropertyPanel tekli güncellemede saveHistory: true kullanmalıdır!"
 
 # 4. Mantıksal Undo/Redo Döngüsü ve Yığın Simülasyonu
 class MockEditorCore:
@@ -1104,6 +1110,49 @@ success = sim_hm.redo()
 assert success is True, "İkinci redo başarılı olmalıdır!"
 assert len(sim_hm.undoStack) == 3 and len(sim_hm.redoStack) == 0, f"İkinci redo sonrası yığın 3/0 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
 assert sim_core.data["objects"][0]["color"] == "red"
+
+# 7. PropertyPanel ve MiniToolbar Çoklu Nesne Düzenleme (1 Kullanıcı Eylemi = 1 Geçmiş Adımı) Testi
+# İkinci bir nesne ekle (obj2: green) -> yığın 4/0
+sim_core.data["objects"].append({"id": "obj2", "color": "green"})
+sim_core.emit("objectAdded", {"object": sim_core.data["objects"][-1], "saveHistory": True})
+assert len(sim_hm.undoStack) == 4 and len(sim_hm.redoStack) == 0, "İkinci nesne ekleme sonrası yığın 4/0 olmalıdır!"
+
+# İki nesne birden seçili (targets = [obj1, obj2]) ve ortak özellik (renk: "purple") toplu güncelleniyor:
+targets = [sim_core.data["objects"][0], sim_core.data["objects"][1]]
+for obj in targets:
+    obj["color"] = "purple"
+    sim_core.emit("objectUpdated", {"object": obj, "saveHistory": False})
+
+# saveHistory: False olduğu için henüz geçmiş adımı eklenmedi
+assert len(sim_hm.undoStack) == 4, "Toplu ara güncellemelerde saveHistory: False nedeniyle yığın artmamalıdır!"
+
+# Bütün nesneler güncellendikten sonra merkezi pushHistoryState çağrılır
+sim_core.pushHistoryState("Seçili Nesneleri Güncelle")
+assert len(sim_hm.undoStack) == 5 and len(sim_hm.redoStack) == 0, "Toplu güncelleme tek bir Undo adımı (5/0) üretmelidir!"
+
+# Tek bir Undo çağrıldığında HER İKİ nesne de eski renklerine ("red" ve "green") dönmelidir
+success = sim_hm.undo()
+assert success is True, "Toplu güncelleme sonrası Undo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 4 and len(sim_hm.redoStack) == 1, f"Undo sonrası yığın 4/1 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert sim_core.data["objects"][0]["color"] == "red", "İlk nesne eski rengine dönmelidir!"
+assert sim_core.data["objects"][1]["color"] == "green", "İkinci nesne eski rengine dönmelidir!"
+
+# Redo çağrıldığında HER İKİ nesne de yeni rengine ("purple") güncellenmelidir
+success = sim_hm.redo()
+assert success is True, "Toplu güncelleme sonrası Redo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 5 and len(sim_hm.redoStack) == 0, f"Redo sonrası yığın 5/0 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert sim_core.data["objects"][0]["color"] == "purple"
+assert sim_core.data["objects"][1]["color"] == "purple"
+
+# 8. Tek nesne düzenleme davranışı ve Redo yığınının yeni işlemde temizlenmesi
+sim_hm.undo() # Geri al: 4/1 oldu
+assert len(sim_hm.redoStack) == 1, "Undo sonrası redo yığını 1 olmalıdır!"
+# Şimdi tek nesne güncelleniyor (targets.length == 1) -> saveHistory: True
+sim_core.data["objects"][0]["color"] = "yellow"
+sim_core.emit("objectUpdated", {"object": sim_core.data["objects"][0], "saveHistory": True})
+# Yeni işlem yapıldığı için redo yığını temizlenmeli, undo yığını 5 olmalı
+assert len(sim_hm.undoStack) == 5 and len(sim_hm.redoStack) == 0, "Yeni işlem yapıldığında redo yığını temizlenmeli ve undo yığını 1 artmalıdır!"
+assert sim_core.data["objects"][0]["color"] == "yellow"
 
 test_passed("Geçmiş yönetimi (Undo/Redo), iç geri yükleme yığın koruması ve merkezi API entegrasyonu başarıyla doğrulandı.")
 
