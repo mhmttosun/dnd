@@ -280,7 +280,7 @@ print("\n[Aşama 5.4] Metin Tanımlı Renkler Paleti Testi")
 assert 'data-text-tab="color"' in mt_code and 'data-text-color-val' in mt_code, "Metin menüsünde renk sekmesi ve renk butonları eksik!"
 assert '.mt-text-tab-swatch' in ed_css and '.mt-text-palette-section' in ed_css, "Metin renk paleti stilleri eksik!"
 assert 'mt-custom-color' not in mt_code, "Özel renk seçici metin renk panelinde bulunmamalıdır!"
-assert mt_code.find('mt-align-row') < mt_code.find('mt-text-palette-section'), "Tanımlı renkler bloku en altta ve Hizalama blokundan sonra yer almalıdır!"
+assert mt_code.find('mt-text-align-grid') < mt_code.find('mt-text-palette-section'), "Tanımlı renkler bloku en altta ve Hizalama blokundan sonra yer almalıdır!"
 test_passed("Metin rengi seçeneklerinin renk sekmesinde gösterildiği doğrulandı.")
 
 # 5.5 Metin Yatay ve Dikey Hizalama Testi
@@ -522,13 +522,15 @@ assert 'data-layer-action="backward"' in mt_code, "Katman popup'ında 'Arkaya' s
 assert 'data-layer-action="back"' in mt_code, "Katman popup'ında 'En arkaya' seçeneği eksik!"
 assert 'data-layer-action="toggle-lock"' in mt_code, "Katman popup'ında 'Kilit' seçeneği eksik!"
 assert "bringForward" in mt_code and "bringToFront" in mt_code and "sendBackward" in mt_code and "sendToBack" in mt_code, "MiniToolbar LayerManager metotlarını tetiklemelidir!"
+assert 'mt-layer-order-grid' in mt_code and 'mt-layer-lock-section' in mt_code, "Katman sırası ve kilit kontrolleri ayrı kompakt bölümlerde gösterilmelidir!"
+assert 'data-layer-tab' not in mt_code, "Katman popup'ı sekmeli olmamalıdır!"
 
 with open(editor_css_path, 'r', encoding='utf-8') as f:
     editor_css_code = f.read()
 
 assert ".mt-layer-popup" in editor_css_code, "mt-layer-popup stili tanımlı olmalıdır!"
-assert ".mt-layer-item" in editor_css_code, "Minimalist liste ögesi (.mt-layer-item) stili tanımlı olmalıdır!"
-assert ".mt-layer-menu" in editor_css_code, "Minimalist menü konteyneri (.mt-layer-menu) stili tanımlı olmalıdır!"
+assert ".mt-layer-order-grid" in editor_css_code and "grid-template-columns: repeat(2, minmax(0, 1fr))" in editor_css_code, "Katman sırası kontrolleri iki sütunlu ızgarada gösterilmelidir!"
+assert ".mt-layer-lock-section" in editor_css_code, "Kilit kontrolü ayrı alt bölümde tanımlanmalıdır!"
 
 test_passed("Katman ve Kilit minimalist açılır menüsünde Öne, En öne, Arkaya, En arkaya ve Kilit seçenekleri doğrulandı.")
 
@@ -559,6 +561,8 @@ assert '.mt-layer-popup' in ed_css_check and 'width: 252px;' in ed_css_check, "K
 assert '.mt-role-popup' in ed_css_check and 'width: 252px;' in ed_css_check, "Sahne rolü popup kartı standart 252px genişlikte olmalıdır!"
 assert '.mt-text-popup' in ed_css_check and 'width: 252px;' in ed_css_check, "Metin popup kartı referans 252px genişlikte olmalıdır!"
 assert 'mt-role-popup' in mt_code_check, "MiniToolbar rol popup kartına mt-role-popup sınıfı eklenmelidir!"
+assert 'mt-role-grid' in mt_code_check and 'role="radiogroup"' in mt_code_check, "Sahne rolü seçenekleri erişilebilir kompakt kart grubunda gösterilmelidir!"
+assert '.mt-role-grid' in ed_css_check and 'grid-template-columns: repeat(3, minmax(0, 1fr))' in ed_css_check, "Sahne rolü seçenekleri üç sütunlu ızgarada gösterilmelidir!"
 assert 'is-multi' in mt_code_check, "MiniToolbar çoklu seçimde is-multi sınıfını eklemelidir!"
 
 test_passed("Tüm mini araç çubuğu açılır popup menülerinin genişliği Metin popup'ı referans alınarak 252px olarak standartlaştırıldı ve araç çubuğunu aşmadığı doğrulandı.")
@@ -569,7 +573,7 @@ assert 'scrollbar-width: none' in ed_css_check, "Popup kartlarında kaydırma ç
 assert '::-webkit-scrollbar' in ed_css_check, "Webkit tabanlı tarayıcılarda kaydırma çubuğunu gizleyen kural tanımlı olmalıdır!"
 assert '.mt-btn.active' in ed_css_check and '#cbd5e1' in ed_css_check, "Araç çubuğu butonlarının aktif durumu minimalist nötr tonlara sahip olmalıdır!"
 assert '.mt-line-type-btn.active' in ed_css_check and '#ffffff' in ed_css_check, "Çizgi butonları aktif durumunda hafif ve beyaz minimalist arka plana sahip olmalıdır!"
-assert '.mt-role-btn.active' in ed_css_check and '#ffffff' in ed_css_check, "Rol butonları aktif durumunda minimalist segmented control stiline sahip olmalıdır!"
+assert '.mt-role-btn.active' in ed_css_check and '#eff6ff' in ed_css_check, "Rol butonları aktif durumda ortak mavi seçim stiline sahip olmalıdır!"
 assert 'popupEl.style.overflow = \'visible\'' in mt_code_check or 'popupEl.style.maxHeight = \'none\'' in mt_code_check, "MiniToolbar içinde popup kartlarında gereksiz taşma ve scroll kısıtlaması kaldırılmış olmalıdır!"
 
 test_passed("Mini araç çubuğu ve açılır kartlar arasında minimalist tasarım dili ortaklaştırıldı, ağır arka planlı butonlar kaldırıldı ve popup kaydırma çubukları/taşmaları engellendi.")
@@ -926,9 +930,17 @@ assert 'data-text-tab="color"' in mt_text_code, "Metin menüsünde renk sekmesi 
 assert 'data-text-panel="font"' in mt_text_code, "Biçimlendirme ve font ayar paneli bulunmalıdır!"
 assert 'data-text-panel="align"' in mt_text_code, "Hizalama ayar paneli bulunmalıdır!"
 assert 'data-text-panel="color"' in mt_text_code, "Renk ayar paneli bulunmalıdır!"
-assert 'data-text-size-preset' in mt_text_code, "Hazır yazı boyutu çipleri (presets) bulunmalıdır!"
+assert '<div class="mt-text-panel-title">Biçim ve boyut</div>' not in text_popup, "Biçim ve boyut panelinde gereksiz başlık bulunmamalıdır!"
+assert 'mt-text-format-grid' in text_popup and text_popup.count('mt-text-format-column') == 2, "Biçim ve yazı boyutu iki sütunlu yapıda gösterilmelidir!"
+assert '<div class="mt-text-panel-title">Hizalama</div>' not in text_popup, "Hizalama panelinde gereksiz başlık bulunmamalıdır!"
+assert 'mt-text-align-grid' in text_popup and text_popup.count('mt-text-align-column') == 2, "Yatay ve dikey hizalama iki sütunlu yapıda gösterilmelidir!"
+assert 'data-text-size-preset' not in mt_text_code, "Hazır yazı boyutu seçenekleri kaldırılmalıdır!"
+assert 'data-text-action="size-down"' in text_popup and 'data-text-action="size-up"' in text_popup, "Yazı boyutu azaltma ve artırma düğmeleri korunmalıdır!"
 assert '.mt-text-tabs-bar' in ed_text_css and '.mt-text-tab-btn' in ed_text_css, "Metin sekme çubuğu ve buton CSS'leri tanımlı olmalıdır!"
-assert '.mt-text-panel' in ed_text_css and '.mt-text-chips-row' in ed_text_css, "Metin alt paneli ve boyut çipleri CSS'leri tanımlı olmalıdır!"
+assert '.mt-text-panel' in ed_text_css, "Metin alt paneli CSS'i tanımlı olmalıdır!"
+assert '.mt-text-format-grid' in ed_text_css and 'grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr)' in ed_text_css, "Biçim ve boyut panelinin iki sütunlu CSS yapısı tanımlı olmalıdır!"
+assert '.mt-text-align-grid' in ed_text_css and 'grid-template-columns: repeat(2, minmax(0, 1fr))' in ed_text_css, "Hizalama panelinin iki sütunlu CSS yapısı tanımlı olmalıdır!"
+assert '.mt-text-chips-row' not in ed_text_css and '.mt-text-chip-btn' not in ed_text_css, "Kaldırılan boyut seçeneklerinin stilleri temizlenmelidir!"
 
 test_passed("Metin ayarları popup'ı 3 sekmeli yapıya (Biçimlendirme/Font, Hizalama, Renk) kavuşturuldu ve nesne görünümüyle bütünleştirildi.")
 

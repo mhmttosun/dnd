@@ -591,11 +591,22 @@ class MiniToolbar {
       const r = primary.role || 'decorative';
       return `
         <div class="mt-popup-card mt-role-popup ${openClass}" id="mt-role-popup">
-          <div class="mt-popup-title">Sahne rolü</div>
-          <div class="mt-pill-group">
-            <button type="button" class="mt-role-btn ${r === 'draggable' ? 'active' : ''}" data-role-val="draggable">Taşınan</button>
-            <button type="button" class="mt-role-btn ${['target', 'category', 'sequence_slot'].includes(r) ? 'active' : ''}" data-role-val="target">Hedef</button>
-            <button type="button" class="mt-role-btn ${r === 'decorative' ? 'active' : ''}" data-role-val="decorative">Nötr</button>
+          <div class="mt-role-section">
+            <span class="mt-role-section-label">Sahne rolü</span>
+            <div class="mt-role-grid" role="radiogroup" aria-label="Sahne rolü">
+              <button type="button" role="radio" aria-checked="${r === 'draggable'}" class="mt-role-btn ${r === 'draggable' ? 'active' : ''}" data-role-val="draggable" title="Taşınan nesne">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><path d="m8 6 4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4"/></svg>
+                <span>Taşınan</span>
+              </button>
+              <button type="button" role="radio" aria-checked="${['target', 'category', 'sequence_slot'].includes(r)}" class="mt-role-btn ${['target', 'category', 'sequence_slot'].includes(r) ? 'active' : ''}" data-role-val="target" title="Hedef nesne">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                <span>Hedef</span>
+              </button>
+              <button type="button" role="radio" aria-checked="${r === 'decorative'}" class="mt-role-btn ${r === 'decorative' ? 'active' : ''}" data-role-val="decorative" title="Nötr nesne">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+                <span>Nötr</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -731,44 +742,35 @@ class MiniToolbar {
 
           <!-- Panel 1: Biçimlendirme ve Font -->
           <div class="mt-text-panel" data-text-panel="font" style="display: ${tab === 'font' ? 'flex' : 'none'};">
-            <div class="mt-text-panel-title">Biçim ve boyut</div>
-
-            <!-- B / I / U Butonları -->
-            <div class="mt-row mt-text-format-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-              <div class="mt-pill-group">
-                <button type="button" class="mt-format-btn ${isBold ? 'active' : ''}" data-text-action="bold" title="Kalın (Bold)"><strong>B</strong></button>
-                <button type="button" class="mt-format-btn ${isItalic ? 'active' : ''}" data-text-action="italic" title="İtalik (Italic)"><em>I</em></button>
-                <button type="button" class="mt-format-btn ${isUnderline ? 'active' : ''}" data-text-action="underline" title="Altı Çizili (Underline)"><u>U</u></button>
+            <div class="mt-text-format-grid">
+              <div class="mt-text-format-column">
+                <span class="mt-text-section-label">Biçim</span>
+                <div class="mt-pill-group" role="group" aria-label="Metin biçimi">
+                  <button type="button" class="mt-format-btn ${isBold ? 'active' : ''}" data-text-action="bold" title="Kalın (Bold)"><strong>B</strong></button>
+                  <button type="button" class="mt-format-btn ${isItalic ? 'active' : ''}" data-text-action="italic" title="İtalik (Italic)"><em>I</em></button>
+                  <button type="button" class="mt-format-btn ${isUnderline ? 'active' : ''}" data-text-action="underline" title="Altı Çizili (Underline)"><u>U</u></button>
+                </div>
               </div>
-            </div>
-
-            <!-- Font Boyutu Stepper (+/-) -->
-            <div class="mt-stepper-group" role="group" aria-label="Yazı boyutu">
-              <button type="button" class="mt-step-btn" data-text-action="size-down" title="Yazı boyutunu küçült">−</button>
-              <div class="mt-style-step-value">
-                <span class="mt-step-val mt-size-val" id="mt-val-fontSize" aria-live="polite">${fSize}</span>
-                <span class="mt-step-unit mt-size-unit">px</span>
+              <div class="mt-text-format-column">
+                <span class="mt-text-section-label">Boyut</span>
+                <div class="mt-stepper-group" role="group" aria-label="Yazı boyutu">
+                  <button type="button" class="mt-step-btn" data-text-action="size-down" title="Yazı boyutunu küçült">−</button>
+                  <div class="mt-style-step-value">
+                    <span class="mt-step-val mt-size-val" id="mt-val-fontSize" aria-live="polite">${fSize}</span>
+                    <span class="mt-step-unit mt-size-unit">px</span>
+                  </div>
+                  <button type="button" class="mt-step-btn" data-text-action="size-up" title="Yazı boyutunu büyüt">+</button>
+                </div>
               </div>
-              <button type="button" class="mt-step-btn" data-text-action="size-up" title="Yazı boyutunu büyüt">+</button>
-            </div>
-
-            <!-- Hazır Boyut Seçenekleri -->
-            <div class="mt-text-chips-row" role="group" aria-label="Hazır yazı boyutları">
-              ${[12, 14, 16, 18, 24, 32].map(s => `
-                <button type="button" class="mt-text-chip-btn ${fSize === s ? 'active' : ''}" data-text-size-preset="${s}" title="${s} px">
-                  ${s}
-                </button>
-              `).join('')}
             </div>
           </div>
 
           <!-- Panel 2: Hizalama -->
           <div class="mt-text-panel" data-text-panel="align" style="display: ${tab === 'align' ? 'flex' : 'none'};">
-            <div class="mt-text-panel-title">Hizalama</div>
-            <div class="mt-row mt-align-row" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span class="mt-align-section-label" style="font-size: 0.74rem; color: #64748b; font-weight: 500;">Yatay</span>
-                <div class="mt-pill-group">
+            <div class="mt-text-align-grid">
+              <div class="mt-text-align-column">
+                <span class="mt-text-section-label">Yatay</span>
+                <div class="mt-pill-group" role="group" aria-label="Yatay hizalama">
                   <button type="button" class="mt-icon-btn ${hAlign === 'left' ? 'active' : ''}" data-align-h="left" title="Sola Hizala">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
                   </button>
@@ -780,9 +782,9 @@ class MiniToolbar {
                   </button>
                 </div>
               </div>
-              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span class="mt-align-section-label" style="font-size: 0.74rem; color: #64748b; font-weight: 500;">Dikey</span>
-                <div class="mt-pill-group">
+              <div class="mt-text-align-column">
+                <span class="mt-text-section-label">Dikey</span>
+                <div class="mt-pill-group" role="group" aria-label="Dikey hizalama">
                   <button type="button" class="mt-icon-btn ${vAlign === 'top' ? 'active' : ''}" data-align-v="top" title="Üste Hizala">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="4" x2="21" y2="4"/><path d="M12 20V8"/><polyline points="8 12 12 8 16 12"/></svg>
                   </button>
@@ -816,25 +818,30 @@ class MiniToolbar {
       const isLocked = primary.locked;
       return `
         <div class="mt-popup-card mt-layer-popup ${openClass}" id="mt-layer-popup">
-          <div class="mt-layer-menu">
-            <button type="button" class="mt-layer-item mt-layer-btn" data-layer-action="forward" title="Öne Getir">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-              <span>Öne</span>
-            </button>
-            <button type="button" class="mt-layer-item mt-layer-btn" data-layer-action="front" title="En Öne Getir">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg>
-              <span>En öne</span>
-            </button>
-            <button type="button" class="mt-layer-item mt-layer-btn" data-layer-action="backward" title="Arkaya Gönder">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              <span>Arkaya</span>
-            </button>
-            <button type="button" class="mt-layer-item mt-layer-btn" data-layer-action="back" title="En Arkaya Gönder">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 13 5 5 5-5"/><path d="m7 6 5 5 5-5"/></svg>
-              <span>En arkaya</span>
-            </button>
-            <div class="mt-layer-divider"></div>
-            <button type="button" class="mt-layer-item mt-layer-btn mt-layer-lock-item ${isLocked ? 'is-locked active-lock' : ''}" data-layer-action="toggle-lock" title="${isLocked ? 'Kilidi Aç' : 'Nesneyi Kilitle'}">
+          <div class="mt-layer-section">
+            <span class="mt-layer-section-label">Katman sırası</span>
+            <div class="mt-layer-order-grid" role="group" aria-label="Katman sırası">
+              <button type="button" class="mt-layer-btn" data-layer-action="forward" title="Öne Getir">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                <span>Öne</span>
+              </button>
+              <button type="button" class="mt-layer-btn" data-layer-action="front" title="En Öne Getir">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg>
+                <span>En öne</span>
+              </button>
+              <button type="button" class="mt-layer-btn" data-layer-action="backward" title="Arkaya Gönder">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                <span>Arkaya</span>
+              </button>
+              <button type="button" class="mt-layer-btn" data-layer-action="back" title="En Arkaya Gönder">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 13 5 5 5-5"/><path d="m7 6 5 5 5-5"/></svg>
+                <span>En arkaya</span>
+              </button>
+            </div>
+          </div>
+          <div class="mt-layer-section mt-layer-lock-section">
+            <span class="mt-layer-section-label">Kilit durumu</span>
+            <button type="button" class="mt-layer-btn mt-layer-lock-item ${isLocked ? 'is-locked active-lock' : ''}" data-layer-action="toggle-lock" title="${isLocked ? 'Kilidi Aç' : 'Nesneyi Kilitle'}" aria-pressed="${isLocked}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 ${isLocked 
                   ? '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>' 
@@ -1055,8 +1062,12 @@ class MiniToolbar {
       btn.onclick = (e) => {
         e.stopPropagation();
         const role = btn.getAttribute('data-role-val');
-        this.toolbarEl.querySelectorAll('[data-role-val]').forEach(b => b.classList.remove('active'));
+        this.toolbarEl.querySelectorAll('[data-role-val]').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-checked', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { role }));
       };
     });
@@ -1144,19 +1155,6 @@ class MiniToolbar {
       };
     });
 
-    // Hazır Yazı Boyutu Seçenekleri (Chips)
-    this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const newSize = parseInt(btn.getAttribute('data-text-size-preset'), 10);
-        this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => b.classList.toggle('active', b === btn));
-        const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
-        if (sizeVal) sizeVal.textContent = newSize;
-        getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { fontSize: newSize }));
-        syncAppearanceControls();
-      };
-    });
-
     // Metin Formatlama
     this.toolbarEl.querySelectorAll('[data-text-action]').forEach(btn => {
       btn.onclick = (e) => {
@@ -1185,9 +1183,6 @@ class MiniToolbar {
           const newSize = textPrimary.fontSize || 16;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
-          this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => {
-            b.classList.toggle('active', parseInt(b.getAttribute('data-text-size-preset'), 10) === newSize);
-          });
         }
         syncAppearanceControls();
       };
@@ -1266,6 +1261,8 @@ class MiniToolbar {
           const newLocked = !allLocked;
           btn.classList.toggle('active-lock', newLocked);
           btn.classList.toggle('is-locked', newLocked);
+          btn.setAttribute('aria-pressed', String(newLocked));
+          btn.title = newLocked ? 'Kilidi Aç' : 'Nesneyi Kilitle';
           const lockIcon = btn.querySelector('svg');
           if (lockIcon) {
             lockIcon.innerHTML = newLocked
