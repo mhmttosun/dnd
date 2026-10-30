@@ -274,6 +274,7 @@ class UIManager {
                 y: 200,
                 width: w,
                 height: h,
+                text: '',
                 backgroundColor: 'transparent',
                 borderColor: 'transparent',
                 borderWidth: 0
@@ -453,13 +454,22 @@ class UIManager {
     // Hedef metin öğesini bul veya oluştur
     let targetEl = objEl.querySelector('.object-text-span, .image-caption, .category-header, .sequence-slot-label');
     if (!targetEl) {
-      targetEl = document.createElement('span');
-      targetEl.className = 'object-text-span';
-      targetEl.style.width = '100%';
-      targetEl.style.display = 'block';
-      targetEl.style.textAlign = obj.textAlign || 'center';
-      targetEl.textContent = obj.text || '';
-      contentEl.appendChild(targetEl);
+      if (obj.type === 'image') {
+        targetEl = document.createElement('div');
+        targetEl.className = 'image-caption';
+        targetEl.style.width = '100%';
+        targetEl.style.textAlign = obj.textAlign || 'center';
+        targetEl.textContent = obj.text || '';
+        contentEl.appendChild(targetEl);
+      } else {
+        targetEl = document.createElement('span');
+        targetEl.className = 'object-text-span';
+        targetEl.style.width = '100%';
+        targetEl.style.display = 'block';
+        targetEl.style.textAlign = obj.textAlign || 'center';
+        targetEl.textContent = obj.text || '';
+        contentEl.appendChild(targetEl);
+      }
     }
 
     this.isEditingText = true;
@@ -522,9 +532,14 @@ class UIManager {
         let rawText = targetEl.innerText !== undefined ? targetEl.innerText : targetEl.textContent;
         // Sondaki gereksiz fazladan boşluk veya satırları normalize et
         let newText = rawText.replace(/\r\n/g, '\n').replace(/\n+$/, '');
+        if (obj && obj.type === 'image' && !newText.trim()) {
+          newText = '';
+        }
 
         if (obj && obj.text !== newText) {
           this.objectManager.updateObject(objId, { text: newText });
+        } else if (obj && obj.type === 'image' && newText === '') {
+          targetEl.remove();
         }
       }
     }

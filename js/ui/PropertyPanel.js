@@ -220,7 +220,7 @@ class PropertyPanel {
           <div class="prop-group-title">İçerik ve Tipografi</div>
           <div class="prop-row">
             <label class="prop-label">Metin</label>
-            <textarea class="prop-textarea" id="prop-text" rows="2">${window.DND.ValidationEngine.sanitizeText(obj.text || '')}</textarea>
+            <textarea class="prop-textarea" id="prop-text" rows="2" placeholder="${isImage ? 'Görsel altına metin eklemek için yazın...' : ''}">${window.DND.ValidationEngine.sanitizeText(obj.text || '')}</textarea>
           </div>
           <div class="prop-grid-2">
             <div class="prop-col">

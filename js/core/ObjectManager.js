@@ -132,6 +132,14 @@ class ObjectManager {
       baseObj.backgroundColor = '#f1f5f9';
       baseObj.borderColor = '#cbd5e1';
       baseObj.text = '';
+    } else if (type === 'image') {
+      baseObj.width = 300;
+      baseObj.height = 200;
+      baseObj.backgroundColor = 'transparent';
+      baseObj.borderColor = 'transparent';
+      baseObj.borderWidth = 0;
+      baseObj.boxShadow = 'none';
+      baseObj.text = '';
     }
 
     const finalObj = Object.assign({}, baseObj, extra);
