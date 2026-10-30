@@ -345,6 +345,78 @@
   color: var(--primary);
 }
 
+/* Sağ Küme ve Geçmiş / Yakınlaştırma */
+.cluster-history-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Daha Fazla Seçenek Açılır Menüsü (Proje Aç, Çevrimdışı HTML İndir, Kaydet) */
+.more-menu-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.more-dropdown-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 215px;
+  z-index: 1000;
+}
+
+.more-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  user-select: none;
+}
+
+.more-menu-item svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.more-menu-item:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+}
+
+.more-menu-item:hover svg {
+  color: var(--primary);
+}
+
+.more-menu-item#btn-save-project {
+  font-weight: 600;
+}
+
+.more-menu-item#btn-save-project:hover {
+  background: #eff6ff;
+  color: var(--primary);
+}
+
 /* ==========================================
    3. ÇALIŞMA ALANI (FULL CANVAS WORKSPACE)
    ========================================== */
@@ -3201,5 +3273,6 @@ body.mode-answer-key .app-sub-toolbar .template-dropdown-wrapper,
 
 :host { display: block; width: 100%; height: 100%; min-height: 0; }
 .dnd-editor-root { width: 100%; height: 100%; min-height: 620px; position: relative; }
+.dnd-editor-root.hide-file-actions .more-menu-wrapper { display: none; }
 .dnd-editor-root.hide-file-actions .top-header-right { display: none; }
 .dnd-editor-root #preview-container { position: absolute; inset: 0; }

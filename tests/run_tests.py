@@ -1211,6 +1211,43 @@ assert sim_core.data["objects"][0]["color"] == "yellow"
 
 test_passed("Geçmiş yönetimi (Undo/Redo), iç geri yükleme yığın koruması ve merkezi API entegrasyonu başarıyla doğrulandı.")
 
+# 5.32 Üst Header Kaldırılması ve Alt Nav Bar 3 Nokta Menüsü Testi
+print("\n[Aşama 5.32] Üst Header Kaldırılması ve Alt Nav Bar 3 Nokta Menüsü Testi")
+index_html_path = os.path.join(BASE_DIR, 'index.html')
+with open(index_html_path, 'r', encoding='utf-8') as f:
+    index_html_content = f.read()
+
+# 1. app-top-header ve btn-new-project index.html'de olmamalı
+assert 'class="app-top-header"' not in index_html_content, "index.html içinde app-top-header bulunmamalıdır!"
+assert 'id="btn-new-project"' not in index_html_content, "Yeni Proje butonu kaldırılmış olmalıdır!"
+
+# 2. Üç nokta menüsü ve butonlar alt araç çubuğunda (.app-sub-toolbar) bulunmalı
+assert 'id="btn-more-menu"' in index_html_content, "btn-more-menu üç nokta butonu index.html'de bulunmalıdır!"
+assert 'id="more-dropdown-menu"' in index_html_content, "more-dropdown-menu açılır menüsü bulunmalıdır!"
+assert 'id="btn-open-project"' in index_html_content, "Proje Aç butonu menü içinde bulunmalıdır!"
+assert 'id="btn-export-html"' in index_html_content, "Çevrimdışı Html İndir butonu menü içinde bulunmalıdır!"
+assert 'id="btn-save-project"' in index_html_content, "Kaydet butonu menü içinde bulunmalıdır!"
+
+# 3. CSS tanımları kontrolü
+css_editor_path = os.path.join(BASE_DIR, 'css/editor.css')
+with open(css_editor_path, 'r', encoding='utf-8') as f:
+    css_content = f.read()
+
+assert '.more-menu-wrapper' in css_content, "css/editor.css içinde .more-menu-wrapper bulunmalıdır!"
+assert '.more-dropdown-menu' in css_content, "css/editor.css içinde .more-dropdown-menu bulunmalıdır!"
+assert '.more-menu-item' in css_content, "css/editor.css içinde .more-menu-item bulunmalıdır!"
+
+# 4. UIManager.js kontrolü
+ui_manager_path = os.path.join(BASE_DIR, 'js/ui/UIManager.js')
+with open(ui_manager_path, 'r', encoding='utf-8') as f:
+    ui_content = f.read()
+
+assert 'btn-more-menu' in ui_content, "UIManager.js içinde btn-more-menu dinleyicisi bulunmalıdır!"
+assert 'more-dropdown-menu' in ui_content, "UIManager.js içinde more-dropdown-menu yönetimi bulunmalıdır!"
+assert 'btn-new-project' not in ui_content, "UIManager.js içinde artık btn-new-project referansı bulunmamalıdır!"
+
+test_passed("Üst header kaldırılması, 'Yeni Proje' butonunun iptali ve alt nav bar 3 nokta menüsü entegrasyonu başarıyla doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

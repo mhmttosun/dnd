@@ -66,20 +66,7 @@ class UIManager {
   }
 
   bindHeaderActions() {
-    // 1. Yeni Proje
-    const btnNew = this.root.getElementById('btn-new-project');
-    if (btnNew) {
-      btnNew.onclick = () => {
-        if (confirm('Yeni bir proje başlatmak istiyor musunuz? Kaydedilmemiş değişiklikler kaybolabilir.')) {
-          const newProj = window.DND.SAMPLE_PROJECTS['matching'] || this.core.createDefaultProject('matching', 'Kavram ve Tanım');
-          this.core.loadProject(newProj);
-          this.updateSaveStatus(true);
-          this.showToast('Yeni proje oluşturuldu.', 'info');
-        }
-      };
-    }
-
-    // 2. Proje Aç (JSON)
+    // 1. Proje Aç (JSON)
     const btnOpen = this.root.getElementById('btn-open-project');
     const fileInput = this.root.getElementById('file-input-project');
     if (btnOpen && fileInput) {
@@ -104,7 +91,7 @@ class UIManager {
       };
     }
 
-    // 3. Projeyi Kaydet (JSON İndir)
+    // 2. Projeyi Kaydet (JSON İndir)
     const btnSave = this.root.getElementById('btn-save-project');
     if (btnSave) {
       btnSave.onclick = () => {
@@ -113,7 +100,7 @@ class UIManager {
         const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
         const url = URL.createObjectURL(blob);
 
-        const safeTitle = (projectData.project.name || 'etkinlik')
+        const safeTitle = ((projectData.project && projectData.project.name) || 'etkinlik')
           .toLowerCase()
           .replace(/[^a-z0-9ğüşıöç]+/g, '_');
 
@@ -130,7 +117,7 @@ class UIManager {
       };
     }
 
-    // 4. HTML İndir
+    // 3. HTML İndir
     const btnExport = this.root.getElementById('btn-export-html');
     if (btnExport) {
       btnExport.onclick = () => {
@@ -146,10 +133,13 @@ class UIManager {
     // Şablonlar Menüsü Aç / Kapa
     const btnTemplates = this.root.getElementById('btn-toggle-templates');
     const menuTemplates = this.root.getElementById('templates-menu');
+    const btnMore = this.root.getElementById('btn-more-menu');
+    const menuMore = this.root.getElementById('more-dropdown-menu');
 
     if (btnTemplates && menuTemplates) {
       btnTemplates.onclick = (e) => {
         e.stopPropagation();
+        if (menuMore) menuMore.style.display = 'none';
         const isHidden = menuTemplates.style.display === 'none';
         menuTemplates.style.display = isHidden ? 'flex' : 'none';
       };
@@ -170,6 +160,31 @@ class UIManager {
           }
           menuTemplates.style.display = 'none';
         };
+      });
+    }
+
+    // Daha Fazla Seçenek Menüsü Aç / Kapa (Proje Aç, Çevrimdışı HTML İndir, Kaydet)
+    if (btnMore && menuMore) {
+      btnMore.onclick = (e) => {
+        e.stopPropagation();
+        if (menuTemplates) menuTemplates.style.display = 'none';
+        const isHidden = menuMore.style.display === 'none';
+        menuMore.style.display = isHidden ? 'flex' : 'none';
+        btnMore.setAttribute('aria-expanded', String(isHidden));
+      };
+
+      window.addEventListener('click', () => {
+        if (menuMore) {
+          menuMore.style.display = 'none';
+          btnMore.setAttribute('aria-expanded', 'false');
+        }
+      }, this.options.signal ? { signal: this.options.signal } : undefined);
+
+      menuMore.querySelectorAll('.more-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+          menuMore.style.display = 'none';
+          btnMore.setAttribute('aria-expanded', 'false');
+        });
       });
     }
 
@@ -355,6 +370,8 @@ class UIManager {
     if (clusterAdd) clusterAdd.style.display = newMode === 'answer-key' ? 'none' : 'flex';
     if (clusterHistoryZoom) clusterHistoryZoom.style.display = newMode === 'answer-key' ? 'none' : 'flex';
     if (templateDropdown) templateDropdown.style.display = newMode === 'answer-key' ? 'none' : '';
+    const moreMenuDivider = this.root.getElementById('more-menu-divider');
+    if (moreMenuDivider) moreMenuDivider.style.display = newMode === 'answer-key' ? 'none' : 'block';
 
     if (newMode === 'preview') {
       this.editorContainer.style.display = 'none';

@@ -34,6 +34,7 @@ editor_css = editor_css.replace('body {', '.dnd-editor-root {')
 editor_css += '''
 :host { display: block; width: 100%; height: 100%; min-height: 0; }
 .dnd-editor-root { width: 100%; height: 100%; min-height: 620px; position: relative; }
+.dnd-editor-root.hide-file-actions .more-menu-wrapper { display: none; }
 .dnd-editor-root.hide-file-actions .top-header-right { display: none; }
 .dnd-editor-root #preview-container { position: absolute; inset: 0; }
 '''

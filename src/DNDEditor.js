@@ -6,20 +6,6 @@ const EDITOR_CSS = globalThis.__DND_EDITOR_CSS__ || '';
 
 const shell = () => `
   <div class="dnd-editor-root">
-    <header class="app-top-header">
-      <div class="top-header-left"><div class="header-titles-box">
-        <div class="app-subtitle">ETKİNLİK DÜZENLEYİCİSİ</div>
-        <div class="project-title-row"><input id="project-title-input" class="project-title-input" value="Eşleştirme" aria-label="Etkinlik başlığı"></div>
-        <div class="project-save-status is-saved"><span class="status-dot"></span><span id="status-text">Kaydedildi</span></div>
-      </div></div>
-      <div class="top-header-right">
-        <button id="btn-new-project" class="top-icon-btn" type="button" title="Yeni">＋</button>
-        <button id="btn-open-project" class="top-icon-btn" type="button" title="Aç">↥</button>
-        <input id="file-input-project" type="file" accept=".json,application/json" hidden>
-        <button id="btn-export-html" class="top-icon-btn" type="button" title="HTML indir">HTML</button>
-        <button id="btn-save-project" class="top-primary-save-btn" type="button">Kaydet</button>
-      </div>
-    </header>
     <nav class="app-sub-toolbar">
       <div class="sub-toolbar-cluster cluster-left-group">
         <div class="mode-pill-group">
