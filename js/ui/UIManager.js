@@ -199,7 +199,7 @@ class UIManager {
     if (btnAddRect) {
       btnAddRect.onclick = () => {
         const obj = this.objectManager.createObject('rectangle', 'decorative', {
-          text: 'Kavram Kartı',
+          text: '',
           x: 420,
           y: 240,
           width: 240,
@@ -220,6 +220,7 @@ class UIManager {
     if (btnAddCircle) {
       btnAddCircle.onclick = () => {
         const obj = this.objectManager.createObject('circle', 'decorative', {
+          text: '',
           x: 480,
           y: 240,
           width: 100,
@@ -532,13 +533,13 @@ class UIManager {
         let rawText = targetEl.innerText !== undefined ? targetEl.innerText : targetEl.textContent;
         // Sondaki gereksiz fazladan boşluk veya satırları normalize et
         let newText = rawText.replace(/\r\n/g, '\n').replace(/\n+$/, '');
-        if (obj && obj.type === 'image' && !newText.trim()) {
+        if (obj && ['rectangle', 'circle', 'image'].includes(obj.type) && !newText.trim()) {
           newText = '';
         }
 
         if (obj && obj.text !== newText) {
           this.objectManager.updateObject(objId, { text: newText });
-        } else if (obj && obj.type === 'image' && newText === '') {
+        } else if (obj && ['rectangle', 'circle', 'image'].includes(obj.type) && newText === '') {
           targetEl.remove();
         }
       }

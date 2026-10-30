@@ -853,18 +853,19 @@ assert (new_o2_y - new_o1_y) == init_dy, "Dikey ortalamada göreli dikey mesafe 
 
 test_passed("Grup halindeki nesnelerin sahneye ve birbirine tek bir birleşik nesne olarak hizalanma matematiği doğrulandı.")
 
-# 5.27 Görsel Nesnesi Varsayılan Metin Durumu ve Çift Tıklama Mantığı Testi
-print("\n[Aşama 5.27] Görsel Nesnesi Varsayılan Metin Durumu ve Çift Tıklama Mantığı Testi")
+# 5.27 Şekil ve Görsel Nesneleri Varsayılan Metin Durumu ve Çift Tıklama Mantığı Testi
+print("\n[Aşama 5.27] Şekil ve Görsel Nesneleri Varsayılan Metin Durumu ve Çift Tıklama Mantığı Testi")
 with open(os.path.join(BASE_DIR, 'js/core/ObjectManager.js'), 'r', encoding='utf-8') as f:
     om_img_code = f.read()
 with open(os.path.join(BASE_DIR, 'js/ui/UIManager.js'), 'r', encoding='utf-8') as f:
     ui_img_code = f.read()
 
 assert "} else if (type === 'image')" in om_img_code, "ObjectManager createObject içinde type === 'image' dalı bulunmalıdır!"
-assert "baseObj.text = '';" in om_img_code, "Görsel nesneleri için varsayılan text boş ('') olmalıdır!"
-assert "obj.type === 'image'" in ui_img_code, "UIManager içinde görsel nesnesine çift tıklandığında metin alanı oluşturma desteği bulunmalıdır!"
+assert "baseObj.text = '';" in om_img_code, "Şekil ve görsel nesneleri için varsayılan text boş ('') olmalıdır!"
+assert "obj.type === 'text' || (obj.text && obj.text.trim() !== '')" in om_img_code, "ObjectManager boş metinli şekillerde gereksiz metin alanı render etmemelidir!"
+assert "['rectangle', 'circle', 'image'].includes(obj.type)" in ui_img_code, "UIManager kutu, daire ve görsel nesnelerinde boş metinleri otomatik temizlemelidir!"
 
-test_passed("Görsellerin sahneye eklendiğinde varsayılan olarak metinsiz gelmesi ve çift tıklama ile metin ekleme mantığı doğrulandı.")
+test_passed("Görsel, kutu ve daire nesnelerinin sahneye eklendiğinde varsayılan olarak metinsiz gelmesi ve çift tıklama ile metin ekleme mantığı doğrulandı.")
 
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")

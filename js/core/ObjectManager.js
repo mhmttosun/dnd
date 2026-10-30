@@ -390,13 +390,16 @@ class ObjectManager {
       content.appendChild(slotLbl);
     } else {
       // Standart metin veya şekil içi metin
-      const textNode = document.createElement('span');
-      textNode.className = 'object-text-span';
-      textNode.style.width = '100%';
-      textNode.style.display = 'block';
-      textNode.style.textAlign = textAlign;
-      textNode.textContent = obj.text || '';
-      content.appendChild(textNode);
+      const shouldRenderText = obj.type === 'text' || (obj.text && obj.text.trim() !== '');
+      if (shouldRenderText) {
+        const textNode = document.createElement('span');
+        textNode.className = 'object-text-span';
+        textNode.style.width = '100%';
+        textNode.style.display = 'block';
+        textNode.style.textAlign = textAlign;
+        textNode.textContent = obj.text || '';
+        content.appendChild(textNode);
+      }
     }
 
     el.appendChild(content);
