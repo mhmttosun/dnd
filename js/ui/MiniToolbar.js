@@ -434,7 +434,7 @@ class MiniToolbar {
 
     let html = `
       <div class="mini-toolbar-pill ${isMulti ? 'is-multi' : ''}">
-        ${isMulti ? `
+        ${(isMulti || hasGroup) ? `
           <button type="button" class="mt-btn ${this.activePopup === 'align' ? 'active' : ''}" data-action="toggle-align-popup" title="Hizalama">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M12 7v10M7 12h10"/></svg>
           </button>
@@ -807,8 +807,9 @@ class MiniToolbar {
 
     if (this.activePopup === 'align') {
       const selectedObjs = this.selectionManager.getSelectedObjects().filter(o => !o.locked);
+      const units = this.getSelectionUnits(selectedObjs);
       const canEqualize = selectedObjs.length >= 2;
-      const canDistribute = selectedObjs.length >= 3;
+      const canDistribute = units.length >= 3;
 
       return `
         <div class="mt-popup-card mt-align-popup ${openClass}" id="mt-align-popup">
@@ -1201,40 +1202,97 @@ class MiniToolbar {
     });
   }
 
+  getSelectionUnits(selectedObjects) {
+    if (!selectedObjects || selectedObjects.length === 0) return [];
+    const unitsMap = new Map();
+    const standaloneUnits = [];
+
+    selectedObjects.forEach(obj => {
+      if (obj.groupId) {
+        if (!unitsMap.has(obj.groupId)) {
+          unitsMap.set(obj.groupId, []);
+        }
+        unitsMap.get(obj.groupId).push(obj);
+      } else {
+        standaloneUnits.push({
+          isGroup: false,
+          groupId: null,
+          objects: [obj],
+          minX: obj.x,
+          maxX: obj.x + obj.width,
+          minY: obj.y,
+          maxY: obj.y + obj.height,
+          width: obj.width,
+          height: obj.height
+        });
+      }
+    });
+
+    const groupUnits = Array.from(unitsMap.entries()).map(([groupId, objs]) => {
+      const minX = Math.min(...objs.map(o => o.x));
+      const maxX = Math.max(...objs.map(o => o.x + o.width));
+      const minY = Math.min(...objs.map(o => o.y));
+      const maxY = Math.max(...objs.map(o => o.y + o.height));
+      return {
+        isGroup: true,
+        groupId,
+        objects: objs,
+        minX,
+        maxX,
+        minY,
+        maxY,
+        width: maxX - minX,
+        height: maxY - minY
+      };
+    });
+
+    return [...groupUnits, ...standaloneUnits];
+  }
+
   distributeSelected(axis) {
     const selected = this.selectionManager.getSelectedObjects().filter(o => !o.locked);
-    if (selected.length < 3) return;
+    const units = this.getSelectionUnits(selected);
+    if (units.length < 3) return;
 
     if (axis === 'horizontal') {
-      selected.sort((a, b) => a.x - b.x);
-      const minX = selected[0].x;
-      const lastObj = selected[selected.length - 1];
-      const maxX = lastObj.x + lastObj.width;
-      const totalWidths = selected.reduce((s, o) => s + o.width, 0);
+      units.sort((a, b) => a.minX - b.minX);
+      const minX = units[0].minX;
+      const lastUnit = units[units.length - 1];
+      const maxX = lastUnit.maxX;
+      const totalWidths = units.reduce((s, u) => s + u.width, 0);
       const totalGap = (maxX - minX) - totalWidths;
-      const gap = totalGap / (selected.length - 1);
+      const gap = totalGap / (units.length - 1);
 
       let curX = minX;
-      selected.forEach(o => {
-        this.objectManager.updateObject(o.id, { x: Math.round(curX) });
-        curX += o.width + gap;
+      units.forEach(u => {
+        const deltaX = Math.round(curX) - u.minX;
+        u.objects.forEach(o => {
+          this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) });
+        });
+        curX += u.width + gap;
       });
     } else if (axis === 'vertical') {
-      selected.sort((a, b) => a.y - b.y);
-      const minY = selected[0].y;
-      const lastObj = selected[selected.length - 1];
-      const maxY = lastObj.y + lastObj.height;
-      const totalHeights = selected.reduce((s, o) => s + o.height, 0);
+      units.sort((a, b) => a.minY - b.minY);
+      const minY = units[0].minY;
+      const lastUnit = units[units.length - 1];
+      const maxY = lastUnit.maxY;
+      const totalHeights = units.reduce((s, u) => s + u.height, 0);
       const totalGap = (maxY - minY) - totalHeights;
-      const gap = totalGap / (selected.length - 1);
+      const gap = totalGap / (units.length - 1);
 
       let curY = minY;
-      selected.forEach(o => {
-        this.objectManager.updateObject(o.id, { y: Math.round(curY) });
-        curY += o.height + gap;
+      units.forEach(u => {
+        const deltaY = Math.round(curY) - u.minY;
+        u.objects.forEach(o => {
+          this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) });
+        });
+        curY += u.height + gap;
       });
     }
 
+    if (this.core && this.core.pushHistoryState) {
+      this.core.pushHistoryState('Eşit Dağıt');
+    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -1261,28 +1319,84 @@ class MiniToolbar {
 
   alignSelectedObjects(direction) {
     const selected = this.selectionManager.getSelectedObjects().filter(o => !o.locked);
-    if (selected.length < 2) return;
+    if (!selected || selected.length === 0) return;
 
-    if (direction === 'left') {
-      const minX = Math.min(...selected.map(o => o.x));
-      selected.forEach(o => this.objectManager.updateObject(o.id, { x: minX }));
-    } else if (direction === 'right') {
-      const maxR = Math.max(...selected.map(o => o.x + o.width));
-      selected.forEach(o => this.objectManager.updateObject(o.id, { x: maxR - o.width }));
-    } else if (direction === 'center') {
-      const avgX = selected.reduce((sum, o) => sum + (o.x + o.width / 2), 0) / selected.length;
-      selected.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(avgX - o.width / 2) }));
-    } else if (direction === 'top') {
-      const minY = Math.min(...selected.map(o => o.y));
-      selected.forEach(o => this.objectManager.updateObject(o.id, { y: minY }));
-    } else if (direction === 'bottom') {
-      const maxB = Math.max(...selected.map(o => o.y + o.height));
-      selected.forEach(o => this.objectManager.updateObject(o.id, { y: maxB - o.height }));
-    } else if (direction === 'middle') {
-      const avgY = selected.reduce((sum, o) => sum + (o.y + o.height / 2), 0) / selected.length;
-      selected.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(avgY - o.height / 2) }));
+    const units = this.getSelectionUnits(selected);
+    if (units.length === 0) return;
+
+    const stageW = (this.stageManager && this.stageManager.logicalWidth) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.width) || 1200;
+    const stageH = (this.stageManager && this.stageManager.logicalHeight) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.height) || 675;
+
+    if (units.length === 1) {
+      // Tek bir birim (örneğin grup haline getirilmiş bir nesneler topluluğu) sahneye tek parça olarak hizalanır
+      const unit = units[0];
+      let deltaX = 0;
+      let deltaY = 0;
+
+      if (direction === 'left') {
+        deltaX = 0 - unit.minX;
+      } else if (direction === 'right') {
+        deltaX = (stageW - unit.width) - unit.minX;
+      } else if (direction === 'center') {
+        deltaX = Math.round((stageW - unit.width) / 2) - unit.minX;
+      } else if (direction === 'top') {
+        deltaY = 0 - unit.minY;
+      } else if (direction === 'bottom') {
+        deltaY = (stageH - unit.height) - unit.minY;
+      } else if (direction === 'middle') {
+        deltaY = Math.round((stageH - unit.height) / 2) - unit.minY;
+      }
+
+      unit.objects.forEach(o => {
+        this.objectManager.updateObject(o.id, {
+          x: Math.round(o.x + deltaX),
+          y: Math.round(o.y + deltaY)
+        });
+      });
+    } else {
+      // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
+      if (direction === 'left') {
+        const minX = Math.min(...units.map(u => u.minX));
+        units.forEach(u => {
+          const deltaX = minX - u.minX;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+        });
+      } else if (direction === 'right') {
+        const maxR = Math.max(...units.map(u => u.maxX));
+        units.forEach(u => {
+          const deltaX = (maxR - u.width) - u.minX;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+        });
+      } else if (direction === 'center') {
+        const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
+        units.forEach(u => {
+          const deltaX = Math.round(avgX - u.width / 2) - u.minX;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+        });
+      } else if (direction === 'top') {
+        const minY = Math.min(...units.map(u => u.minY));
+        units.forEach(u => {
+          const deltaY = minY - u.minY;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+        });
+      } else if (direction === 'bottom') {
+        const maxB = Math.max(...units.map(u => u.maxY));
+        units.forEach(u => {
+          const deltaY = (maxB - u.height) - u.minY;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+        });
+      } else if (direction === 'middle') {
+        const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
+        units.forEach(u => {
+          const deltaY = Math.round(avgY - u.height / 2) - u.minY;
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+        });
+      }
     }
 
+    if (this.core && this.core.pushHistoryState) {
+      this.core.pushHistoryState('Nesneleri Hizala');
+    }
     this.selectionManager.updateSelectionBox();
   }
 }

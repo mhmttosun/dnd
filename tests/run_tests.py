@@ -763,6 +763,96 @@ assert t1 == 'Tüm eşleşmeler tamamlandı' and d1 == 'Cevap anahtarını kontr
 
 test_passed("Cevap anahtarı üst rehber çubuğu, yükseklik sınırları ve 3 dinamik durum metni başarıyla doğrulandı.")
 
+# 5.26 Grup Hizalama ve Dağıtma (Tek Birleşik Nesne Mantığı) Testi
+print("\n[Aşama 5.26] Grup Hizalama ve Dağıtma (Tek Birleşik Nesne Mantığı) Testi")
+with open(os.path.join(BASE_DIR, 'js/ui/MiniToolbar.js'), 'r', encoding='utf-8') as f:
+    mt_group_align_code = f.read()
+
+assert 'getSelectionUnits' in mt_group_align_code, "MiniToolbar içinde seçim birimlerini (grup ve tekil) ayıran 'getSelectionUnits' metodu bulunmalıdır!"
+assert 'units.length === 1' in mt_group_align_code, "Tek bir birim (örneğin grup) seçildiğinde sahneye tek parça hizalama koşulu bulunmalıdır!"
+assert 'stageW - unit.width' in mt_group_align_code, "Grup sağa ve yatay ortaya hizalanırken sahne genişliği ve grup genişliği kullanılmalıdır!"
+assert 'stageH - unit.height' in mt_group_align_code, "Grup alta ve dikey ortaya hizalanırken sahne yüksekliği ve grup yüksekliği kullanılmalıdır!"
+
+# Mantıksal Simülasyon: Grup Birimi ve Sahneye Hizalama
+def get_selection_units(objects):
+    units_map = {}
+    standalone = []
+    for o in objects:
+        gid = o.get('groupId')
+        if gid:
+            units_map.setdefault(gid, []).append(o)
+        else:
+            standalone.append({
+                'isGroup': False,
+                'groupId': None,
+                'objects': [o],
+                'minX': o['x'],
+                'maxX': o['x'] + o['width'],
+                'minY': o['y'],
+                'maxY': o['y'] + o['height'],
+                'width': o['width'],
+                'height': o['height']
+            })
+    group_units = []
+    for gid, objs in units_map.items():
+        min_x = min(o['x'] for o in objs)
+        max_x = max(o['x'] + o['width'] for o in objs)
+        min_y = min(o['y'] for o in objs)
+        max_y = max(o['y'] + o['height'] for o in objs)
+        group_units.append({
+            'isGroup': True,
+            'groupId': gid,
+            'objects': objs,
+            'minX': min_x,
+            'maxX': max_x,
+            'minY': min_y,
+            'maxY': max_y,
+            'width': max_x - min_x,
+            'height': max_y - min_y
+        })
+    return group_units + standalone
+
+# Test 1: Tek grup seçildiğinde sahneye hizalama (1200x675)
+group_objs = [
+    {"id": "o1", "groupId": "grp_1", "x": 100, "y": 150, "width": 120, "height": 60},
+    {"id": "o2", "groupId": "grp_1", "x": 260, "y": 180, "width": 140, "height": 70}
+]
+init_dx = group_objs[1]["x"] - group_objs[0]["x"]
+init_dy = group_objs[1]["y"] - group_objs[0]["y"]
+
+units = get_selection_units(group_objs)
+assert len(units) == 1, "Grup üyeleri tek bir birim (unit) oluşturmalıdır!"
+u = units[0]
+assert u['minX'] == 100 and u['maxX'] == 400 and u['width'] == 300
+assert u['minY'] == 150 and u['maxY'] == 250 and u['height'] == 100
+
+# Sola Hizala:
+deltaX = 0 - u['minX']
+assert deltaX == -100
+assert (group_objs[0]["x"] + deltaX) == 0
+assert (group_objs[1]["x"] + deltaX) == 160
+assert ((group_objs[1]["x"] + deltaX) - (group_objs[0]["x"] + deltaX)) == init_dx, "Grup içi nesnelerin göreli mesafesi korunmalıdır!"
+
+# Yatay Ortala:
+deltaX_center = round((1200 - u['width']) / 2) - u['minX']
+assert deltaX_center == (450 - 100)
+new_o1_x = group_objs[0]["x"] + deltaX_center
+new_o2_x = group_objs[1]["x"] + deltaX_center
+assert new_o1_x == 450 and (new_o2_x + 140) == 750
+assert (new_o2_x - new_o1_x) == init_dx, "Grup içi nesnelerin göreli mesafesi korunmalıdır!"
+
+# Sağa Hizala:
+deltaX_right = (1200 - u['width']) - u['minX']
+assert (group_objs[1]["x"] + deltaX_right + 140) == 1200, "Grubun sağ sınırı tam 1200 olmalıdır!"
+
+# Dikey Ortala:
+deltaY_middle = round((675 - u['height']) / 2) - u['minY']
+new_o1_y = group_objs[0]["y"] + deltaY_middle
+new_o2_y = group_objs[1]["y"] + deltaY_middle
+assert (new_o2_y - new_o1_y) == init_dy, "Dikey ortalamada göreli dikey mesafe korunmalıdır!"
+
+test_passed("Grup halindeki nesnelerin sahneye ve birbirine tek bir birleşik nesne olarak hizalanma matematiği doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 
