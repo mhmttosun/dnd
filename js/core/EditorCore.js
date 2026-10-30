@@ -8,6 +8,40 @@ class EditorCore {
     this.mode = 'design'; // 'design' | 'answer-key' | 'preview'
     this.data = this.createDefaultProject();
     this.activeSubMode = null;
+    this.historyManager = null;
+  }
+
+  // Geçmiş Yönetimi Entegrasyonu (Merkezi API)
+  setHistoryManager(historyManager) {
+    this.historyManager = historyManager;
+  }
+
+  pushHistoryState(description = '') {
+    if (this.historyManager && typeof this.historyManager.pushState === 'function') {
+      this.historyManager.pushState(description);
+    } else {
+      this.emit('requestHistoryPush', { description });
+    }
+  }
+
+  undo() {
+    if (this.historyManager && typeof this.historyManager.undo === 'function') {
+      return this.historyManager.undo();
+    }
+  }
+
+  redo() {
+    if (this.historyManager && typeof this.historyManager.redo === 'function') {
+      return this.historyManager.redo();
+    }
+  }
+
+  canUndo() {
+    return this.historyManager ? this.historyManager.canUndo() : false;
+  }
+
+  canRedo() {
+    return this.historyManager ? this.historyManager.canRedo() : false;
   }
 
   createDefaultProject(activityType = 'image-labeling', name = 'Yeni Etkinlik') {
@@ -102,7 +136,10 @@ class EditorCore {
       settings: Object.assign({}, defaults.settings, projectData.settings)
     };
 
-    this.emit('projectLoaded', { project: this.data, saveToHistory });
+    const isHistoryRestore = (saveToHistory === false) || (typeof saveToHistory === 'object' && saveToHistory.isHistoryRestore);
+    const shouldSaveHistory = typeof saveToHistory === 'object' ? (saveToHistory.saveToHistory ?? true) : !!saveToHistory;
+
+    this.emit('projectLoaded', { project: this.data, saveToHistory: shouldSaveHistory, isHistoryRestore });
     this.emit('dataChanged', { source: 'loadProject' });
     this.autoSave();
   }

@@ -20,7 +20,7 @@ class LayerManager {
     });
   }
 
-  bringToFront(id) {
+  bringToFront(id, saveHistory = true) {
     const obj = this.objectManager.getObject(id);
     if (!obj) return;
 
@@ -30,11 +30,11 @@ class LayerManager {
     obj.zIndex = maxZ + 1;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj });
+    this.core.emit('layerChanged', { object: obj, saveHistory });
     this.core.emit('dataChanged', { source: 'layer' });
   }
 
-  sendToBack(id) {
+  sendToBack(id, saveHistory = true) {
     const obj = this.objectManager.getObject(id);
     if (!obj) return;
 
@@ -42,11 +42,11 @@ class LayerManager {
     obj.zIndex = 0;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj });
+    this.core.emit('layerChanged', { object: obj, saveHistory });
     this.core.emit('dataChanged', { source: 'layer' });
   }
 
-  bringForward(id) {
+  bringForward(id, saveHistory = true) {
     this.normalizeLayers();
     const sorted = this.getSortedObjects();
     const idx = sorted.findIndex(o => o.id === id);
@@ -59,11 +59,11 @@ class LayerManager {
     nextObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx] });
+    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
     this.core.emit('dataChanged', { source: 'layer' });
   }
 
-  sendBackward(id) {
+  sendBackward(id, saveHistory = true) {
     this.normalizeLayers();
     const sorted = this.getSortedObjects();
     const idx = sorted.findIndex(o => o.id === id);
@@ -76,7 +76,7 @@ class LayerManager {
     prevObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx] });
+    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
     this.core.emit('dataChanged', { source: 'layer' });
   }
 }

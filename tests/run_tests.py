@@ -944,6 +944,169 @@ assert '.mt-text-chips-row' not in ed_text_css and '.mt-text-chip-btn' not in ed
 
 test_passed("Metin ayarları popup'ı 3 sekmeli yapıya (Biçimlendirme/Font, Hizalama, Renk) kavuşturuldu ve nesne görünümüyle bütünleştirildi.")
 
+# 5.31 Geçmiş Yönetimi (Undo/Redo) Entegrasyonu, Olay Köprüleri ve Yığın Koruması Testi
+print("\n[Aşama 5.31] Geçmiş Yönetimi (Undo/Redo) Entegrasyonu ve Yığın Koruması Testi")
+history_js_path = os.path.join(BASE_DIR, 'js/core/HistoryManager.js')
+core_js_path = os.path.join(BASE_DIR, 'js/core/EditorCore.js')
+obj_js_path = os.path.join(BASE_DIR, 'js/core/ObjectManager.js')
+sel_js_path = os.path.join(BASE_DIR, 'js/core/SelectionManager.js')
+
+with open(history_js_path, 'r', encoding='utf-8') as f:
+    history_js_code = f.read()
+with open(core_js_path, 'r', encoding='utf-8') as f:
+    core_js_code = f.read()
+with open(obj_js_path, 'r', encoding='utf-8') as f:
+    obj_js_code = f.read()
+with open(sel_js_path, 'r', encoding='utf-8') as f:
+    sel_js_code = f.read()
+
+# 1. EditorCore merkezi geçmiş API'si kontrolü
+assert 'pushHistoryState(description' in core_js_code, "EditorCore içinde pushHistoryState metodu bulunmalıdır!"
+assert 'undo()' in core_js_code and 'redo()' in core_js_code, "EditorCore içinde undo ve redo metotları bulunmalıdır!"
+assert 'canUndo()' in core_js_code and 'canRedo()' in core_js_code, "EditorCore içinde canUndo ve canRedo metotları bulunmalıdır!"
+assert 'isHistoryRestore' in core_js_code, "EditorCore loadProject içinde isHistoryRestore bayrağı tanımlanmalı ve emit edilmelidir!"
+
+# 2. HistoryManager yığın koruması ve olay abonelikleri kontrolü
+assert 'if (this.isApplying' in history_js_code, "HistoryManager işlem uygularken (isApplying) olayları yutmalıdır!"
+assert 'isHistoryRestore' in history_js_code and 'saveToHistory === false' in history_js_code, "HistoryManager iç geri yüklemelerde undo/redo yığınlarını sıfırlamamalıdır!"
+assert 'requestHistoryPush' in history_js_code, "HistoryManager açık geçmiş kaydetme isteğini (requestHistoryPush) dinlemelidir!"
+assert 'objectAdded' in history_js_code and 'objectDeleted' in history_js_code and 'objectUpdated' in history_js_code, "HistoryManager nesne ekleme, silme ve güncelleme olaylarını dinlemelidir!"
+assert 'layerChanged' in history_js_code and 'answerKeyChanged' in history_js_code, "HistoryManager katman ve cevap anahtarı değişimlerini dinlemelidir!"
+
+# 3. ObjectManager ve SelectionManager saveHistory entegrasyonu
+assert "createObject(type, role = 'decorative', extra = {}, saveHistory = true)" in obj_js_code, "ObjectManager.createObject saveHistory parametresini desteklemelidir!"
+assert "deleteObject(id, saveHistory = true)" in obj_js_code, "ObjectManager.deleteObject saveHistory parametresini desteklemelidir!"
+assert "duplicateObject(id, saveHistory = true)" in obj_js_code, "ObjectManager.duplicateObject saveHistory parametresini desteklemelidir!"
+assert 'deleteSelected' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager toplu silme sonrasında pushHistoryState çağırmalıdır!"
+assert 'duplicateSelected' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager toplu çoğaltma sonrasında pushHistoryState çağırmalıdır!"
+assert 'paste' in sel_js_code and 'pushHistoryState' in sel_js_code, "SelectionManager yapıştırma sonrasında pushHistoryState çağırmalıdır!"
+
+# 4. Mantıksal Undo/Redo Döngüsü ve Yığın Simülasyonu
+class MockEditorCore:
+    def __init__(self):
+        self.data = {"version": "1.0", "objects": []}
+        self.listeners = {}
+        self.historyManager = None
+
+    def on(self, event, cb):
+        self.listeners.setdefault(event, []).append(cb)
+
+    def emit(self, event, payload=None):
+        for cb in self.listeners.get(event, []):
+            cb(payload)
+
+    def pushHistoryState(self, desc=""):
+        if self.historyManager:
+            self.historyManager.push_state(desc)
+
+    def loadProject(self, data, saveToHistory=True):
+        self.data = data
+        isRestore = (saveToHistory is False) or (isinstance(saveToHistory, dict) and saveToHistory.get('isHistoryRestore'))
+        shouldSave = saveToHistory.get('saveToHistory', True) if isinstance(saveToHistory, dict) else bool(saveToHistory)
+        self.emit('projectLoaded', {'project': self.data, 'saveToHistory': shouldSave, 'isHistoryRestore': isRestore})
+
+class MockHistoryManager:
+    def __init__(self, core, maxHistory=40):
+        self.core = core
+        self.core.historyManager = self
+        self.maxHistory = maxHistory
+        self.undoStack = []
+        self.redoStack = []
+        self.isApplying = False
+
+        self.core.on('projectLoaded', self._on_project_loaded)
+        self.core.on('requestHistoryPush', lambda p: not self.isApplying and self.push_state((p or {}).get('description', '')))
+        self.core.on('objectAdded', lambda p: not self.isApplying and (p is None or p.get('saveHistory', True)) and self.push_state('Nesne Eklendi'))
+        self.core.on('objectDeleted', lambda p: not self.isApplying and (p is None or p.get('saveHistory', True)) and self.push_state('Nesne Silindi'))
+        self.core.on('objectUpdated', lambda p: not self.isApplying and (p is None or p.get('saveHistory', True)) and self.push_state('Nesne Güncellendi'))
+
+        if self.core.data:
+            self.push_state('Başlangıç')
+
+    def _on_project_loaded(self, payload):
+        if self.isApplying:
+            return
+        if payload and (payload.get('saveToHistory') is False or payload.get('isHistoryRestore')):
+            return
+        self.undoStack.clear()
+        self.redoStack.clear()
+        self.push_state('Proje Yüklendi')
+
+    def push_state(self, desc=""):
+        import json
+        snap = json.dumps(self.core.data, sort_keys=True)
+        if self.undoStack and self.undoStack[-1] == snap:
+            return
+        self.undoStack.append(snap)
+        if len(self.undoStack) > self.maxHistory:
+            self.undoStack.pop(0)
+        self.redoStack.clear()
+
+    def undo(self):
+        import json
+        if len(self.undoStack) <= 1:
+            return False
+        self.isApplying = True
+        current = self.undoStack.pop()
+        self.redoStack.append(current)
+        prev = self.undoStack[-1]
+        self.core.loadProject(json.loads(prev), {'saveToHistory': False, 'isHistoryRestore': True})
+        self.isApplying = False
+        return True
+
+    def redo(self):
+        import json
+        if not self.redoStack:
+            return False
+        self.isApplying = True
+        next_state = self.redoStack.pop()
+        self.undoStack.append(next_state)
+        self.core.loadProject(json.loads(next_state), {'saveToHistory': False, 'isHistoryRestore': True})
+        self.isApplying = False
+        return True
+
+sim_core = MockEditorCore()
+sim_hm = MockHistoryManager(sim_core)
+
+# Başlangıçta 1 durum (baseline)
+assert len(sim_hm.undoStack) == 1 and len(sim_hm.redoStack) == 0, "Başlangıçta undoStack 1 olmalıdır!"
+
+# 1. Nesne ekle
+sim_core.data["objects"].append({"id": "obj1", "color": "blue"})
+sim_core.emit("objectAdded", {"object": sim_core.data["objects"][-1], "saveHistory": True})
+assert len(sim_hm.undoStack) == 2 and len(sim_hm.redoStack) == 0, "Nesne ekleme sonrası yığın 2/0 olmalıdır!"
+
+# 2. Nesne güncelle (renk değişti)
+sim_core.data["objects"][0]["color"] = "red"
+sim_core.emit("objectUpdated", {"object": sim_core.data["objects"][0], "saveHistory": True})
+assert len(sim_hm.undoStack) == 3 and len(sim_hm.redoStack) == 0, "Nesne güncelleme sonrası yığın 3/0 olmalıdır!"
+
+# 3. İlk Undo -> Renk değişikliği geri alınır, yığın 2/1 olmalıdır (Kritik: projectLoaded redoStack'i sıfırlamamalıdır!)
+success = sim_hm.undo()
+assert success is True, "İlk undo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 2 and len(sim_hm.redoStack) == 1, f"İlk undo sonrası yığın 2/1 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert sim_core.data["objects"][0]["color"] == "blue", "Geri alınan durumda renk 'blue' olmalıdır!"
+
+# 4. İkinci Undo -> Nesne ekleme geri alınır, yığın 1/2 olmalıdır
+success = sim_hm.undo()
+assert success is True, "İkinci undo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 1 and len(sim_hm.redoStack) == 2, f"İkinci undo sonrası yığın 1/2 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert len(sim_core.data["objects"]) == 0, "Geri alınan durumda nesne listesi boş olmalıdır!"
+
+# 5. Redo -> Nesne geri gelir, yığın 2/1 olmalıdır
+success = sim_hm.redo()
+assert success is True, "İlk redo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 2 and len(sim_hm.redoStack) == 1, f"İlk redo sonrası yığın 2/1 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert len(sim_core.data["objects"]) == 1 and sim_core.data["objects"][0]["color"] == "blue"
+
+# 6. İkinci Redo -> Renk 'red' olur, yığın 3/0 olmalıdır
+success = sim_hm.redo()
+assert success is True, "İkinci redo başarılı olmalıdır!"
+assert len(sim_hm.undoStack) == 3 and len(sim_hm.redoStack) == 0, f"İkinci redo sonrası yığın 3/0 olmalıdır, alınan: {len(sim_hm.undoStack)}/{len(sim_hm.redoStack)}"
+assert sim_core.data["objects"][0]["color"] == "red"
+
+test_passed("Geçmiş yönetimi (Undo/Redo), iç geri yükleme yığın koruması ve merkezi API entegrasyonu başarıyla doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

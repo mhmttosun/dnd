@@ -971,7 +971,8 @@ class MiniToolbar {
         const style = btn.getAttribute('data-line-style');
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -979,7 +980,8 @@ class MiniToolbar {
     // Çizgi Kalınlığı Hızlı Seçim Butonları
     const updateLineWidth = (newWidth) => {
       const clamped = Math.max(1, Math.min(24, Math.round(newWidth)));
-      getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderWidth: clamped }));
+      const targets = getTargets();
+      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderWidth: clamped }, i === targets.length - 1));
       const tabValEl = this.root.getElementById('mt-tab-width-val');
       if (tabValEl) tabValEl.textContent = `${clamped}`;
       this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
@@ -999,7 +1001,8 @@ class MiniToolbar {
 
     // Çizgi Rengi Seçimi (Palet Swatchları)
     const updateLineColor = (hex) => {
-      getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderColor: hex }));
+      const targets = getTargets();
+      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderColor: hex }, i === targets.length - 1));
       const swatchEl = this.root.getElementById('mt-tab-color-swatch');
       if (swatchEl) swatchEl.style.backgroundColor = hex;
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
@@ -1024,7 +1027,8 @@ class MiniToolbar {
         const rot = align === 'horizontal' ? 0 : 90;
         this.toolbarEl.querySelectorAll('[data-line-align]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { rotation: rot }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { rotation: rot }, i === targets.length - 1));
         syncAppearanceControls();
         this.selectionManager.updateSelectionBox();
       };
@@ -1052,7 +1056,8 @@ class MiniToolbar {
         }
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }, i === targets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -1068,7 +1073,8 @@ class MiniToolbar {
         });
         btn.classList.add('active');
         btn.setAttribute('aria-checked', 'true');
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { role }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { role }, i === targets.length - 1));
       };
     });
 
@@ -1079,7 +1085,8 @@ class MiniToolbar {
         const style = btn.getAttribute('data-border-style');
         this.toolbarEl.querySelectorAll('[data-border-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -1098,7 +1105,8 @@ class MiniToolbar {
         const currentVal = primary[prop] !== undefined ? primary[prop] : (prop === 'borderRadius' ? 8 : 2);
         const newVal = Math.max(minVal, Math.min(maxVal, currentVal + (dir * step)));
 
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { [prop]: newVal }));
+        const targets = getTargets();
+        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { [prop]: newVal }, i === targets.length - 1));
 
         const valEl = this.toolbarEl.querySelector(`#mt-val-${prop}`);
         if (valEl) {
@@ -1115,12 +1123,13 @@ class MiniToolbar {
         e.stopPropagation();
         const color = btn.getAttribute('data-style-color');
         const prop = btn.getAttribute('data-style-color-prop');
-        getTargets().forEach(object => {
+        const targets = getTargets();
+        targets.forEach((object, i) => {
           const changes = { [prop]: color };
           if (prop === 'borderColor') {
             changes.borderStyle = color === 'transparent' ? 'none' : (object.borderStyle === 'none' ? 'solid' : object.borderStyle || 'solid');
           }
-          this.objectManager.updateObject(object.id, changes);
+          this.objectManager.updateObject(object.id, changes, i === targets.length - 1);
         });
         this.toolbarEl.querySelectorAll(`[data-style-color-prop="${prop}"]`).forEach(button => {
           button.classList.toggle('is-active', button.getAttribute('data-style-color') === color);
@@ -1166,20 +1175,20 @@ class MiniToolbar {
           const isBold = textPrimary.fontWeight === 'bold' || textPrimary.fontWeight === '700' || textPrimary.fontWeight === '800';
           const newWeight = isBold ? 'normal' : '700';
           btn.classList.toggle('active', newWeight === '700');
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontWeight: newWeight }));
+          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontWeight: newWeight }, i === tTargets.length - 1));
         } else if (act === 'italic') {
           const isItalic = textPrimary.fontStyle === 'italic';
           const newStyle = isItalic ? 'normal' : 'italic';
           btn.classList.toggle('active', newStyle === 'italic');
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontStyle: newStyle }));
+          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontStyle: newStyle }, i === tTargets.length - 1));
         } else if (act === 'underline') {
           const isUnderline = textPrimary.textDecoration === 'underline';
           const newDecor = isUnderline ? 'none' : 'underline';
           btn.classList.toggle('active', newDecor === 'underline');
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { textDecoration: newDecor }));
+          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textDecoration: newDecor }, i === tTargets.length - 1));
         } else if (act === 'size-up' || act === 'size-down') {
           const delta = act === 'size-up' ? 2 : -2;
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + delta) }));
+          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + delta) }, i === tTargets.length - 1));
           const newSize = textPrimary.fontSize || 16;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
@@ -1201,7 +1210,8 @@ class MiniToolbar {
         });
         btn.classList.add('is-active-swatch');
         btn.innerHTML = '<span class="swatch-check">✓</span>';
-        getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { textColor: c }));
+        const tTargets = getTextTargets();
+        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textColor: c }, i === tTargets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -1213,7 +1223,8 @@ class MiniToolbar {
         const align = btn.getAttribute('data-align-h');
         this.toolbarEl.querySelectorAll('[data-align-h]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { textAlign: align }));
+        const tTargets = getTextTargets();
+        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textAlign: align }, i === tTargets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -1225,7 +1236,8 @@ class MiniToolbar {
         const vAlign = btn.getAttribute('data-align-v');
         this.toolbarEl.querySelectorAll('[data-align-v]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { verticalAlign: vAlign }));
+        const tTargets = getTextTargets();
+        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { verticalAlign: vAlign }, i === tTargets.length - 1));
         syncAppearanceControls();
       };
     });
@@ -1238,22 +1250,22 @@ class MiniToolbar {
         const targets = getTargets();
         if (act === 'forward') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringForward(o.id));
+          sorted.forEach(o => this.layerManager.bringForward(o.id, false));
           this.selectionManager.updateSelectionBox();
           this.core.pushHistoryState('Katmanı Öne Al');
         } else if (act === 'front') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringToFront(o.id));
+          sorted.forEach(o => this.layerManager.bringToFront(o.id, false));
           this.selectionManager.updateSelectionBox();
           this.core.pushHistoryState('Katmanı En Öne Al');
         } else if (act === 'backward') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendBackward(o.id));
+          sorted.forEach(o => this.layerManager.sendBackward(o.id, false));
           this.selectionManager.updateSelectionBox();
           this.core.pushHistoryState('Katmanı Arkaya Al');
         } else if (act === 'back') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendToBack(o.id));
+          sorted.forEach(o => this.layerManager.sendToBack(o.id, false));
           this.selectionManager.updateSelectionBox();
           this.core.pushHistoryState('Katmanı En Arkaya Al');
         } else if (act === 'toggle-lock') {
@@ -1273,7 +1285,7 @@ class MiniToolbar {
           if (labelSpan) {
             labelSpan.textContent = newLocked ? 'Kilidi Aç' : 'Kilit';
           }
-          targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }));
+          targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }, false));
           this.selectionManager.updateSelectionBox();
           this.core.pushHistoryState(newLocked ? 'Nesneyi Kilitle' : 'Kilidi Aç');
         }
@@ -1392,7 +1404,7 @@ class MiniToolbar {
       units.forEach(u => {
         const deltaX = Math.round(curX) - u.minX;
         u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) });
+          this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false);
         });
         curX += u.width + gap;
       });
@@ -1409,7 +1421,7 @@ class MiniToolbar {
       units.forEach(u => {
         const deltaY = Math.round(curY) - u.minY;
         u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) });
+          this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false);
         });
         curY += u.height + gap;
       });
@@ -1436,9 +1448,12 @@ class MiniToolbar {
       if (newX + targetWidth > stageW) {
         newX = Math.max(0, stageW - targetWidth);
       }
-      this.objectManager.updateObject(o.id, { width: targetWidth, x: newX });
+      this.objectManager.updateObject(o.id, { width: targetWidth, x: newX }, false);
     });
 
+    if (this.core && this.core.pushHistoryState) {
+      this.core.pushHistoryState('Genişlikleri Eşitle');
+    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -1476,7 +1491,7 @@ class MiniToolbar {
         this.objectManager.updateObject(o.id, {
           x: Math.round(o.x + deltaX),
           y: Math.round(o.y + deltaY)
-        });
+        }, false);
       });
     } else {
       // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
@@ -1484,37 +1499,37 @@ class MiniToolbar {
         const minX = Math.min(...units.map(u => u.minX));
         units.forEach(u => {
           const deltaX = minX - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
         });
       } else if (direction === 'right') {
         const maxR = Math.max(...units.map(u => u.maxX));
         units.forEach(u => {
           const deltaX = (maxR - u.width) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
         });
       } else if (direction === 'center') {
         const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
         units.forEach(u => {
           const deltaX = Math.round(avgX - u.width / 2) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
         });
       } else if (direction === 'top') {
         const minY = Math.min(...units.map(u => u.minY));
         units.forEach(u => {
           const deltaY = minY - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
         });
       } else if (direction === 'bottom') {
         const maxB = Math.max(...units.map(u => u.maxY));
         units.forEach(u => {
           const deltaY = (maxB - u.height) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
         });
       } else if (direction === 'middle') {
         const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
         units.forEach(u => {
           const deltaY = Math.round(avgY - u.height / 2) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }));
+          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
         });
       }
     }

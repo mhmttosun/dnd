@@ -22,7 +22,7 @@ class ObjectManager {
   }
 
   // Yeni nesne oluşturma ve varsayılan özellikler
-  createObject(type, role = 'decorative', extra = {}) {
+  createObject(type, role = 'decorative', extra = {}, saveHistory = true) {
     const id = this.generateId(role === 'draggable' ? 'drag' : (['target', 'category', 'sequence_slot'].includes(role) ? 'target' : 'obj'));
     const maxZ = this.getMaxZIndex() + 1;
 
@@ -160,7 +160,7 @@ class ObjectManager {
     this.core.data.objects.push(finalObj);
     this.renderObjectDOM(finalObj);
 
-    this.core.emit('objectAdded', { object: finalObj });
+    this.core.emit('objectAdded', { object: finalObj, saveHistory });
     this.core.emit('dataChanged', { source: 'createObject' });
     this.core.autoSave();
 
@@ -219,7 +219,7 @@ class ObjectManager {
     return obj;
   }
 
-  deleteObject(id) {
+  deleteObject(id, saveHistory = true) {
     const idx = this.core.data.objects.findIndex(o => o.id === id);
     if (idx === -1) return;
 
@@ -238,12 +238,12 @@ class ObjectManager {
       }
     }
 
-    this.core.emit('objectDeleted', { object: removed });
+    this.core.emit('objectDeleted', { object: removed, saveHistory });
     this.core.emit('dataChanged', { source: 'deleteObject' });
     this.core.autoSave();
   }
 
-  duplicateObject(id) {
+  duplicateObject(id, saveHistory = true) {
     const src = this.getObject(id);
     if (!src) return null;
 
@@ -254,7 +254,7 @@ class ObjectManager {
     copyProps.y = Math.min(this.core.data.stage.height - (src.height || 60), src.y + 25);
     copyProps.zIndex = this.getMaxZIndex() + 1;
 
-    const newObj = this.createObject(src.type, src.role, copyProps);
+    const newObj = this.createObject(src.type, src.role, copyProps, saveHistory);
     return newObj;
   }
 

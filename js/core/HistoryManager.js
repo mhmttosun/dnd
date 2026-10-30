@@ -5,6 +5,12 @@
 class HistoryManager {
   constructor(core, maxHistory = 40, options = {}) {
     this.core = core;
+    if (this.core) {
+      this.core.historyManager = this;
+      if (typeof this.core.setHistoryManager === 'function') {
+        this.core.setHistoryManager(this);
+      }
+    }
     this.maxHistory = maxHistory;
     this.undoStack = [];
     this.redoStack = [];
@@ -12,12 +18,62 @@ class HistoryManager {
     this.signal = options.signal;
 
     this.init();
+
+    // Çekirdekte mevcut bir proje verisi varsa başlangıç taban durumunu kaydet
+    if (this.core && this.core.data) {
+      this.pushState('Başlangıç');
+    }
   }
 
   init() {
-    this.core.on('projectLoaded', () => {
+    // Dışarıdan yeni bir proje yüklendiğinde geçmiş sıfırlanır ve yeni başlangıç durumu kaydedilir;
+    // ancak iç geri yüklemelerde (undo/redo sırasında isApplying veya saveToHistory === false) geçmiş korunur!
+    this.core.on('projectLoaded', (payload) => {
+      if (this.isApplying) return;
+      if (payload && (payload.saveToHistory === false || payload.isHistoryRestore)) return;
       this.clear();
-      this.pushState(); // İlk durumu kaydet
+      this.pushState('Proje Yüklendi');
+    });
+
+    // Çekirdekten veya bileşenlerden gelen açık geçmiş kaydetme isteği
+    this.core.on('requestHistoryPush', (payload) => {
+      if (this.isApplying) return;
+      this.pushState(payload?.description || '');
+    });
+
+    // Nesne ekleme işlemi
+    this.core.on('objectAdded', (payload) => {
+      if (this.isApplying) return;
+      if (payload && payload.saveHistory === false) return;
+      this.pushState('Nesne Eklendi');
+    });
+
+    // Nesne silme işlemi
+    this.core.on('objectDeleted', (payload) => {
+      if (this.isApplying) return;
+      if (payload && payload.saveHistory === false) return;
+      this.pushState('Nesne Silindi');
+    });
+
+    // Nesne özelliği güncelleme (renk, rol, metin, boyut vb.)
+    this.core.on('objectUpdated', (payload) => {
+      if (this.isApplying) return;
+      if (payload && payload.saveHistory === false) return;
+      this.pushState('Nesne Güncellendi');
+    });
+
+    // Katman sırası değişimi
+    this.core.on('layerChanged', (payload) => {
+      if (this.isApplying) return;
+      if (payload && payload.saveHistory === false) return;
+      this.pushState('Katman Değiştirildi');
+    });
+
+    // Cevap anahtarı eşleşme değişimi
+    this.core.on('answerKeyChanged', (payload) => {
+      if (this.isApplying) return;
+      if (payload && payload.saveHistory === false) return;
+      this.pushState('Cevap Anahtarı Güncellendi');
     });
 
     // Klavye kısayolları: Ctrl+Z / Ctrl+Y
@@ -50,7 +106,11 @@ class HistoryManager {
     }, this.signal ? { signal: this.signal } : undefined);
   }
 
-  pushState() {
+  push(description = '') {
+    return this.pushState(description);
+  }
+
+  pushState(description = '') {
     if (this.isApplying) return;
 
     const snapshot = JSON.stringify(this.core.data);
@@ -68,7 +128,7 @@ class HistoryManager {
     // Yeni işlem yapıldığında Redo yığını sıfırlanır
     this.redoStack = [];
 
-    this.notifyState();
+    this.notifyState(description);
   }
 
   undo() {
@@ -81,10 +141,10 @@ class HistoryManager {
 
       const prevState = this.undoStack[this.undoStack.length - 1];
       const parsed = JSON.parse(prevState);
-      this.core.loadProject(parsed, false);
+      this.core.loadProject(parsed, { saveToHistory: false, isHistoryRestore: true });
     } finally {
       this.isApplying = false;
-      this.notifyState();
+      this.notifyState('Geri Alındı');
     }
   }
 
@@ -97,10 +157,10 @@ class HistoryManager {
       this.undoStack.push(nextState);
 
       const parsed = JSON.parse(nextState);
-      this.core.loadProject(parsed, false);
+      this.core.loadProject(parsed, { saveToHistory: false, isHistoryRestore: true });
     } finally {
       this.isApplying = false;
-      this.notifyState();
+      this.notifyState('İleri Alındı');
     }
   }
 
@@ -115,13 +175,16 @@ class HistoryManager {
   clear() {
     this.undoStack = [];
     this.redoStack = [];
-    this.notifyState();
+    this.notifyState('Geçmiş Sıfırlandı');
   }
 
-  notifyState() {
+  notifyState(action = '') {
     this.core.emit('historyChanged', {
       canUndo: this.canUndo(),
-      canRedo: this.canRedo()
+      canRedo: this.canRedo(),
+      undoCount: Math.max(0, this.undoStack.length - 1),
+      redoCount: this.redoStack.length,
+      action
     });
   }
 }

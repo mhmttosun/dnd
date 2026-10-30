@@ -249,12 +249,19 @@ class SelectionManager {
 
   deleteSelected() {
     const ids = Array.from(this.selectedIds);
+    if (ids.length === 0) return;
     this.clearSelection();
-    ids.forEach(id => this.objectManager.deleteObject(id));
+    if (ids.length === 1) {
+      this.objectManager.deleteObject(ids[0], true);
+    } else {
+      ids.forEach(id => this.objectManager.deleteObject(id, false));
+      this.core.pushHistoryState('Seçili Nesneleri Sil');
+    }
   }
 
   duplicateSelected() {
     const ids = Array.from(this.selectedIds);
+    if (ids.length === 0) return;
     this.clearSelection();
     const groupMap = new Map();
     const newIds = [];
@@ -267,7 +274,7 @@ class SelectionManager {
         }
         targetGroupId = groupMap.get(src.groupId);
       }
-      const dup = this.objectManager.duplicateObject(id);
+      const dup = this.objectManager.duplicateObject(id, false);
       if (dup) {
         if (targetGroupId !== undefined) {
           this.objectManager.updateObject(dup.id, { groupId: targetGroupId }, false);
@@ -276,6 +283,7 @@ class SelectionManager {
       }
     });
     newIds.forEach(id => this.select(id, true));
+    this.core.pushHistoryState('Seçili Nesneleri Çoğalt');
   }
 
   copy() {
@@ -299,20 +307,23 @@ class SelectionManager {
         }
         copyProps.groupId = groupMap.get(item.groupId);
       }
-      const newObj = this.objectManager.createObject(item.type, item.role, copyProps);
+      const newObj = this.objectManager.createObject(item.type, item.role, copyProps, false);
       if (newObj) newIds.push(newObj.id);
     });
     newIds.forEach(id => this.select(id, true));
+    this.core.pushHistoryState('Yapıştır');
   }
 
   nudgeSelected(dx, dy) {
-    this.getSelectedObjects().forEach(obj => {
-      if (obj.locked) return;
+    const targets = this.getSelectedObjects().filter(obj => !obj.locked);
+    if (targets.length === 0) return;
+    targets.forEach(obj => {
       this.objectManager.updateObject(obj.id, {
         x: Math.max(0, Math.min(this.core.data.stage.width - obj.width, obj.x + dx)),
         y: Math.max(0, Math.min(this.core.data.stage.height - obj.height, obj.y + dy))
-      }, true);
+      }, false);
     });
+    this.core.pushHistoryState('Nesneleri Kaydır');
     this.updateSelectionBox();
   }
 
