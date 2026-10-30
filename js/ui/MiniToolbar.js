@@ -564,7 +564,6 @@ class MiniToolbar {
                 <svg width="28" height="12" viewBox="0 0 28 12"><line x1="2" y1="6" x2="26" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="1 5" stroke-linecap="round"/></svg>
               </button>
             </div>
-            <div class="mt-line-panel-desc" id="mt-line-desc-type">${bStyle === 'dashed' ? 'Kesikli çizgi' : (bStyle === 'dotted' ? 'Noktalı çizgi' : 'Düz çizgi')}</div>
           </div>
 
           <!-- Panel 2: Kalınlık -->
@@ -584,7 +583,6 @@ class MiniToolbar {
                 <button type="button" class="mt-line-chip-btn ${bWidth === w ? 'active' : ''}" data-line-width-preset="${w}">${w}</button>
               `).join('')}
             </div>
-            <div class="mt-line-panel-desc" id="mt-line-desc-width">${bWidth <= 2 ? 'İnce çizgi' : (bWidth <= 4 ? 'Orta kalınlık' : 'Kalın çizgi')} (${bWidth}px)</div>
           </div>
 
           <!-- Panel 3: Renk -->
@@ -595,14 +593,6 @@ class MiniToolbar {
                 <button type="button" class="mt-line-color-swatch ${bColor.toLowerCase() === c.toLowerCase() ? 'is-active' : ''}" data-line-color="${c}" style="background-color: ${c};" title="${c}"></button>
               `).join('')}
             </div>
-            <div class="mt-line-color-custom-row">
-              <label class="mt-line-color-custom-btn" title="Özel Renk Seç">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10c0 2-2 3-3 3h-1a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-1"/></svg>
-                <span>Özel Renk Seç</span>
-                <input type="color" class="mt-line-color-picker-input" value="${bColor.startsWith('#') && bColor.length === 7 ? bColor : '#1e293b'}">
-              </label>
-            </div>
-            <div class="mt-line-panel-desc" id="mt-line-desc-color">Renk: ${bColor}</div>
           </div>
 
           <!-- Panel 4: Ok uçları -->
@@ -626,7 +616,6 @@ class MiniToolbar {
                 <span>Çift yön</span>
               </button>
             </div>
-            <div class="mt-line-panel-desc" id="mt-line-desc-arrow">${arrowMode === 'both' ? 'Çift yönlü ok' : (arrowMode === 'start' ? 'Başlangıç oku' : (arrowMode === 'end' ? 'Bitiş oku' : 'Uçsuz düz çizgi'))}</div>
           </div>
 
           <!-- Panel 5: Hizalama -->
@@ -642,7 +631,6 @@ class MiniToolbar {
                 <span>Dikey</span>
               </button>
             </div>
-            <div class="mt-line-panel-desc" id="mt-line-desc-align">${isHoriz ? 'Yatay çizgi (0°)' : (isVert ? 'Dikey çizgi (90°)' : `Açılı çizgi (${normalizedRot}°)`)}</div>
           </div>
         </div>
       `;
@@ -987,10 +975,6 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
-        const descEl = this.root.getElementById('mt-line-desc-type');
-        if (descEl) {
-          descEl.textContent = style === 'dashed' ? 'Kesikli çizgi' : (style === 'dotted' ? 'Noktalı çizgi' : 'Düz çizgi');
-        }
       };
     });
 
@@ -1002,11 +986,6 @@ class MiniToolbar {
       if (valEl) valEl.textContent = `${clamped} px`;
       const tabValEl = this.root.getElementById('mt-tab-width-val');
       if (tabValEl) tabValEl.textContent = `${clamped}`;
-      const descEl = this.root.getElementById('mt-line-desc-width');
-      if (descEl) {
-        const desc = clamped <= 2 ? 'İnce çizgi' : (clamped <= 4 ? 'Orta kalınlık' : 'Kalın çizgi');
-        descEl.textContent = `${desc} (${clamped}px)`;
-      }
       this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
         const pVal = parseInt(b.getAttribute('data-line-width-preset'), 10);
         b.classList.toggle('active', pVal === clamped);
@@ -1031,13 +1010,11 @@ class MiniToolbar {
       };
     });
 
-    // Çizgi Rengi Seçimi (Palet ve Özel Renk Seçici)
+    // Çizgi Rengi Seçimi (Palet Swatchları)
     const updateLineColor = (hex) => {
       getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderColor: hex }));
       const swatchEl = this.root.getElementById('mt-tab-color-swatch');
       if (swatchEl) swatchEl.style.backgroundColor = hex;
-      const descEl = this.root.getElementById('mt-line-desc-color');
-      if (descEl) descEl.textContent = `Renk: ${hex}`;
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
         b.classList.toggle('is-active', (b.getAttribute('data-line-color') || '').toLowerCase() === hex.toLowerCase());
       });
@@ -1051,14 +1028,6 @@ class MiniToolbar {
       };
     });
 
-    const lineColorPicker = this.toolbarEl.querySelector('.mt-line-color-picker-input');
-    if (lineColorPicker) {
-      lineColorPicker.oninput = (e) => {
-        e.stopPropagation();
-        updateLineColor(e.target.value);
-      };
-    }
-
     // Çizgi Hizalama (Yatay Yap / Dikey Yap)
     this.toolbarEl.querySelectorAll('[data-line-align]').forEach(btn => {
       btn.onclick = (e) => {
@@ -1069,10 +1038,6 @@ class MiniToolbar {
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { rotation: rot }));
         this.selectionManager.updateSelectionBox();
-        const descEl = this.root.getElementById('mt-line-desc-align');
-        if (descEl) {
-          descEl.textContent = align === 'horizontal' ? 'Yatay çizgi (0°)' : 'Dikey çizgi (90°)';
-        }
       };
     });
 
@@ -1099,10 +1064,6 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }));
-        const descEl = this.root.getElementById('mt-line-desc-arrow');
-        if (descEl) {
-          descEl.textContent = arrowType === 'both' ? 'Çift yönlü ok' : (arrowType === 'start' ? 'Başlangıç oku' : (arrowType === 'end' ? 'Bitiş oku' : 'Uçsuz düz çizgi'));
-        }
       };
     });
 

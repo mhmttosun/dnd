@@ -830,42 +830,6 @@
   transform: scale(1.05);
 }
 
-.mt-line-color-custom-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 2px;
-}
-
-.mt-line-color-custom-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  height: 28px;
-  padding: 0 8px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #475569;
-  position: relative;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.mt-line-color-picker-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
 /* Ok Uçları Butonları */
 .mt-line-arrow-grid {
   display: grid;
