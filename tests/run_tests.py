@@ -867,6 +867,23 @@ assert "['rectangle', 'circle', 'image'].includes(obj.type)" in ui_img_code, "UI
 
 test_passed("Görsel, kutu ve daire nesnelerinin sahneye eklendiğinde varsayılan olarak metinsiz gelmesi ve çift tıklama ile metin ekleme mantığı doğrulandı.")
 
+# 5.28 Metin Kutusu (Text Box) Özgün Görünümü ve Şekillerden Ayrıştırılması Testi
+print("\n[Aşama 5.28] Metin Kutusu (Text Box) Özgün Görünümü ve Şekillerden Ayrıştırılması Testi")
+with open(os.path.join(BASE_DIR, 'js/core/ObjectManager.js'), 'r', encoding='utf-8') as f:
+    om_text_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/ui/UIManager.js'), 'r', encoding='utf-8') as f:
+    ui_text_code = f.read()
+with open(os.path.join(BASE_DIR, 'css/stage.css'), 'r', encoding='utf-8') as f:
+    stage_text_css = f.read()
+
+assert "} else if (type === 'text')" in om_text_code, "ObjectManager createObject içinde type === 'text' dalı bulunmalıdır!"
+assert "baseObj.backgroundColor = 'transparent';" in om_text_code, "Metin kutusu varsayılan olarak şeffaf arka plana sahip olmalıdır!"
+assert "baseObj.borderWidth = 0;" in om_text_code, "Metin kutusu varsayılan olarak kenarlıksız (0px) olmalıdır!"
+assert "backgroundColor: 'transparent'" in ui_text_code and "borderWidth: 0" in ui_text_code, "UIManager metin kutusu eklerken şeffaf ve kenarlıksız oluşturmalıdır!"
+assert '.stage-object[data-type="text"][data-role="decorative"]:hover' in stage_text_css, "Tasarım modunda metin kutusu üzerine gelindiğinde ayırt edici hover efekti bulunmalıdır!"
+
+test_passed("Metin kutusunun normal kutulardan (şekillerden) ayırt edilerek şeffaf arka plan, kenarlıksız gövde ve hover kılavuzu ile sunulduğu doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

@@ -178,17 +178,20 @@ class UIManager {
     if (btnAddText) {
       btnAddText.onclick = () => {
         const obj = this.objectManager.createObject('text', 'decorative', {
-          text: 'Yeni Metin',
+          text: 'Metin yazın',
           x: 450,
           y: 280,
           width: 220,
-          height: 54,
-          fontSize: 16,
+          height: 48,
+          fontSize: 18,
           fontWeight: '600',
-          backgroundColor: '#ffffff',
-          borderColor: '#3b82f6',
-          borderWidth: 2,
-          borderRadius: 12
+          textColor: '#1e293b',
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+          borderWidth: 0,
+          borderRadius: 4,
+          boxShadow: 'none',
+          padding: 4
         });
         this.selectionManager.select(obj.id);
       };

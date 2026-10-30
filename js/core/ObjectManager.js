@@ -140,6 +140,19 @@ class ObjectManager {
       baseObj.borderWidth = 0;
       baseObj.boxShadow = 'none';
       baseObj.text = '';
+    } else if (type === 'text') {
+      baseObj.width = 220;
+      baseObj.height = 48;
+      baseObj.backgroundColor = 'transparent';
+      baseObj.borderColor = 'transparent';
+      baseObj.borderWidth = 0;
+      baseObj.boxShadow = 'none';
+      baseObj.borderRadius = 4;
+      baseObj.padding = 4;
+      baseObj.text = 'Metin yazın';
+      baseObj.fontSize = 18;
+      baseObj.fontWeight = '600';
+      baseObj.textColor = '#1e293b';
     }
 
     const finalObj = Object.assign({}, baseObj, extra);

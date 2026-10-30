@@ -81,6 +81,16 @@
   display: none !important;
 }
 
+/* Metin Kutusu Nesnesi Stilleri (Tasarım Modunda Ayırt Edilebilirlik) */
+.stage-object[data-type="text"][data-role="decorative"] {
+  transition: outline 0.15s ease;
+}
+
+.stage-object[data-type="text"][data-role="decorative"]:hover {
+  outline: 1px dashed rgba(59, 130, 246, 0.45);
+  outline-offset: 2px;
+}
+
 /* Çizgi Nesnesi Stilleri */
 .stage-object[data-type="line"] {
   background-color: transparent !important;
