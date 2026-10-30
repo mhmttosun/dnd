@@ -17,7 +17,6 @@ class MiniToolbar {
     this.activePopup = null; // 'role' | 'style' | 'text' | 'layers' | 'align' | null
     this.activeStyleTab = 'fill'; // 'fill' | 'border' | 'width' | 'borderColor' | 'radius'
     this.activeTextTab = 'font'; // 'font' | 'align' | 'color'
-    this.showTextColorPalette = false; // Metin popup'ında tanımlı renkler paletinin açık olup olmadığı
     this.activeLineTab = 'type'; // Çizgi popup'ında aktif olan sekme ('type', 'width', 'color', 'arrows', 'align')
     this.isNewlyOpened = false;
     this.currentPlacementAbove = false;
@@ -148,7 +147,6 @@ class MiniToolbar {
 
   handleAction(action, btn) {
     const selectedObjs = this.selectionManager.getSelectedObjects();
-    const primary = this.selectionManager.getPrimarySelected();
     if (selectedObjs.length === 0) return;
 
     if (action === 'toggle-line-popup') {
@@ -164,20 +162,6 @@ class MiniToolbar {
       this.togglePopup('layers');
     } else if (action === 'toggle-align-popup') {
       this.togglePopup('align');
-    } else if (action === 'toggle-text-palette') {
-      this.activeTextTab = 'color';
-      this.showTextColorPalette = true;
-      this.toolbarEl.querySelectorAll('[data-text-tab]').forEach(button => {
-        button.classList.toggle('active', button.getAttribute('data-text-tab') === 'color');
-      });
-      this.toolbarEl.querySelectorAll('[data-text-panel]').forEach(panel => {
-        panel.style.display = panel.getAttribute('data-text-panel') === 'color' ? 'flex' : 'none';
-      });
-      this.reposition();
-    } else if (action === 'start-inline-edit') {
-      if (primary) {
-        this.core.emit('requestInlineTextEdit', { objectId: primary.id });
-      }
     } else if (action === 'toggle-group') {
       const selected = this.selectionManager.getSelectedObjects();
       const hasGroup = selected.some(o => o.groupId);
@@ -200,14 +184,10 @@ class MiniToolbar {
   togglePopup(popupName) {
     if (this.activePopup === popupName) {
       this.activePopup = null;
-      this.showTextColorPalette = false;
       this.isNewlyOpened = false;
     } else {
       this.activePopup = popupName;
       this.isNewlyOpened = true;
-      if (popupName !== 'text') {
-        this.showTextColorPalette = false;
-      }
     }
     this.render();
     if (this.isNewlyOpened) {
@@ -222,7 +202,6 @@ class MiniToolbar {
   closePopup() {
     if (this.activePopup) {
       this.activePopup = null;
-      this.showTextColorPalette = false;
       this.isNewlyOpened = false;
       this.render();
     }
@@ -251,7 +230,6 @@ class MiniToolbar {
     if (!this.toolbarEl) return;
     this.toolbarEl.style.display = 'none';
     this.activePopup = null;
-    this.showTextColorPalette = false;
     this.isNewlyOpened = false;
     this.linePopupClosedByUser = false;
   }
@@ -709,13 +687,14 @@ class MiniToolbar {
     }
 
     if (this.activePopup === 'text') {
-      const isBold = primary.fontWeight === 'bold' || primary.fontWeight === '700' || primary.fontWeight === '800';
-      const isItalic = primary.fontStyle === 'italic';
-      const isUnderline = primary.textDecoration === 'underline';
-      const fSize = primary.fontSize || 16;
-      const tColor = primary.textColor || '#1e293b';
-      const hAlign = primary.textAlign || 'center';
-      const vAlign = primary.verticalAlign || 'middle';
+      const textPrimary = this.selectionManager.getSelectedObjects().find(object => object.type !== 'line') || primary;
+      const isBold = textPrimary.fontWeight === 'bold' || textPrimary.fontWeight === '700' || textPrimary.fontWeight === '800';
+      const isItalic = textPrimary.fontStyle === 'italic';
+      const isUnderline = textPrimary.textDecoration === 'underline';
+      const fSize = textPrimary.fontSize || 16;
+      const tColor = textPrimary.textColor || '#1e293b';
+      const hAlign = textPrimary.textAlign || 'center';
+      const vAlign = textPrimary.verticalAlign || 'middle';
       const tab = this.activeTextTab || 'font';
 
       const textColors = [
@@ -733,7 +712,7 @@ class MiniToolbar {
           <!-- Üst Menü / 3 Sekme Çubuğu -->
           <div class="mt-text-tabs-bar" role="group" aria-label="Metin ayarları">
             <!-- 1. Biçimlendirme ve Font Sekmesi -->
-            <button type="button" class="mt-text-tab-btn ${tab === 'font' ? 'active' : ''}" data-text-tab="font" title="Biçimlendirme ve Yazı Tipi">
+            <button type="button" class="mt-text-tab-btn ${tab === 'font' ? 'active' : ''}" data-text-tab="font" title="Biçim ve yazı boyutu">
               <span class="mt-text-tab-font-icon" style="font-weight: 700; font-size: 0.95rem; line-height: 1;">Aa</span>
             </button>
 
@@ -743,8 +722,8 @@ class MiniToolbar {
             </button>
 
             <!-- 3. Renk Sekmesi -->
-            <button type="button" class="mt-text-tab-btn mt-color-preview-btn ${tab === 'color' ? 'active' : ''}" data-text-tab="color" data-action="toggle-text-palette" title="Metin Rengi">
-              <span class="mt-text-tab-swatch mt-color-circle" id="mt-tab-text-color-swatch" style="background-color: ${tColor};"></span>
+            <button type="button" class="mt-text-tab-btn ${tab === 'color' ? 'active' : ''}" data-text-tab="color" title="Metin Rengi">
+              <span class="mt-text-tab-swatch" id="mt-tab-text-color-swatch" style="background-color: ${tColor};"></span>
             </button>
           </div>
 
@@ -752,16 +731,15 @@ class MiniToolbar {
 
           <!-- Panel 1: Biçimlendirme ve Font -->
           <div class="mt-text-panel" data-text-panel="font" style="display: ${tab === 'font' ? 'flex' : 'none'};">
-            <div class="mt-text-panel-title">Biçimlendirme ve font</div>
+            <div class="mt-text-panel-title">Biçim ve boyut</div>
 
-            <!-- B / I / U Butonları ve Düzenle Butonu -->
+            <!-- B / I / U Butonları -->
             <div class="mt-row mt-text-format-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
               <div class="mt-pill-group">
                 <button type="button" class="mt-format-btn ${isBold ? 'active' : ''}" data-text-action="bold" title="Kalın (Bold)"><strong>B</strong></button>
                 <button type="button" class="mt-format-btn ${isItalic ? 'active' : ''}" data-text-action="italic" title="İtalik (Italic)"><em>I</em></button>
                 <button type="button" class="mt-format-btn ${isUnderline ? 'active' : ''}" data-text-action="underline" title="Altı Çizili (Underline)"><u>U</u></button>
               </div>
-              <button type="button" class="mt-inline-edit-btn" data-action="start-inline-edit" title="Metni Yerinde Düzenle (veya çift tıklayın)">✏️ Düzenle</button>
             </div>
 
             <!-- Font Boyutu Stepper (+/-) -->
@@ -769,7 +747,7 @@ class MiniToolbar {
               <button type="button" class="mt-step-btn" data-text-action="size-down" title="Yazı boyutunu küçült">−</button>
               <div class="mt-style-step-value">
                 <span class="mt-step-val mt-size-val" id="mt-val-fontSize" aria-live="polite">${fSize}</span>
-                <span class="mt-step-unit mt-size-unit">pt</span>
+                <span class="mt-step-unit mt-size-unit">px</span>
               </div>
               <button type="button" class="mt-step-btn" data-text-action="size-up" title="Yazı boyutunu büyüt">+</button>
             </div>
@@ -777,7 +755,7 @@ class MiniToolbar {
             <!-- Hazır Boyut Seçenekleri -->
             <div class="mt-text-chips-row" role="group" aria-label="Hazır yazı boyutları">
               ${[12, 14, 16, 18, 24, 32].map(s => `
-                <button type="button" class="mt-text-chip-btn ${fSize === s ? 'active' : ''}" data-text-size-preset="${s}" title="${s} pt">
+                <button type="button" class="mt-text-chip-btn ${fSize === s ? 'active' : ''}" data-text-size-preset="${s}" title="${s} px">
                   ${s}
                 </button>
               `).join('')}
@@ -932,13 +910,14 @@ class MiniToolbar {
   bindPopupInteractions(primary) {
     if (!primary) return;
     const getTargets = () => this.selectionManager.getSelectedObjects();
-    const getTextTargets = () => getTargets().filter(o => o.type === 'text' || o.text !== undefined || o.role === 'category' || o.role === 'sequence_slot');
+    const getTextTargets = () => getTargets().filter(o => o.type !== 'line' && (o.type === 'text' || o.text !== undefined || o.role === 'category' || o.role === 'sequence_slot'));
+    const textPrimary = getTextTargets()[0] || primary;
 
     // İkonlu kontrollerin adı ve seçili durumu yardımcı teknolojilere de aktarılır.
     const syncAppearanceControls = () => {
       this.toolbarEl.querySelectorAll('.mt-line-popup button, .mt-style-popup button, .mt-text-popup button').forEach(button => {
-        if (!button.hasAttribute('data-step-prop')) {
-          button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active')));
+        if (!button.hasAttribute('data-step-prop') && !['size-up', 'size-down'].includes(button.getAttribute('data-text-action'))) {
+          button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active') || button.classList.contains('is-active-swatch')));
         }
         if (!button.hasAttribute('aria-label') && button.title) {
           button.setAttribute('aria-label', button.title);
@@ -1174,6 +1153,7 @@ class MiniToolbar {
         const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
         if (sizeVal) sizeVal.textContent = newSize;
         getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { fontSize: newSize }));
+        syncAppearanceControls();
       };
     });
 
@@ -1185,37 +1165,31 @@ class MiniToolbar {
         const tTargets = getTextTargets();
 
         if (act === 'bold') {
-          const isBold = primary.fontWeight === 'bold' || primary.fontWeight === '700' || primary.fontWeight === '800';
+          const isBold = textPrimary.fontWeight === 'bold' || textPrimary.fontWeight === '700' || textPrimary.fontWeight === '800';
           const newWeight = isBold ? 'normal' : '700';
           btn.classList.toggle('active', newWeight === '700');
           tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontWeight: newWeight }));
         } else if (act === 'italic') {
-          const isItalic = primary.fontStyle === 'italic';
+          const isItalic = textPrimary.fontStyle === 'italic';
           const newStyle = isItalic ? 'normal' : 'italic';
           btn.classList.toggle('active', newStyle === 'italic');
           tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontStyle: newStyle }));
         } else if (act === 'underline') {
-          const isUnderline = primary.textDecoration === 'underline';
+          const isUnderline = textPrimary.textDecoration === 'underline';
           const newDecor = isUnderline ? 'none' : 'underline';
           btn.classList.toggle('active', newDecor === 'underline');
           tTargets.forEach(o => this.objectManager.updateObject(o.id, { textDecoration: newDecor }));
-        } else if (act === 'size-up') {
-          const newSize = (primary.fontSize || 16) + 2;
+        } else if (act === 'size-up' || act === 'size-down') {
+          const delta = act === 'size-up' ? 2 : -2;
+          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + delta) }));
+          const newSize = textPrimary.fontSize || 16;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
           this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => {
             b.classList.toggle('active', parseInt(b.getAttribute('data-text-size-preset'), 10) === newSize);
           });
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + 2) }));
-        } else if (act === 'size-down') {
-          const newSize = Math.max(10, (primary.fontSize || 16) - 2);
-          const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
-          if (sizeVal) sizeVal.textContent = newSize;
-          this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => {
-            b.classList.toggle('active', parseInt(b.getAttribute('data-text-size-preset'), 10) === newSize);
-          });
-          tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) - 2) }));
         }
+        syncAppearanceControls();
       };
     });
 
@@ -1224,8 +1198,6 @@ class MiniToolbar {
       btn.onclick = (e) => {
         e.stopPropagation();
         const c = btn.getAttribute('data-text-color-val');
-        const previewCircle = this.toolbarEl.querySelector('.mt-color-circle');
-        if (previewCircle) previewCircle.style.backgroundColor = c;
         const tabSwatch = this.toolbarEl.querySelector('#mt-tab-text-color-swatch');
         if (tabSwatch) tabSwatch.style.backgroundColor = c;
         this.toolbarEl.querySelectorAll('[data-text-color-val]').forEach(b => {
@@ -1235,6 +1207,7 @@ class MiniToolbar {
         btn.classList.add('is-active-swatch');
         btn.innerHTML = '<span class="swatch-check">✓</span>';
         getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { textColor: c }));
+        syncAppearanceControls();
       };
     });
 
@@ -1246,6 +1219,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-h]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { textAlign: align }));
+        syncAppearanceControls();
       };
     });
 
@@ -1257,6 +1231,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-v]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { verticalAlign: vAlign }));
+        syncAppearanceControls();
       };
     });
 

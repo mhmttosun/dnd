@@ -277,11 +277,11 @@ test_passed("Mini araç çubuğunun ekran sınırlarını hesaplayıp uygun yön
 
 # 5.4 Metin Tanımlı Renkler Paleti Testi
 print("\n[Aşama 5.4] Metin Tanımlı Renkler Paleti Testi")
-assert 'toggle-text-palette' in mt_code and 'data-text-color-val' in mt_code, "Metin menüsünde tanımlı renkler paleti açma ve renk butonları eksik!"
-assert '.mt-color-preview-btn' in ed_css and '.mt-text-palette-section' in ed_css, "Metin renk paleti stilleri eksik!"
+assert 'data-text-tab="color"' in mt_code and 'data-text-color-val' in mt_code, "Metin menüsünde renk sekmesi ve renk butonları eksik!"
+assert '.mt-text-tab-swatch' in ed_css and '.mt-text-palette-section' in ed_css, "Metin renk paleti stilleri eksik!"
 assert 'mt-custom-color' not in mt_code, "Özel renk seçici metin renk panelinde bulunmamalıdır!"
 assert mt_code.find('mt-align-row') < mt_code.find('mt-text-palette-section'), "Tanımlı renkler bloku en altta ve Hizalama blokundan sonra yer almalıdır!"
-test_passed("Metin rengi tıklandığında nesne görünümündeki gibi tanımlı renk paletinin en altta açılması ve özel renk seçicinin kaldırıldığı doğrulandı.")
+test_passed("Metin rengi seçeneklerinin renk sekmesinde gösterildiği doğrulandı.")
 
 # 5.5 Metin Yatay ve Dikey Hizalama Testi
 print("\n[Aşama 5.5] Metin Yatay ve Dikey Hizalama Testi")
@@ -327,7 +327,7 @@ assert 'e.target.isContentEditable' in tf_inline_code, "TransformEngine metin d�
 assert 'requestInlineTextEdit' in sel_inline_code, "SelectionManager Enter tuşuna basıldığında yerinde düzenlemeyi başlatmalıdır!"
 assert '.stage-object.is-editing-text' in stage_inline_css, "stage.css içinde yerinde düzenleme stili eksik!"
 assert '.selection-box.is-editing-text' in stage_inline_css and 'pointer-events: none' in stage_inline_css, "Düzenleme sırasında seçim kutusu tıklamaları engellememelidir!"
-test_passed("Çift tıklama, Enter tuşu veya araç çubuğuyla tuval üzerinde yerinde metin düzenleme (Canva/Figma) yeteneği doğrulandı.")
+test_passed("Çift tıklama ve Enter tuşuyla yerinde metin düzenleme yeteneği doğrulandı.")
 
 # 5.8 Gerçek Gruplama ve Çoklu Özellik Uygulama Testi
 print("\n[Aşama 5.8] Gerçek Gruplama ve Çoklu Özellik Uygulama Testi")
@@ -912,6 +912,12 @@ with open(mini_toolbar_path, 'r', encoding='utf-8') as f:
 with open(editor_css_path, 'r', encoding='utf-8') as f:
     ed_text_css = f.read()
 
+text_start = mt_text_code.index("    if (this.activePopup === 'text') {", mt_text_code.index('  renderActivePopup('))
+text_end = mt_text_code.index("    if (this.activePopup === 'layers') {", text_start)
+text_popup = mt_text_code[text_start:text_end]
+assert text_popup.count('data-text-tab="') == 3, "Metin ayarları tam üç sekme içermelidir!"
+assert 'start-inline-edit' not in text_popup and 'Düzenle' not in text_popup, "Metin kartında Düzenle düğmesi bulunmamalıdır!"
+assert 'showTextColorPalette' not in mt_text_code, "Renk paleti sekme durumunu kullanmalıdır!"
 assert 'activeTextTab' in mt_text_code, "MiniToolbar içinde activeTextTab durumu tanımlı olmalıdır!"
 assert 'mt-text-tabs-bar' in mt_text_code, "Metin popup kartında 3 sekmeli üst çubuk (.mt-text-tabs-bar) bulunmalıdır!"
 assert 'data-text-tab="font"' in mt_text_code, "Metin menüsünde biçimlendirme ve font sekmesi tanımlı olmalıdır!"

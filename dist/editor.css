@@ -942,7 +942,8 @@
 }
 
 .mt-line-popup button:focus-visible,
-.mt-style-popup button:focus-visible {
+.mt-style-popup button:focus-visible,
+.mt-text-popup button:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
@@ -978,7 +979,10 @@
   .mt-line-popup.is-opening,
   .mt-style-popup,
   .mt-style-popup *,
-  .mt-style-popup.is-opening {
+  .mt-style-popup.is-opening,
+  .mt-text-popup,
+  .mt-text-popup *,
+  .mt-text-popup.is-opening {
     animation: none;
     transition: none;
   }
@@ -995,27 +999,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.mt-inline-edit-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 2px 7px;
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.mt-inline-edit-btn:hover {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
 }
 
 .mt-row {
@@ -1456,6 +1439,15 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
+.mt-text-format-row .mt-pill-group {
+  width: 100%;
+}
+
+.mt-text-format-row .mt-format-btn {
+  flex: 1;
+  min-height: 36px;
+}
+
 /* Metin Popup Sekmeleri, Stepper ve Hazır Boyut Çipleri */
 .mt-text-tab-font-icon {
   font-family: inherit;
@@ -1535,25 +1527,31 @@
   font-weight: 600;
 }
 
-.mt-inline-edit-btn {
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.15s ease;
-}
+@media (pointer: coarse) {
+  .mt-text-popup {
+    width: 280px;
+    min-width: 280px;
+  }
 
-.mt-inline-edit-btn:hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+  .mt-text-popup button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .mt-text-chips-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mt-text-popup .mt-color-palette {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mt-text-popup .mt-color-swatch {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 .mt-custom-color-swatch {
