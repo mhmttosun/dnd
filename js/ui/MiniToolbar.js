@@ -512,13 +512,14 @@ class MiniToolbar {
         '#f97316', '#f59e0b', '#10b981', '#06b6d4',
         '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'
       ];
+      const paletteNames = ['Koyu gri', 'Gri', 'Açık gri', 'Kırmızı', 'Turuncu', 'Sarı', 'Yeşil', 'Turkuaz', 'Mavi', 'İndigo', 'Mor', 'Pembe'];
 
       return `
         <div class="mt-popup-card mt-line-popup ${openClass}" id="mt-line-popup">
           <div class="mt-line-title">Çizgi</div>
 
           <!-- Üst Menü Sekmeleri -->
-          <div class="mt-line-tabs-bar">
+          <div class="mt-line-tabs-bar" role="group" aria-label="Çizgi ayarları">
             <!-- 1. Çizgi Tipi -->
             <button type="button" class="mt-line-tab-btn ${activeTab === 'type' ? 'active' : ''}" data-line-tab="type" title="Çizgi tipi">
               <svg width="20" height="12" viewBox="0 0 20 12"><line x1="2" y1="6" x2="18" y2="6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -542,9 +543,9 @@ class MiniToolbar {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="9 8 5 12 9 16"/><polyline points="15 8 19 12 15 16"/></svg>
             </button>
 
-            <!-- 5. Hizalama -->
-            <button type="button" class="mt-line-tab-btn ${activeTab === 'align' ? 'active' : ''}" data-line-tab="align" title="Hizalama">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><polyline points="8 4 4 7 8 10"/><line x1="20" y1="17" x2="4" y2="17"/><polyline points="16 14 20 17 16 20"/></svg>
+            <!-- 5. Yön -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'align' ? 'active' : ''}" data-line-tab="align" title="Çizgi yönü">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M6 6v14M16 14l4 4-4 4M2 10l4-4 4 4"/></svg>
             </button>
           </div>
 
@@ -568,10 +569,13 @@ class MiniToolbar {
 
           <!-- Panel 2: Kalınlık -->
           <div class="mt-line-panel" data-panel="width" style="display: ${activeTab === 'width' ? 'flex' : 'none'};">
-            <div class="mt-line-panel-title">Çizgi kalınlığı</div>
+            <div class="mt-line-panel-title">Kalınlık <span class="mt-line-unit">px</span></div>
             <div class="mt-line-chips-row">
               ${[1, 2, 3, 4, 6, 8].map(w => `
-                <button type="button" class="mt-line-chip-btn ${bWidth === w ? 'active' : ''}" data-line-width-preset="${w}">${w}</button>
+                <button type="button" class="mt-line-chip-btn ${bWidth === w ? 'active' : ''}" data-line-width-preset="${w}" aria-label="${w} piksel">
+                  <span class="mt-line-width-sample" style="--line-width: ${w}px;" aria-hidden="true"></span>
+                  <span>${w}</span>
+                </button>
               `).join('')}
             </div>
           </div>
@@ -580,8 +584,10 @@ class MiniToolbar {
           <div class="mt-line-panel" data-panel="color" style="display: ${activeTab === 'color' ? 'flex' : 'none'};">
             <div class="mt-line-panel-title">Çizgi rengi</div>
             <div class="mt-line-color-grid">
-              ${paletteColors.map(c => `
-                <button type="button" class="mt-line-color-swatch ${bColor.toLowerCase() === c.toLowerCase() ? 'is-active' : ''}" data-line-color="${c}" style="background-color: ${c};" title="${c}"></button>
+              ${paletteColors.map((c, i) => `
+                <button type="button" class="mt-line-color-swatch ${bColor.toLowerCase() === c.toLowerCase() ? 'is-active' : ''}" data-line-color="${c}" style="--line-color: ${c}; --line-check-color: ${['#94a3b8', '#f59e0b', '#10b981', '#06b6d4'].includes(c) ? '#0f172a' : '#ffffff'};" title="${paletteNames[i]}" aria-label="${paletteNames[i]}">
+                  <span class="mt-line-color-dot" aria-hidden="true"><span class="mt-line-color-check">✓</span></span>
+                </button>
               `).join('')}
             </div>
           </div>
@@ -609,9 +615,9 @@ class MiniToolbar {
             </div>
           </div>
 
-          <!-- Panel 5: Hizalama -->
+          <!-- Panel 5: Yön -->
           <div class="mt-line-panel" data-panel="align" style="display: ${activeTab === 'align' ? 'flex' : 'none'};">
-            <div class="mt-line-panel-title">Hizalama</div>
+            <div class="mt-line-panel-title">Yön</div>
             <div class="mt-line-align-grid">
               <button type="button" class="mt-line-align-btn ${isHoriz ? 'active' : ''}" data-line-align="horizontal" title="Yatay Yap">
                 <svg width="18" height="14" viewBox="0 0 18 14"><line x1="1" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
@@ -944,6 +950,17 @@ class MiniToolbar {
     const getTargets = () => this.selectionManager.getSelectedObjects();
     const getTextTargets = () => getTargets().filter(o => o.type === 'text' || o.text !== undefined || o.role === 'category' || o.role === 'sequence_slot');
 
+    // İkonlu kontrollerin adı ve seçili durumu yardımcı teknolojilere de aktarılır.
+    const syncLineControls = () => {
+      this.toolbarEl.querySelectorAll('.mt-line-popup button').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active')));
+        if (!button.hasAttribute('aria-label') && button.title) {
+          button.setAttribute('aria-label', button.title);
+        }
+      });
+    };
+    syncLineControls();
+
     // Çizgi Popup Sekme Değişimi
     this.toolbarEl.querySelectorAll('[data-line-tab]').forEach(btn => {
       btn.onclick = (e) => {
@@ -954,6 +971,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('.mt-line-panel').forEach(p => {
           p.style.display = p.getAttribute('data-panel') === tab ? 'flex' : 'none';
         });
+        syncLineControls();
         this.reposition();
       };
     });
@@ -966,6 +984,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
+        syncLineControls();
       };
     });
 
@@ -979,6 +998,7 @@ class MiniToolbar {
         const pVal = parseInt(b.getAttribute('data-line-width-preset'), 10);
         b.classList.toggle('active', pVal === clamped);
       });
+      syncLineControls();
     };
 
     this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(btn => {
@@ -997,6 +1017,7 @@ class MiniToolbar {
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
         b.classList.toggle('is-active', (b.getAttribute('data-line-color') || '').toLowerCase() === hex.toLowerCase());
       });
+      syncLineControls();
     };
 
     this.toolbarEl.querySelectorAll('[data-line-color]').forEach(btn => {
@@ -1016,6 +1037,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-align]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { rotation: rot }));
+        syncLineControls();
         this.selectionManager.updateSelectionBox();
       };
     });
@@ -1043,6 +1065,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }));
+        syncLineControls();
       };
     });
 
