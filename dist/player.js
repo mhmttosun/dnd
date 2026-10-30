@@ -449,6 +449,7 @@ class ActivityEngine {
       }
     }
     this.isCompleted = this.totalDraggables > 0 && this.correctCount === this.totalDraggables && value.isCompleted === true;
+    this.setCompletionResultVisible(this.isCompleted);
     this.updateStats();
     return this.getState();
   }
@@ -496,6 +497,26 @@ class ActivityEngine {
               </div>
             </div>
 
+            <!-- Tamamlanma Sonuç Kartı (Sahneyi kapatmadan normal akışta gösterilir) -->
+            <section class="completion-result-card" id="completion-result" aria-labelledby="completion-result-title" aria-live="polite" hidden>
+              <div class="completion-result-message">
+                <span class="completion-result-icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8 12 2.5 2.5L16 9"></path>
+                  </svg>
+                </span>
+                <h2 class="completion-result-title" id="completion-result-title">Harika, hepsi doğru!</h2>
+              </div>
+              <button type="button" class="completion-replay-btn" id="btn-play-again">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                </svg>
+                <span>Tekrar Oyna</span>
+              </button>
+            </section>
+
             <!-- Alt Yardımcı İpucu Metni (Ayrı koyu şerit değil, sade yardımcı metin) -->
             <footer class="player-footer" id="player-footer">
               <div class="player-hint" id="player-hint">
@@ -504,31 +525,6 @@ class ActivityEngine {
             </footer>
           </div>
         </main>
-
-        <!-- Başarı / Kutlama Modalı -->
-        <div class="player-modal-backdrop" id="completion-modal" style="display: none;">
-          <div class="player-modal-card">
-            <div class="modal-confetti" id="modal-confetti"></div>
-            <div class="modal-star-banner">🎉 ⭐ 🏆 ⭐ 🎉</div>
-            <h2 class="modal-title">Harika İş!</h2>
-            <p class="modal-desc" id="modal-completion-msg">
-              ${window.DND.ValidationEngine.sanitizeText(this.projectData.settings?.completionMessage || 'Etkinliği başarıyla tamamladınız!')}
-            </p>
-            <div class="modal-score-summary">
-              <div class="summary-box">
-                <span class="summary-num" id="modal-final-score">100%</span>
-                <span class="summary-lbl">Başarı Oranı</span>
-              </div>
-              <div class="summary-box">
-                <span class="summary-num" id="modal-final-attempts">0</span>
-                <span class="summary-lbl">Toplam Deneme</span>
-              </div>
-            </div>
-            <button class="player-btn modal-btn" id="btn-play-again">
-              🔄 Tekrar Oyna
-            </button>
-          </div>
-        </div>
       </div>
     `;
 
@@ -644,6 +640,7 @@ class ActivityEngine {
     this.stageEl = this.container.querySelector('#player-stage');
     this.stageScalerEl = this.container.querySelector('#player-stage-scaler');
     this.stageBoardEl = this.container.querySelector('#player-stage-board');
+    this.completionResultEl = this.container.querySelector('#completion-result');
     this.viewportEl = this.container.querySelector('#player-viewport');
     this.stageContainerEl = this.container.querySelector('#player-stage-container') || this.viewportEl;
 
@@ -715,6 +712,10 @@ class ActivityEngine {
 
     if (this.stageBoardEl) {
       this.stageBoardEl.style.width = `${scaledW}px`;
+    }
+
+    if (this.completionResultEl) {
+      this.completionResultEl.style.width = `${scaledW}px`;
     }
 
     this.stageEl.style.transform = `scale(${this.currentScale})`;
@@ -1322,9 +1323,8 @@ class ActivityEngine {
 
     if (correct === this.totalDraggables) {
       this.isCompleted = true;
-      this.setFeedback('Tebrikler! Tüm eşleştirmeler doğru.', 'success');
       this.audio.playComplete();
-      this.showCompletionModal();
+      this.showCompletionResult();
     } else {
       this.audio.playWrong();
       this.setFeedback(`${correct} / ${this.totalDraggables} doğru. Yanlışları Tekrar Dene butonuyla düzeltebilirsiniz.`, 'warning', 4000);
@@ -1363,22 +1363,36 @@ class ActivityEngine {
     if (this.correctCount >= this.totalDraggables && this.totalDraggables > 0) {
       if (!this.isCompleted) {
         this.isCompleted = true;
-        this.setFeedback('Tebrikler! Etkinliği başarıyla tamamladınız.', 'success');
         this.audio.playComplete();
-        setTimeout(() => this.showCompletionModal(), 400);
+        setTimeout(() => this.showCompletionResult(), 400);
       }
     }
   }
 
-  showCompletionModal() {
-    const modal = this.container.querySelector('#completion-modal');
-    if (!modal) return;
+  setCompletionResultVisible(isVisible) {
+    const resultCard = this.container.querySelector('#completion-result');
+    const controls = this.container.querySelector('#player-controls');
+    const footer = this.container.querySelector('#player-footer');
+    const replayButton = this.container.querySelector('#btn-play-again');
 
+    if (resultCard) resultCard.hidden = !isVisible;
+    if (controls) controls.hidden = isVisible;
+    if (footer) footer.hidden = isVisible;
+
+    if (isVisible && replayButton && typeof replayButton.focus === 'function') {
+      try {
+        replayButton.focus({ preventScroll: true });
+      } catch (error) {
+        replayButton.focus();
+      }
+    }
+
+    this.updateScale();
+  }
+
+  showCompletionResult() {
     const accuracy = Math.round((this.totalDraggables / Math.max(this.attempts, this.totalDraggables)) * 100);
-    this.container.querySelector('#modal-final-score').textContent = `%${accuracy}`;
-    this.container.querySelector('#modal-final-attempts').textContent = this.attempts;
-
-    modal.style.display = 'flex';
+    this.setCompletionResultVisible(true);
 
     const payload = {
       score: accuracy,
@@ -1502,9 +1516,7 @@ class ActivityEngine {
     this.setCheckButtonState('check');
     this.updateStats();
     this.resetFeedback();
-
-    const modal = this.container.querySelector('#completion-modal');
-    if (modal) modal.style.display = 'none';
+    this.setCompletionResultVisible(false);
 
     this.prepareItems();
     this.emit('reset', this.getState());

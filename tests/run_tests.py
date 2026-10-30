@@ -655,6 +655,61 @@ assert 'getPlayMode' in dnd_elem_code and 'setPlayMode' in dnd_elem_code, "DNDPl
 
 test_passed("Öğrenme ve Değerlendirme modları, segmented switch, yeşil tik/kırmızı çarpı rozetleri, hedef kilitleme ve Tekrar Dene döngüsü doğrulandı.")
 
+# 5.23.1 Minimal Tamamlanma Sonuç Kartı Testi
+print("\n[Aşama 5.23.1] Minimal Tamamlanma Sonuç Kartı Testi")
+with open(os.path.join(BASE_DIR, 'js/player/ExportManager.js'), 'r', encoding='utf-8') as f:
+    export_manager_code = f.read()
+
+assert 'completion-result-card' in ae_code, "ActivityEngine içinde normal akışta gösterilen tamamlanma sonuç kartı bulunmalıdır!"
+assert 'completion-result-icon' in ae_code, "Tamamlanma kartında yeşil onay ikonu bulunmalıdır!"
+assert 'Harika, hepsi doğru!' in ae_code, "Tamamlanma kartında minimal başarı mesajı bulunmalıdır!"
+assert 'completion-replay-btn' in ae_code and '<span>Tekrar Oyna</span>' in ae_code, "Tamamlanma kartında tekrar oynama eylemi bulunmalıdır!"
+assert 'setCompletionResultVisible' in ae_code and 'showCompletionResult' in ae_code, "Sonuç kartının görünürlük ve tamamlanma akışı tanımlı olmalıdır!"
+assert 'controls.hidden = isVisible' in ae_code and 'footer.hidden = isVisible' in ae_code, "Tamamlanma sırasında kontroller ve yardımcı footer gizlenmelidir!"
+assert 'this.setCompletionResultVisible(false);' in ae_code, "Tekrar oynandığında sonuç kartı gizlenmeli ve normal kontroller geri gelmelidir!"
+
+stage_board_index = ae_code.index('class="player-stage-board"')
+result_card_index = ae_code.index('class="completion-result-card"')
+footer_index = ae_code.index('class="player-footer"')
+assert stage_board_index < result_card_index < footer_index, "Sonuç kartı overlay yerine sahne panosunun hemen altında normal yerleşimde olmalıdır!"
+
+legacy_completion_tokens = (
+    'completion-modal',
+    'player-modal-backdrop',
+    'modal-final-score',
+    'modal-final-attempts',
+    'modal-score-summary',
+    'modal-star-banner',
+    'showCompletionModal',
+)
+for token in legacy_completion_tokens:
+    assert token not in ae_code, f"ActivityEngine içinde eski tamamlanma modalı kalıntısı bulundu: {token}"
+    assert token not in player_css, f"player.css içinde eski tamamlanma modalı kalıntısı bulundu: {token}"
+    assert token not in export_manager_code, f"ExportManager içinde eski tamamlanma modalı kalıntısı bulundu: {token}"
+
+for sample_filename in sorted(name for name in os.listdir(SAMPLES_DIR) if name.endswith('.html')):
+    with open(os.path.join(SAMPLES_DIR, sample_filename), 'r', encoding='utf-8') as f:
+        sample_html = f.read()
+    for token in legacy_completion_tokens:
+        assert token not in sample_html, f"{sample_filename} örneğinde eski tamamlanma modalı kalıntısı bulundu: {token}"
+    assert 'completion-result-card' in sample_html, f"{sample_filename} örneğinde yeni tamamlanma sonuç kartı bulunmalıdır!"
+
+assert '.completion-result-card {' in player_css, "player.css içinde tamamlanma kartı stilleri bulunmalıdır!"
+assert 'border: 1px solid #dcece2' in player_css and 'background: #f3f9f5' in player_css, "Tamamlanma kartı hafif yeşil, sınırlı ve minimal bir yüzeye sahip olmalıdır!"
+assert '@keyframes completionResultIn' in player_css and 'animation: completionResultIn 0.3s ease-out' in player_css, "Kart 250–350 ms aralığında giriş animasyonu kullanmalıdır!"
+assert '@media (prefers-reduced-motion: reduce)' in player_css, "Tamamlanma kartı azaltılmış hareket tercihini desteklemelidir!"
+assert '@media (max-width: 480px)' in player_css, "Dar ekranlarda kart ve tekrar oynama butonu alt alta yerleşebilmelidir!"
+
+completion_css_start = player_css.index('.completion-result-card {')
+completion_css_end = player_css.index('.completion-result-card[hidden]', completion_css_start)
+completion_card_rule = player_css[completion_css_start:completion_css_end]
+assert 'position: absolute' not in completion_card_rule and 'position: fixed' not in completion_card_rule, "Tamamlanma kartı overlay konumlandırması kullanmamalıdır!"
+
+assert '.completion-result-card {' in export_manager_code, "Bağımsız HTML dışa aktarımında yeni tamamlanma kartı stilleri bulunmalıdır!"
+assert '@media (prefers-reduced-motion: reduce)' in export_manager_code, "Bağımsız HTML çıktısı azaltılmış hareket tercihini desteklemelidir!"
+
+test_passed("Eski tamamlanma modalı kaldırıldı; minimal, erişilebilir ve responsive sonuç kartı hem önizleme hem bağımsız dışa aktarım için doğrulandı.")
+
 # 5.24. Sahne Yakınlaştırma, Modern Scrollbar ve Stage Scaler Mimarisi Testi
 print("\n[Aşama 5.24] Sahne Yakınlaştırma, Modern Scrollbar ve Stage Scaler Mimarisi Testi")
 with open(os.path.join(BASE_DIR, 'index.html'), 'r', encoding='utf-8') as f:

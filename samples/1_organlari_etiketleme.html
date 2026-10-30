@@ -605,105 +605,101 @@
   white-space: nowrap;
 }
 
-/* BAŞARI MODALI */
-.player-modal-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(8px);
+/* TAMAMLANMA SONUÇ KARTI */
+.completion-result-card {
+  min-height: 74px;
+  margin-top: 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.player-modal-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 36px 40px;
-  text-align: center;
-  max-width: 440px;
-  width: 90%;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-@keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.modal-star-banner {
-  font-size: 2.2rem;
-  margin-bottom: 12px;
-}
-
-.modal-title {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-
-.modal-desc {
-  font-size: 1rem;
-  color: #64748b;
-  margin-bottom: 24px;
-  line-height: 1.5;
-}
-
-.modal-score-summary {
-  display: flex;
+  justify-content: space-between;
   gap: 16px;
-  justify-content: center;
-  margin-bottom: 24px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 1px solid #dcece2;
+  border-radius: 14px;
+  background: #f3f9f5;
+  animation: completionResultIn 0.3s ease-out;
 }
 
-.summary-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 20px;
+.completion-result-card[hidden],
+.player-controls[hidden],
+.player-footer[hidden] {
+  display: none !important;
+}
+
+.completion-result-message {
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 12px;
 }
 
-.summary-num {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #4f46e5;
-}
-
-.summary-lbl {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.modal-btn {
-  width: 100%;
-  padding: 14px 24px;
-  font-size: 1.05rem;
-  font-weight: 700;
+.completion-result-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   border-radius: 12px;
-  background: #4f46e5;
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background: #e0f2e6;
+  color: #29885a;
 }
 
-.modal-btn:hover {
-  background: #4338ca;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+.completion-result-title {
+  margin: 0;
+  color: #253b30;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.completion-replay-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex-shrink: 0;
+  border: 1px solid #d3e2d8;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #365747;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.completion-replay-btn:hover {
+  background: #f8fbf9;
+  border-color: #bcd5c5;
+  color: #253b30;
+}
+
+.completion-replay-btn:focus-visible {
+  outline: 2px solid #29885a;
+  outline-offset: 2px;
+}
+
+@keyframes completionResultIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .completion-result-card {
+    animation: none;
+  }
 }
 
 /* ==========================================================================
@@ -752,11 +748,45 @@
     padding: 4px 12px;
   }
 
+  .completion-result-card {
+    min-height: 68px;
+    margin-top: 12px;
+    padding: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .completion-result-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .completion-result-title {
+    font-size: 1rem;
+  }
+
+  .completion-replay-btn {
+    margin-left: auto;
+  }
+
   .player-hint {
     font-size: 0.75rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .completion-result-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .completion-replay-btn {
+    width: 100%;
+    margin-left: 0;
   }
 }
 
@@ -1221,6 +1251,7 @@ class ActivityEngine {
       }
     }
     this.isCompleted = this.totalDraggables > 0 && this.correctCount === this.totalDraggables && value.isCompleted === true;
+    this.setCompletionResultVisible(this.isCompleted);
     this.updateStats();
     return this.getState();
   }
@@ -1268,6 +1299,26 @@ class ActivityEngine {
               </div>
             </div>
 
+            <!-- Tamamlanma Sonuç Kartı (Sahneyi kapatmadan normal akışta gösterilir) -->
+            <section class="completion-result-card" id="completion-result" aria-labelledby="completion-result-title" aria-live="polite" hidden>
+              <div class="completion-result-message">
+                <span class="completion-result-icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8 12 2.5 2.5L16 9"></path>
+                  </svg>
+                </span>
+                <h2 class="completion-result-title" id="completion-result-title">Harika, hepsi doğru!</h2>
+              </div>
+              <button type="button" class="completion-replay-btn" id="btn-play-again">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                </svg>
+                <span>Tekrar Oyna</span>
+              </button>
+            </section>
+
             <!-- Alt Yardımcı İpucu Metni (Ayrı koyu şerit değil, sade yardımcı metin) -->
             <footer class="player-footer" id="player-footer">
               <div class="player-hint" id="player-hint">
@@ -1276,31 +1327,6 @@ class ActivityEngine {
             </footer>
           </div>
         </main>
-
-        <!-- Başarı / Kutlama Modalı -->
-        <div class="player-modal-backdrop" id="completion-modal" style="display: none;">
-          <div class="player-modal-card">
-            <div class="modal-confetti" id="modal-confetti"></div>
-            <div class="modal-star-banner">🎉 ⭐ 🏆 ⭐ 🎉</div>
-            <h2 class="modal-title">Harika İş!</h2>
-            <p class="modal-desc" id="modal-completion-msg">
-              ${window.DND.ValidationEngine.sanitizeText(this.projectData.settings?.completionMessage || 'Etkinliği başarıyla tamamladınız!')}
-            </p>
-            <div class="modal-score-summary">
-              <div class="summary-box">
-                <span class="summary-num" id="modal-final-score">100%</span>
-                <span class="summary-lbl">Başarı Oranı</span>
-              </div>
-              <div class="summary-box">
-                <span class="summary-num" id="modal-final-attempts">0</span>
-                <span class="summary-lbl">Toplam Deneme</span>
-              </div>
-            </div>
-            <button class="player-btn modal-btn" id="btn-play-again">
-              🔄 Tekrar Oyna
-            </button>
-          </div>
-        </div>
       </div>
     `;
 
@@ -1416,6 +1442,7 @@ class ActivityEngine {
     this.stageEl = this.container.querySelector('#player-stage');
     this.stageScalerEl = this.container.querySelector('#player-stage-scaler');
     this.stageBoardEl = this.container.querySelector('#player-stage-board');
+    this.completionResultEl = this.container.querySelector('#completion-result');
     this.viewportEl = this.container.querySelector('#player-viewport');
     this.stageContainerEl = this.container.querySelector('#player-stage-container') || this.viewportEl;
 
@@ -1487,6 +1514,10 @@ class ActivityEngine {
 
     if (this.stageBoardEl) {
       this.stageBoardEl.style.width = `${scaledW}px`;
+    }
+
+    if (this.completionResultEl) {
+      this.completionResultEl.style.width = `${scaledW}px`;
     }
 
     this.stageEl.style.transform = `scale(${this.currentScale})`;
@@ -2094,9 +2125,8 @@ class ActivityEngine {
 
     if (correct === this.totalDraggables) {
       this.isCompleted = true;
-      this.setFeedback('Tebrikler! Tüm eşleştirmeler doğru.', 'success');
       this.audio.playComplete();
-      this.showCompletionModal();
+      this.showCompletionResult();
     } else {
       this.audio.playWrong();
       this.setFeedback(`${correct} / ${this.totalDraggables} doğru. Yanlışları Tekrar Dene butonuyla düzeltebilirsiniz.`, 'warning', 4000);
@@ -2135,22 +2165,36 @@ class ActivityEngine {
     if (this.correctCount >= this.totalDraggables && this.totalDraggables > 0) {
       if (!this.isCompleted) {
         this.isCompleted = true;
-        this.setFeedback('Tebrikler! Etkinliği başarıyla tamamladınız.', 'success');
         this.audio.playComplete();
-        setTimeout(() => this.showCompletionModal(), 400);
+        setTimeout(() => this.showCompletionResult(), 400);
       }
     }
   }
 
-  showCompletionModal() {
-    const modal = this.container.querySelector('#completion-modal');
-    if (!modal) return;
+  setCompletionResultVisible(isVisible) {
+    const resultCard = this.container.querySelector('#completion-result');
+    const controls = this.container.querySelector('#player-controls');
+    const footer = this.container.querySelector('#player-footer');
+    const replayButton = this.container.querySelector('#btn-play-again');
 
+    if (resultCard) resultCard.hidden = !isVisible;
+    if (controls) controls.hidden = isVisible;
+    if (footer) footer.hidden = isVisible;
+
+    if (isVisible && replayButton && typeof replayButton.focus === 'function') {
+      try {
+        replayButton.focus({ preventScroll: true });
+      } catch (error) {
+        replayButton.focus();
+      }
+    }
+
+    this.updateScale();
+  }
+
+  showCompletionResult() {
     const accuracy = Math.round((this.totalDraggables / Math.max(this.attempts, this.totalDraggables)) * 100);
-    this.container.querySelector('#modal-final-score').textContent = `%${accuracy}`;
-    this.container.querySelector('#modal-final-attempts').textContent = this.attempts;
-
-    modal.style.display = 'flex';
+    this.setCompletionResultVisible(true);
 
     const payload = {
       score: accuracy,
@@ -2274,9 +2318,7 @@ class ActivityEngine {
     this.setCheckButtonState('check');
     this.updateStats();
     this.resetFeedback();
-
-    const modal = this.container.querySelector('#completion-modal');
-    if (modal) modal.style.display = 'none';
+    this.setCompletionResultVisible(false);
 
     this.prepareItems();
     this.emit('reset', this.getState());
