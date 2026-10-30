@@ -582,8 +582,9 @@ body.is-embedded .editor-workspace {
   user-select: none;
 }
 
-/* Çizgi Özel Mini Toolbar ve Popup Kartı */
-.mt-line-popup {
+/* Çizgi ve Nesne Görünümü: ortak kompakt sekmeli kartlar */
+.mt-line-popup,
+.mt-style-popup {
   width: 252px;
   min-width: 252px;
   max-width: 100%;
@@ -598,7 +599,8 @@ body.is-embedded .editor-workspace {
   flex-direction: column;
 }
 
-.mt-line-title {
+.mt-line-title,
+.mt-style-title {
   font-size: 0.95rem;
   font-weight: 500;
   color: #1e293b;
@@ -607,7 +609,8 @@ body.is-embedded .editor-workspace {
 }
 
 /* Üst 5'li Menü / Sekme Çubuğu */
-.mt-line-tabs-bar {
+.mt-line-tabs-bar,
+.mt-style-tabs-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -615,7 +618,8 @@ body.is-embedded .editor-workspace {
   width: 100%;
 }
 
-.mt-line-tab-btn {
+.mt-line-tab-btn,
+.mt-style-tab-btn {
   flex: 1;
   min-width: 0;
   height: 40px;
@@ -632,19 +636,22 @@ body.is-embedded .editor-workspace {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.mt-line-tab-btn:hover {
+.mt-line-tab-btn:hover,
+.mt-style-tab-btn:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
   color: #0f172a;
 }
 
-.mt-line-tab-btn.active {
+.mt-line-tab-btn.active,
+.mt-style-tab-btn.active {
   background: #eff6ff;
   border-color: #bfdbfe;
   color: #1d4ed8;
 }
 
-.mt-line-tab-swatch {
+.mt-line-tab-swatch,
+.mt-style-tab-swatch {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -659,14 +666,16 @@ body.is-embedded .editor-workspace {
   color: inherit;
 }
 
-.mt-line-tab-width-text {
+.mt-line-tab-width-text,
+.mt-style-tab-width-text {
   font-size: 0.76rem;
   font-weight: 500;
   color: inherit;
 }
 
 /* Alt Ayar Kartı Paneli */
-.mt-line-panel {
+.mt-line-panel,
+.mt-style-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -675,7 +684,8 @@ body.is-embedded .editor-workspace {
   box-sizing: border-box;
 }
 
-.mt-line-panel-title {
+.mt-line-panel-title,
+.mt-style-panel-title {
   font-size: 0.78rem;
   font-weight: 500;
   color: #1e293b;
@@ -692,14 +702,16 @@ body.is-embedded .editor-workspace {
 }
 
 /* Çizgi Tipi Butonları */
-.mt-line-type-row {
+.mt-line-type-row,
+.mt-style-type-row {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
 }
 
-.mt-line-type-btn {
+.mt-line-type-btn,
+.mt-style-type-btn {
   flex: 1;
   min-height: 40px;
   border-radius: 8px;
@@ -713,12 +725,14 @@ body.is-embedded .editor-workspace {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.mt-line-type-btn:hover {
+.mt-line-type-btn:hover,
+.mt-style-type-btn:hover {
   background: #f8fafc;
   color: #0f172a;
 }
 
-.mt-line-type-btn.active {
+.mt-line-type-btn.active,
+.mt-style-type-btn.active {
   background: #eff6ff;
   border-color: #93c5fd;
   color: #1d4ed8;
@@ -767,14 +781,16 @@ body.is-embedded .editor-workspace {
 }
 
 /* Renk Paneli Elemanları */
-.mt-line-color-grid {
+.mt-line-color-grid,
+.mt-style-color-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 6px;
   align-items: center;
 }
 
-.mt-line-color-swatch {
+.mt-line-color-swatch,
+.mt-style-color-swatch {
   width: 100%;
   height: 34px;
   border: 0;
@@ -787,11 +803,13 @@ body.is-embedded .editor-workspace {
   padding: 4px;
 }
 
-.mt-line-color-swatch:hover {
+.mt-line-color-swatch:hover,
+.mt-style-color-swatch:hover {
   background: #f1f5f9;
 }
 
-.mt-line-color-dot {
+.mt-line-color-dot,
+.mt-style-color-dot {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
@@ -804,18 +822,21 @@ body.is-embedded .editor-workspace {
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
 }
 
-.mt-line-color-check {
+.mt-line-color-check,
+.mt-style-color-check {
   opacity: 0;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
-.mt-line-color-swatch.is-active .mt-line-color-dot {
+.mt-line-color-swatch.is-active .mt-line-color-dot,
+.mt-style-color-swatch.is-active .mt-style-color-dot {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
-.mt-line-color-swatch.is-active .mt-line-color-check {
+.mt-line-color-swatch.is-active .mt-line-color-check,
+.mt-style-color-swatch.is-active .mt-style-color-check {
   opacity: 1;
 }
 
@@ -911,7 +932,8 @@ body.is-embedded .editor-workspace {
   background: currentColor;
 }
 
-.mt-line-popup button:focus-visible {
+.mt-line-popup button:focus-visible,
+.mt-style-popup button:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
@@ -944,7 +966,10 @@ body.is-embedded .editor-workspace {
 @media (prefers-reduced-motion: reduce) {
   .mt-line-popup,
   .mt-line-popup *,
-  .mt-line-popup.is-opening {
+  .mt-line-popup.is-opening,
+  .mt-style-popup,
+  .mt-style-popup *,
+  .mt-style-popup.is-opening {
     animation: none;
     transition: none;
   }
@@ -1088,50 +1113,6 @@ body.is-embedded .editor-workspace {
   pointer-events: none;
 }
 
-.mt-color-target-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.mt-target-chip {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 1.5px solid transparent;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.mt-target-chip:hover {
-  background: #e2e8f0;
-}
-
-.mt-target-chip.active {
-  background: #ffffff;
-  border-color: #0f172a;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-}
-
-.chip-preview-border {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  border: 2px solid #3b82f6;
-  background: transparent;
-}
-
-.chip-preview-fill {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  background: #3b82f6;
-}
-
 .mt-stepper-row {
   display: flex;
   align-items: center;
@@ -1201,25 +1182,78 @@ body.is-embedded .editor-workspace {
   user-select: none;
 }
 
-.mt-style-popup {
-  width: 252px;
-  min-width: 252px;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
+.mt-style-color-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.mt-style-color-swatch {
+  padding: 2px;
+}
+
+.mt-style-border-preview {
+  width: 18px;
+  height: 18px;
+  border: 3px solid;
+  border-radius: 5px;
+}
+
+.mt-style-popup .is-transparent {
+  background-image: linear-gradient(135deg, transparent 45%, #94a3b8 46%, #94a3b8 54%, transparent 55%);
+  background-color: #ffffff;
+  box-shadow: inset 0 0 0 1px #cbd5e1;
+}
+
+.mt-style-popup .mt-stepper-group {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 3px;
   gap: 8px;
 }
 
-.mt-style-palette-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid #f1f5f9;
+.mt-style-popup .mt-step-btn {
+  width: 36px;
+  height: 34px;
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
-.mt-style-palette-section.is-opening {
-  animation: popupSlideDown 0.16s ease;
+.mt-style-popup .mt-step-btn:hover {
+  background: #f1f5f9;
+  box-shadow: none;
+}
+
+.mt-style-step-value {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.mt-style-popup .mt-step-val {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (pointer: coarse) {
+  .mt-style-popup {
+    width: 280px;
+    min-width: 280px;
+  }
+
+  .mt-style-popup button {
+    min-height: 44px;
+  }
+
+  .mt-style-popup .mt-step-btn {
+    width: 44px;
+  }
+
+  .mt-style-color-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 /* Renk Paleti Swatch Izgarası */

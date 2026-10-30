@@ -15,9 +15,8 @@ class MiniToolbar {
 
     this.toolbarEl = null;
     this.activePopup = null; // 'role' | 'style' | 'text' | 'layers' | 'align' | null
-    this.currentTargetProp = 'fill'; // 'fill' veya 'border' renk seçimi için
+    this.activeStyleTab = 'fill'; // 'fill' | 'border' | 'width' | 'borderColor' | 'radius'
     this.showTextColorPalette = false; // Metin popup'ında tanımlı renkler paletinin açık olup olmadığı
-    this.showStyleColorPalette = false; // Nesne görünümünde tanımlı renkler paletinin açık olup olmadığı
     this.activeLineTab = 'type'; // Çizgi popup'ında aktif olan sekme ('type', 'width', 'color', 'arrows', 'align')
     this.isNewlyOpened = false;
     this.currentPlacementAbove = false;
@@ -164,20 +163,6 @@ class MiniToolbar {
       this.togglePopup('layers');
     } else if (action === 'toggle-align-popup') {
       this.togglePopup('align');
-    } else if (action === 'toggle-style-palette') {
-      this.showStyleColorPalette = !this.showStyleColorPalette;
-      const paletteSec = this.toolbarEl.querySelector('.mt-style-popup .mt-style-palette-section');
-      const previewBtn = this.toolbarEl.querySelector('.mt-style-popup [data-action="toggle-style-palette"]');
-      if (paletteSec) {
-        paletteSec.style.display = this.showStyleColorPalette ? 'flex' : 'none';
-        if (this.showStyleColorPalette) {
-          paletteSec.classList.add('is-opening');
-        }
-        if (previewBtn) previewBtn.classList.toggle('active', this.showStyleColorPalette);
-        this.reposition();
-      } else {
-        this.render();
-      }
     } else if (action === 'toggle-text-palette') {
       this.showTextColorPalette = !this.showTextColorPalette;
       const paletteSec = this.toolbarEl.querySelector('.mt-text-popup .mt-color-palette')?.parentElement;
@@ -219,16 +204,12 @@ class MiniToolbar {
     if (this.activePopup === popupName) {
       this.activePopup = null;
       this.showTextColorPalette = false;
-      this.showStyleColorPalette = false;
       this.isNewlyOpened = false;
     } else {
       this.activePopup = popupName;
       this.isNewlyOpened = true;
       if (popupName !== 'text') {
         this.showTextColorPalette = false;
-      }
-      if (popupName !== 'style') {
-        this.showStyleColorPalette = false;
       }
     }
     this.render();
@@ -245,7 +226,6 @@ class MiniToolbar {
     if (this.activePopup) {
       this.activePopup = null;
       this.showTextColorPalette = false;
-      this.showStyleColorPalette = false;
       this.isNewlyOpened = false;
       this.render();
     }
@@ -275,7 +255,6 @@ class MiniToolbar {
     this.toolbarEl.style.display = 'none';
     this.activePopup = null;
     this.showTextColorPalette = false;
-    this.showStyleColorPalette = false;
     this.isNewlyOpened = false;
     this.linePopupClosedByUser = false;
   }
@@ -650,119 +629,84 @@ class MiniToolbar {
     if (this.activePopup === 'style') {
       const isLine = primary.type === 'line';
       const bStyle = primary.borderStyle || 'solid';
-      const bWidth = primary.borderWidth !== undefined ? primary.borderWidth : 2;
-      const bRadius = primary.borderRadius !== undefined ? primary.borderRadius : 8;
-
+      const bWidth = primary.borderWidth ?? 2;
+      const bRadius = primary.borderRadius ?? 8;
+      const tab = isLine && ['fill', 'radius'].includes(this.activeStyleTab) ? 'border' : this.activeStyleTab;
       const colors = [
-        'transparent', '#ffffff', '#cbd5e1', '#64748b', '#1e293b', '#ef4444', '#f97316',
-        '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#2563eb', '#8b5cf6', '#ec4899'
+        ['transparent', 'Şeffaf'], ['#ffffff', 'Beyaz'], ['#cbd5e1', 'Açık gri'],
+        ['#64748b', 'Gri'], ['#1e293b', 'Koyu gri'], ['#ef4444', 'Kırmızı'],
+        ['#f97316', 'Turuncu'], ['#eab308', 'Sarı'], ['#22c55e', 'Yeşil'],
+        ['#14b8a6', 'Turkuaz'], ['#0ea5e9', 'Açık mavi'], ['#2563eb', 'Mavi'],
+        ['#8b5cf6', 'Mor'], ['#ec4899', 'Pembe']
       ];
-
-      if (isLine) {
-        const activeColor = primary.borderColor || '#1e293b';
-        return `
-          <div class="mt-popup-card mt-style-popup ${openClass}" id="mt-style-popup">
-            <div class="mt-popup-title">Çizgi görünümü</div>
-
-            <!-- Satır 1: Çizgi Stili ve Renk Seçici Butonu -->
-            <div class="mt-row mt-border-style-row" style="justify-content: space-between;">
-              <div class="mt-pill-group">
-                <button type="button" class="mt-icon-btn ${bStyle === 'solid' ? 'active' : ''}" data-border-style="solid" title="Düz Çizgi">━</button>
-                <button type="button" class="mt-icon-btn ${bStyle === 'dashed' ? 'active' : ''}" data-border-style="dashed" title="Kesikli">┅</button>
-                <button type="button" class="mt-icon-btn ${bStyle === 'dotted' ? 'active' : ''}" data-border-style="dotted" title="Noktalı">⋯</button>
-              </div>
-
-              <button type="button" class="mt-color-preview-btn ${this.showStyleColorPalette ? 'active' : ''}" data-action="toggle-style-palette" title="Çizgi Rengi (Renk paletini aç/kapat)">
-                <span class="mt-color-circle" style="background-color: ${activeColor};"></span>
-              </button>
-            </div>
-
-            <!-- Satır 2: Çizgi Kalınlığı (-/+) Stepper -->
-            <div class="mt-row mt-stepper-row">
-              <div class="mt-stepper-group" style="width: 100%; justify-content: space-between;" title="Çizgi Kalınlığı">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="mt-stepper-label-icon">≡</span>
-                  <span style="font-size: 0.78rem; font-weight: 500; color: #64748b;">Kalınlık</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 3px;">
-                  <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="-1" title="Kalınlığı Azalt">−</button>
-                  <span class="mt-step-val" id="mt-val-borderWidth">${bWidth}</span>
-                  <span class="mt-step-unit">px</span>
-                  <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="1" title="Kalınlığı Artır">+</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Satır 3: Açılır Renk Paleti (Sadece renk ikonu tıklanınca görünür) -->
-            <div class="mt-style-palette-section" style="display: ${this.showStyleColorPalette ? 'flex' : 'none'};">
-              <div class="mt-palette-header">Çizgi Rengi</div>
-              <div class="mt-color-palette">
-                ${colors.filter(c => c !== 'transparent').map(c => `
-                  <button type="button" class="mt-color-swatch ${(activeColor || '').toLowerCase() === c.toLowerCase() ? 'is-active-swatch' : ''}" data-color-val="${c}" style="background-color: ${c};" title="${c}">
-                    ${((activeColor || '').toLowerCase() === c.toLowerCase()) ? '<span class="swatch-check" style="color: ' + (['#ffffff', '#cbd5e1'].includes(c) ? '#000' : '#fff') + '">✓</span>' : ''}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      const activeColor = this.currentTargetProp === 'border' ? (primary.borderColor || 'transparent') : (primary.backgroundColor || '#ffffff');
+      const palette = (prop) => {
+        const selectedColor = (primary[prop] || 'transparent').toLowerCase();
+        return `<div class="mt-style-color-grid" role="group" aria-label="${prop === 'backgroundColor' ? 'Dolgu rengi' : 'Kenarlık rengi'}">
+          ${colors.map(([color, name]) => `
+            <button type="button" class="mt-style-color-swatch ${selectedColor === color ? 'is-active' : ''}" data-style-color="${color}" data-style-color-prop="${prop}" title="${name}" aria-label="${name}" style="--line-color: ${color}; --line-check-color: ${['transparent', '#ffffff', '#cbd5e1', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9'].includes(color) ? '#0f172a' : '#ffffff'};">
+              <span class="mt-style-color-dot ${color === 'transparent' ? 'is-transparent' : ''}" aria-hidden="true"><span class="mt-style-color-check">✓</span></span>
+            </button>`).join('')}
+        </div>`;
+      };
 
       return `
         <div class="mt-popup-card mt-style-popup ${openClass}" id="mt-style-popup">
-          <div class="mt-popup-title">Nesne görünümü</div>
-
-          <!-- Satır 1: Kenarlık Stili ve Dolgu/Kenarlık Renk Seçici İkonları -->
-          <div class="mt-row mt-border-style-row">
-            <div class="mt-pill-group">
-              <button type="button" class="mt-icon-btn ${bStyle === 'none' ? 'active' : ''}" data-border-style="none" title="Kenarlık Yok">⊘</button>
-              <button type="button" class="mt-icon-btn ${bStyle === 'solid' ? 'active' : ''}" data-border-style="solid" title="Düz Çizgi">━</button>
-              <button type="button" class="mt-icon-btn ${bStyle === 'dashed' ? 'active' : ''}" data-border-style="dashed" title="Kesikli">┅</button>
-              <button type="button" class="mt-icon-btn ${bStyle === 'dotted' ? 'active' : ''}" data-border-style="dotted" title="Noktalı">⋯</button>
-            </div>
-
-            <div class="mt-color-target-toggle">
-              <button type="button" class="mt-target-chip ${this.currentTargetProp === 'border' ? 'active' : ''}" data-color-target="border" title="Kenarlık Rengi (Renk paletini aç/kapat)">
-                <span class="chip-preview-border" style="border-color: ${primary.borderColor || '#3b82f6'};"></span>
-              </button>
-              <button type="button" class="mt-target-chip ${this.currentTargetProp === 'fill' ? 'active' : ''}" data-color-target="fill" title="Dolgu Rengi (Renk paletini aç/kapat)">
-                <span class="chip-preview-fill" style="background-color: ${primary.backgroundColor || '#ffffff'};"></span>
-              </button>
+          <div class="mt-style-title">${isLine ? 'Çizgi görünümü' : 'Nesne görünümü'}</div>
+          <div class="mt-style-tabs-bar" role="group" aria-label="Görünüm ayarları">
+            ${!isLine ? `
+              <button type="button" class="mt-style-tab-btn ${tab === 'fill' ? 'active' : ''}" data-style-tab="fill" title="Dolgu rengi">
+                <span class="mt-style-tab-swatch ${!primary.backgroundColor || primary.backgroundColor === 'transparent' ? 'is-transparent' : ''}" data-style-preview="backgroundColor" style="background-color: ${primary.backgroundColor || 'transparent'};"></span>
+              </button>` : ''}
+            <button type="button" class="mt-style-tab-btn ${tab === 'border' ? 'active' : ''}" data-style-tab="border" title="Kenarlık tipi">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3" stroke-dasharray="3 3"/></svg>
+            </button>
+            <button type="button" class="mt-style-tab-btn ${tab === 'width' ? 'active' : ''}" data-style-tab="width" title="Kenarlık kalınlığı">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h8M2 8h8"/></svg>
+              <span class="mt-style-tab-width-text" data-style-value="borderWidth">${bWidth}</span>
+            </button>
+            <button type="button" class="mt-style-tab-btn ${tab === 'borderColor' ? 'active' : ''}" data-style-tab="borderColor" title="Kenarlık rengi">
+              <span class="mt-style-border-preview ${!primary.borderColor || primary.borderColor === 'transparent' ? 'is-transparent' : ''}" data-style-preview="borderColor" style="border-color: ${primary.borderColor || 'transparent'};"></span>
+            </button>
+            ${!isLine ? `
+              <button type="button" class="mt-style-tab-btn ${tab === 'radius' ? 'active' : ''}" data-style-tab="radius" title="Köşe yuvarlaklığı">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V12a7 7 0 0 1 7-7h8"/><path d="M5 5h1M19 19h1"/></svg>
+              </button>` : ''}
+          </div>
+          ${!isLine ? `
+            <div class="mt-style-panel" data-style-panel="fill" style="display: ${tab === 'fill' ? 'flex' : 'none'};">
+              <div class="mt-style-panel-title">Dolgu rengi</div>
+              ${palette('backgroundColor')}
+            </div>` : ''}
+          <div class="mt-style-panel" data-style-panel="border" style="display: ${tab === 'border' ? 'flex' : 'none'};">
+            <div class="mt-style-panel-title">Kenarlık tipi</div>
+            <div class="mt-style-type-row" role="group" aria-label="Kenarlık tipi">
+              <button type="button" class="mt-style-type-btn ${bStyle === 'none' ? 'active' : ''}" data-border-style="none" title="Kenarlık yok">⊘</button>
+              <button type="button" class="mt-style-type-btn ${bStyle === 'solid' ? 'active' : ''}" data-border-style="solid" title="Düz kenarlık">━</button>
+              <button type="button" class="mt-style-type-btn ${bStyle === 'dashed' ? 'active' : ''}" data-border-style="dashed" title="Kesikli kenarlık">┅</button>
+              <button type="button" class="mt-style-type-btn ${bStyle === 'dotted' ? 'active' : ''}" data-border-style="dotted" title="Noktalı kenarlık">⋯</button>
             </div>
           </div>
-
-          <!-- Satır 2: Çizgi Kalınlığı (-/+) ve Köşe Yuvarlaklığı (-/+) Stepper'ları -->
-          <div class="mt-row mt-stepper-row" style="justify-content: space-between;">
-            <div class="mt-stepper-group" title="Kenarlık / Çizgi Kalınlığı">
-              <span class="mt-stepper-label-icon">≡</span>
-              <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="-1" title="Kalınlığı Azalt">−</button>
-              <span class="mt-step-val" id="mt-val-borderWidth">${bWidth}</span>
-              <span class="mt-step-unit">px</span>
-              <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="1" title="Kalınlığı Artır">+</button>
-            </div>
-
-            <div class="mt-stepper-group" title="Köşe Yuvarlaklığı">
-              <span class="mt-stepper-label-icon">⌒</span>
-              <button type="button" class="mt-step-btn" data-step-prop="borderRadius" data-step-dir="-1" title="Köşe Yuvarlaklığını Azalt">−</button>
-              <span class="mt-step-val" id="mt-val-borderRadius">${bRadius}</span>
-              <span class="mt-step-unit">px</span>
-              <button type="button" class="mt-step-btn" data-step-prop="borderRadius" data-step-dir="1" title="Köşe Yuvarlaklığını Artır">+</button>
+          <div class="mt-style-panel" data-style-panel="width" style="display: ${tab === 'width' ? 'flex' : 'none'};">
+            <div class="mt-style-panel-title">Kenarlık kalınlığı</div>
+            <div class="mt-stepper-group" role="group" aria-label="Kenarlık kalınlığı">
+              <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="-1" title="Kalınlığı azalt">−</button>
+              <div class="mt-style-step-value"><span class="mt-step-val" id="mt-val-borderWidth" aria-live="polite">${bWidth}</span><span class="mt-step-unit">px</span></div>
+              <button type="button" class="mt-step-btn" data-step-prop="borderWidth" data-step-dir="1" title="Kalınlığı artır">+</button>
             </div>
           </div>
-
-          <!-- Satır 3: Açılır Renk Paleti (Metindeki gibi sadece renk ikonu tıklandığında görünür) -->
-          <div class="mt-style-palette-section" style="display: ${this.showStyleColorPalette ? 'flex' : 'none'};">
-            <div class="mt-palette-header" id="mt-style-palette-title">${this.currentTargetProp === 'border' ? 'Kenarlık Rengi' : 'Dolgu Rengi'}</div>
-            <div class="mt-color-palette">
-              ${colors.map(c => `
-                <button type="button" class="mt-color-swatch ${c === 'transparent' ? 'is-transparent' : ''} ${(activeColor || '').toLowerCase() === c.toLowerCase() ? 'is-active-swatch' : ''}" data-color-val="${c}" style="background-color: ${c === 'transparent' ? '#ffffff' : c};" title="${c}">
-                  ${c === 'transparent' ? '<span class="slash-line">⊘</span>' : (((activeColor || '').toLowerCase() === c.toLowerCase()) ? '<span class="swatch-check" style="color: ' + (['#ffffff', '#cbd5e1'].includes(c) ? '#000' : '#fff') + '">✓</span>' : '')}
-                </button>
-              `).join('')}
-            </div>
+          <div class="mt-style-panel" data-style-panel="borderColor" style="display: ${tab === 'borderColor' ? 'flex' : 'none'};">
+            <div class="mt-style-panel-title">Kenarlık rengi</div>
+            ${palette('borderColor')}
           </div>
+          ${!isLine ? `
+            <div class="mt-style-panel" data-style-panel="radius" style="display: ${tab === 'radius' ? 'flex' : 'none'};">
+              <div class="mt-style-panel-title">Köşe yuvarlaklığı</div>
+              <div class="mt-stepper-group" role="group" aria-label="Köşe yuvarlaklığı">
+                <button type="button" class="mt-step-btn" data-step-prop="borderRadius" data-step-dir="-1" title="Köşe yuvarlaklığını azalt">−</button>
+                <div class="mt-style-step-value"><span class="mt-step-val" id="mt-val-borderRadius" aria-live="polite">${bRadius}</span><span class="mt-step-unit">px</span></div>
+                <button type="button" class="mt-step-btn" data-step-prop="borderRadius" data-step-dir="1" title="Köşe yuvarlaklığını artır">+</button>
+              </div>
+            </div>` : ''}
         </div>
       `;
     }
@@ -951,15 +895,33 @@ class MiniToolbar {
     const getTextTargets = () => getTargets().filter(o => o.type === 'text' || o.text !== undefined || o.role === 'category' || o.role === 'sequence_slot');
 
     // İkonlu kontrollerin adı ve seçili durumu yardımcı teknolojilere de aktarılır.
-    const syncLineControls = () => {
-      this.toolbarEl.querySelectorAll('.mt-line-popup button').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active')));
+    const syncAppearanceControls = () => {
+      this.toolbarEl.querySelectorAll('.mt-line-popup button, .mt-style-popup button').forEach(button => {
+        if (!button.hasAttribute('data-step-prop')) {
+          button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active')));
+        }
         if (!button.hasAttribute('aria-label') && button.title) {
           button.setAttribute('aria-label', button.title);
         }
       });
     };
-    syncLineControls();
+    syncAppearanceControls();
+
+    // Görünüm sekmeleri içerikleri yerinde değiştirir, klavye odağı korunur.
+    this.toolbarEl.querySelectorAll('[data-style-tab]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        this.activeStyleTab = btn.getAttribute('data-style-tab');
+        this.toolbarEl.querySelectorAll('[data-style-tab]').forEach(button => {
+          button.classList.toggle('active', button === btn);
+        });
+        this.toolbarEl.querySelectorAll('[data-style-panel]').forEach(panel => {
+          panel.style.display = panel.getAttribute('data-style-panel') === this.activeStyleTab ? 'flex' : 'none';
+        });
+        syncAppearanceControls();
+        this.reposition();
+      };
+    });
 
     // Çizgi Popup Sekme Değişimi
     this.toolbarEl.querySelectorAll('[data-line-tab]').forEach(btn => {
@@ -971,7 +933,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('.mt-line-panel').forEach(p => {
           p.style.display = p.getAttribute('data-panel') === tab ? 'flex' : 'none';
         });
-        syncLineControls();
+        syncAppearanceControls();
         this.reposition();
       };
     });
@@ -984,7 +946,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
-        syncLineControls();
+        syncAppearanceControls();
       };
     });
 
@@ -998,7 +960,7 @@ class MiniToolbar {
         const pVal = parseInt(b.getAttribute('data-line-width-preset'), 10);
         b.classList.toggle('active', pVal === clamped);
       });
-      syncLineControls();
+      syncAppearanceControls();
     };
 
     this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(btn => {
@@ -1017,7 +979,7 @@ class MiniToolbar {
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
         b.classList.toggle('is-active', (b.getAttribute('data-line-color') || '').toLowerCase() === hex.toLowerCase());
       });
-      syncLineControls();
+      syncAppearanceControls();
     };
 
     this.toolbarEl.querySelectorAll('[data-line-color]').forEach(btn => {
@@ -1037,7 +999,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-align]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { rotation: rot }));
-        syncLineControls();
+        syncAppearanceControls();
         this.selectionManager.updateSelectionBox();
       };
     });
@@ -1065,7 +1027,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }));
-        syncLineControls();
+        syncAppearanceControls();
       };
     });
 
@@ -1088,52 +1050,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-border-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
-      };
-    });
-
-    // Hedef Renk Seçici (Dolgu mu Kenarlık mı?) ve Palet Aç/Kapat
-    this.toolbarEl.querySelectorAll('[data-color-target]').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const targetProp = btn.getAttribute('data-color-target');
-        const paletteSec = this.toolbarEl.querySelector('.mt-style-popup .mt-style-palette-section');
-
-        if (this.currentTargetProp === targetProp && this.showStyleColorPalette) {
-          // Aynı hedefe tıklandı -> paleti kapat
-          this.showStyleColorPalette = false;
-          btn.classList.remove('active');
-        } else {
-          // Farklı hedefe tıklandı veya kapalıydı -> hedefi güncelle ve paleti aç
-          this.currentTargetProp = targetProp;
-          this.showStyleColorPalette = true;
-          this.toolbarEl.querySelectorAll('[data-color-target]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        }
-
-        if (paletteSec) {
-          paletteSec.style.display = this.showStyleColorPalette ? 'flex' : 'none';
-          if (this.showStyleColorPalette) {
-            paletteSec.classList.add('is-opening');
-            const titleEl = this.root.getElementById('mt-style-palette-title');
-            if (titleEl) {
-              titleEl.textContent = this.currentTargetProp === 'border' ? 'Kenarlık Rengi' : 'Dolgu Rengi';
-            }
-            // Aktif swatch'ı güncelle
-            const activeColor = this.currentTargetProp === 'border' ? (primary.borderColor || 'transparent') : (primary.backgroundColor || '#ffffff');
-            paletteSec.querySelectorAll('[data-color-val]').forEach(sb => {
-              const sc = sb.getAttribute('data-color-val');
-              const isMatch = (sc || '').toLowerCase() === (activeColor || '').toLowerCase();
-              sb.classList.toggle('is-active-swatch', isMatch);
-              const check = sb.querySelector('.swatch-check');
-              if (check) check.remove();
-              if (isMatch && sc !== 'transparent') {
-                const isWhite = ['#ffffff', '#cbd5e1'].includes(sc);
-                sb.insertAdjacentHTML('beforeend', `<span class="swatch-check" style="color: ${isWhite ? '#000' : '#fff'}">✓</span>`);
-              }
-            });
-          }
-          this.reposition();
-        }
+        syncAppearanceControls();
       };
     });
 
@@ -1151,46 +1068,44 @@ class MiniToolbar {
         const currentVal = primary[prop] !== undefined ? primary[prop] : (prop === 'borderRadius' ? 8 : 2);
         const newVal = Math.max(minVal, Math.min(maxVal, currentVal + (dir * step)));
 
-        primary[prop] = newVal;
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { [prop]: newVal }));
 
         const valEl = this.toolbarEl.querySelector(`#mt-val-${prop}`);
         if (valEl) {
           valEl.textContent = newVal;
         }
+        const tabValue = this.toolbarEl.querySelector(`[data-style-value="${prop}"]`);
+        if (tabValue) tabValue.textContent = newVal;
       };
     });
 
-    // Renk Paleti Tıklaması
-    this.toolbarEl.querySelectorAll('#mt-style-popup [data-color-val]').forEach(btn => {
+    // Her palet kendi özelliğini taşır; sekmeler arasında dolgu ve kenarlık karışmaz.
+    this.toolbarEl.querySelectorAll('[data-style-color]').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
-        const c = btn.getAttribute('data-color-val');
-        if (this.currentTargetProp === 'border' || primary.type === 'line') {
-          const chipBorder = this.toolbarEl.querySelector('.chip-preview-border');
-          if (chipBorder) chipBorder.style.borderColor = c === 'transparent' ? '#cbd5e1' : c;
-          const colorCircle = this.toolbarEl.querySelector('.mt-style-popup .mt-color-circle');
-          if (colorCircle) colorCircle.style.backgroundColor = c === 'transparent' ? 'transparent' : c;
-          getTargets().forEach(o => this.objectManager.updateObject(o.id, {
-            borderColor: c,
-            borderStyle: c === 'transparent' ? 'none' : (o.borderStyle === 'none' ? 'solid' : o.borderStyle || 'solid')
-          }));
-        } else {
-          const chipFill = this.toolbarEl.querySelector('.chip-preview-fill');
-          if (chipFill) chipFill.style.backgroundColor = c === 'transparent' ? 'transparent' : c;
-          getTargets().forEach(o => this.objectManager.updateObject(o.id, { backgroundColor: c }));
-        }
-
-        this.toolbarEl.querySelectorAll('#mt-style-popup [data-color-val]').forEach(b => {
-          b.classList.remove('is-active-swatch');
-          const check = b.querySelector('.swatch-check');
-          if (check) check.remove();
+        const color = btn.getAttribute('data-style-color');
+        const prop = btn.getAttribute('data-style-color-prop');
+        getTargets().forEach(object => {
+          const changes = { [prop]: color };
+          if (prop === 'borderColor') {
+            changes.borderStyle = color === 'transparent' ? 'none' : (object.borderStyle === 'none' ? 'solid' : object.borderStyle || 'solid');
+          }
+          this.objectManager.updateObject(object.id, changes);
         });
-        btn.classList.add('is-active-swatch');
-        if (c !== 'transparent') {
-          const isWhite = ['#ffffff', '#cbd5e1'].includes(c);
-          btn.innerHTML = `<span class="swatch-check" style="color: ${isWhite ? '#000' : '#fff'}">✓</span>`;
+        this.toolbarEl.querySelectorAll(`[data-style-color-prop="${prop}"]`).forEach(button => {
+          button.classList.toggle('is-active', button.getAttribute('data-style-color') === color);
+        });
+        const preview = this.toolbarEl.querySelector(`[data-style-preview="${prop}"]`);
+        if (preview) {
+          preview.style[prop] = color;
+          preview.classList.toggle('is-transparent', color === 'transparent');
         }
+        if (prop === 'borderColor') {
+          this.toolbarEl.querySelectorAll('[data-border-style]').forEach(button => {
+            button.classList.toggle('active', button.getAttribute('data-border-style') === primary.borderStyle);
+          });
+        }
+        syncAppearanceControls();
       };
     });
 

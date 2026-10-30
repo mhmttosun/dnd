@@ -574,22 +574,25 @@ assert 'popupEl.style.overflow = \'visible\'' in mt_code_check or 'popupEl.style
 
 test_passed("Mini araç çubuğu ve açılır kartlar arasında minimalist tasarım dili ortaklaştırıldı, ağır arka planlı butonlar kaldırıldı ve popup kaydırma çubukları/taşmaları engellendi.")
 
-# 5.21. Nesne Görünümü Kompakt Tasarım, Açılır Renk Paleti ve + / - Stepper Testi
-print("\n[Aşama 5.21] Nesne Görünümü Kompakt Tasarım, Açılır Renk Paleti ve + / - Stepper Testi")
+# 5.21. Nesne Görünümü Sekmeli Tasarım ve + / - Stepper Testi
+print("\n[Aşama 5.21] Nesne Görünümü Sekmeli Tasarım ve + / - Stepper Testi")
 with open(editor_css_path, 'r', encoding='utf-8') as f:
     ed_css_check = f.read()
 with open(mini_toolbar_path, 'r', encoding='utf-8') as f:
     mt_code_check = f.read()
 
-assert 'showStyleColorPalette' in mt_code_check, "MiniToolbar içinde stil renk paleti açık/kapalı durumu (showStyleColorPalette) tanımlı olmalıdır!"
+assert 'activeStyleTab' in mt_code_check, "Nesne görünümü aktif sekmeyi korumalıdır!"
+for tab in ['fill', 'border', 'width', 'borderColor', 'radius']:
+    assert f'data-style-tab="{tab}"' in mt_code_check, f"Görünüm sekmesi eksik: {tab}"
+    assert f'data-style-panel="{tab}"' in mt_code_check, f"Görünüm paneli eksik: {tab}"
 assert 'data-step-prop="borderWidth"' in mt_code_check, "Çizgi/kenarlık kalınlığı için +/- stepper butonları yer almalıdır!"
 assert 'data-step-prop="borderRadius"' in mt_code_check, "Köşe yuvarlaklığı için +/- stepper butonları yer almalıdır!"
-assert 'mt-style-palette-section' in mt_code_check, "Nesne görünümü popup'ında açılır renk paleti bölümü bulunmalıdır!"
+assert 'data-style-color-prop' in mt_code_check, "Dolgu ve kenarlık paletleri hedef özelliği ayrı tutmalıdır!"
 assert '.mt-stepper-group' in ed_css_check and '.mt-step-btn' in ed_css_check, "CSS içinde stepper grubu ve +/- buton stilleri tanımlı olmalıdır!"
-assert '.mt-style-palette-section' in ed_css_check, "CSS içinde stil renk paleti bölümü tanımlı olmalıdır!"
+assert '.mt-style-tabs-bar' in ed_css_check and '.mt-style-panel' in ed_css_check, "Görünüm sekmeleri ve panelleri ortak kompakt tasarımı kullanmalıdır!"
 assert '#64748b' in mt_code_check, "Renk paletine yeni nötr renk (#64748b) eklenmiş olmalıdır!"
 
-test_passed("Nesne Görünümü popup'ı kompakt hale getirildi, renkler ikon tıklandığında açılır yapıldı, renk paletine yeni renk eklendi ve kalınlık/köşe ayarları + / - butonlarına dönüştürüldü.")
+test_passed("Nesne Görünümü beş sekmeye ayrıldı; bağımsız renk paletleri ve kalınlık/köşe ince ayarları korundu.")
 
 # [Aşama 5.22] Önizleme Player Bütünleşik Sahne İçi Kontrol ve Footer Testi
 print("\n[Aşama 5.22] Önizleme Player Bütünleşik Sahne İçi Kontrol ve Footer Testi")
