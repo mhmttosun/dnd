@@ -704,10 +704,18 @@ with open(os.path.join(BASE_DIR, 'src/DNDEditor.js'), 'r', encoding='utf-8') as 
 # 1. Eski kaybolan toast yönergesinin kaldırıldığının denetimi
 assert "this.showToast('🔑 Cevap Anahtarı:" not in ui_mgr_code, "Cevap Anahtarı modundaki eski geçici toast yönergesi kaldırılmalıdır!"
 
-# 2. HTML ve Editor şablonlarında rehber çubuğunun varlığı
+# 2. HTML ve Editor şablonlarında rehber çubuğunun varlığı ve sayaç bloğunun kaldırılması
 assert 'id="answer-key-guide-bar"' in index_html and 'class="answer-key-guide-bar"' in index_html, "index.html içinde answer-key-guide-bar bulunmalıdır!"
 assert 'id="ak-guide-title"' in index_html and 'id="ak-guide-instruction"' in index_html, "index.html içinde rehber başlık ve talimat öğeleri bulunmalıdır!"
 assert 'id="answer-key-guide-bar"' in editor_js and 'id="ak-guide-title"' in editor_js, "src/DNDEditor.js içinde answer-key-guide-bar ve ak-guide-title bulunmalıdır!"
+assert 'ak-guide-counter' not in index_html and 'ak-guide-counter' not in editor_js, "Rehber çubuğundaki sağ sayaç bloğu (4 / 4 Eşleşti vb.) kaldırılmış olmalıdır!"
+assert 'Eşleşti</div>' not in index_html and 'Eşleşti</div>' not in editor_js, "HTML şablonlarında 'Eşleşti' rozeti bulunmamalıdır!"
+
+# 2.1. Cevap Anahtarı Modunda Orta ve Sağ Araç Kümelerinin Gizlenmesi Denetimi
+assert 'cluster-add-objects' in index_html and 'cluster-history-zoom' in index_html, "index.html içinde orta ve sağ araç kümeleri tanımlı olmalıdır!"
+assert 'cluster-add-objects' in editor_js and 'cluster-history-zoom' in editor_js, "src/DNDEditor.js içinde orta ve sağ araç kümeleri tanımlı olmalıdır!"
+assert '.cluster-add-objects' in ak_css_code and '.cluster-history-zoom' in ak_css_code, "css/answer-key.css içinde cevap anahtarı modunda araç kümelerini gizleme stilleri tanımlı olmalıdır!"
+assert 'clusterAdd' in ui_mgr_code and 'clusterHistoryZoom' in ui_mgr_code, "UIManager içinde cevap anahtarı modunda araç kümeleri gizlenmelidir!"
 
 # 3. CSS yükseklik ve stil denetimi (yaklaşık 56-64px)
 assert '.answer-key-guide-bar' in ak_css_code, "css/answer-key.css içinde .answer-key-guide-bar tanımlı olmalıdır!"

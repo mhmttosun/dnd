@@ -339,6 +339,16 @@ class UIManager {
       btn.classList.toggle('active', btn.getAttribute('data-mode') === newMode);
     });
 
+    const subToolbar = this.root.querySelector('.app-sub-toolbar');
+    if (subToolbar) {
+      subToolbar.classList.toggle('mode-answer-key', newMode === 'answer-key');
+    }
+
+    const clusterAdd = this.root.querySelector('.cluster-add-objects') || this.root.getElementById('cluster-add-objects');
+    const clusterHistoryZoom = this.root.querySelector('.cluster-history-zoom') || this.root.getElementById('cluster-history-zoom');
+    if (clusterAdd) clusterAdd.style.display = newMode === 'answer-key' ? 'none' : 'flex';
+    if (clusterHistoryZoom) clusterHistoryZoom.style.display = newMode === 'answer-key' ? 'none' : 'flex';
+
     if (newMode === 'preview') {
       this.editorContainer.style.display = 'none';
       this.previewContainer.style.display = 'block';

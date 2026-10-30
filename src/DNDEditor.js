@@ -46,7 +46,7 @@ const shell = () => `
           </div>
         </div>
       </div>
-      <div class="sub-toolbar-cluster">
+      <div class="sub-toolbar-cluster cluster-add-objects" id="cluster-add-objects">
         <button id="btn-add-text" class="sub-tool-btn" type="button" title="Metin Kutusu Ekle">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>
         </button>
@@ -64,7 +64,7 @@ const shell = () => `
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="20" x2="20" y2="4"/></svg>
         </button>
       </div>
-      <div class="sub-toolbar-cluster">
+      <div class="sub-toolbar-cluster cluster-history-zoom" id="cluster-history-zoom">
         <button id="btn-undo" class="sub-tool-btn" type="button" disabled title="Geri Al (Ctrl+Z)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
         </button>
@@ -98,9 +98,6 @@ const shell = () => `
           <div class="ak-guide-title" id="ak-guide-title">Cevap anahtarı oluştur</div>
           <div class="ak-guide-instruction" id="ak-guide-instruction">Seçerek eşleştirmeye başla</div>
         </div>
-      </div>
-      <div class="ak-guide-right">
-        <div class="ak-guide-counter" id="ak-guide-counter">0 / 0 Eşleşti</div>
       </div>
     </div>
     <main id="editor-layout" class="editor-workspace">

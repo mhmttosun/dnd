@@ -134,16 +134,10 @@ class AnswerKeyManager {
 
     const titleEl = bar.querySelector('#ak-guide-title');
     const instructionEl = bar.querySelector('#ak-guide-instruction');
-    const counterEl = bar.querySelector('#ak-guide-counter');
     const iconBadge = bar.querySelector('.ak-guide-icon-badge');
 
     if (titleEl) titleEl.textContent = state.title;
     if (instructionEl) instructionEl.textContent = state.instruction;
-
-    if (counterEl) {
-      counterEl.textContent = `${state.matchedCount} / ${state.totalDraggables} Eşleşti`;
-      counterEl.classList.toggle('is-complete', state.status === 'all-completed');
-    }
 
     if (iconBadge) {
       iconBadge.classList.toggle('is-complete', state.status === 'all-completed');
