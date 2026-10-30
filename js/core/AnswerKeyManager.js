@@ -12,6 +12,7 @@ class AnswerKeyManager {
 
     this.svgConnections = stageEl.querySelector('#svg-connections');
     this.activeSourceId = null; // Bağlantı için seçilen sürüklenebilir nesne
+    this.guideBar = null;
 
     this.init();
   }
@@ -22,26 +23,133 @@ class AnswerKeyManager {
       this.stage.classList.remove('ak-selecting-target');
       if (newMode === 'answer-key') {
         this.renderConnections();
+        this.updateGuideBar();
+        setTimeout(() => this.stageManager.updateScale(), 0);
       } else {
         this.clearSvg();
+        this.updateGuideBar();
+        setTimeout(() => this.stageManager.updateScale(), 0);
       }
     });
 
     this.core.on('projectLoaded', () => {
       this.cleanupDanglingKeys();
       if (this.core.getMode() === 'answer-key') this.renderConnections();
+      this.updateGuideBar();
     });
 
     this.core.on('objectDeleted', () => {
       this.cleanupDanglingKeys();
       if (this.core.getMode() === 'answer-key') this.renderConnections();
+      this.updateGuideBar();
     });
 
     this.core.on('objectUpdated', () => {
       if (this.core.getMode() === 'answer-key') this.renderConnections();
+      this.updateGuideBar();
+    });
+
+    this.core.on('objectAdded', () => {
+      this.updateGuideBar();
+    });
+
+    this.core.on('answerKeyChanged', () => {
+      this.updateGuideBar();
     });
 
     this.setupClickInteraction();
+    this.updateGuideBar();
+  }
+
+  getGuideBar() {
+    if (this.guideBar && this.guideBar.isConnected) return this.guideBar;
+    const root = (this.stage && this.stage.getRootNode && this.stage.getRootNode() !== document)
+      ? this.stage.getRootNode()
+      : document;
+    this.guideBar = (root.getElementById ? root.getElementById('answer-key-guide-bar') : null)
+      || (root.querySelector ? root.querySelector('#answer-key-guide-bar') : null)
+      || document.getElementById('answer-key-guide-bar');
+    return this.guideBar;
+  }
+
+  getGuideState() {
+    const objects = this.core.data.objects || [];
+    const answerKey = this.core.data.answerKey || {};
+    const draggables = objects.filter(o => o.role === 'draggable');
+    const targets = objects.filter(o => ['target', 'category', 'sequence_slot'].includes(o.role));
+    const targetIds = new Set(targets.map(t => t.id));
+
+    const totalDraggables = draggables.length;
+    let matchedCount = 0;
+    draggables.forEach(d => {
+      const tId = answerKey[d.id];
+      if (tId && (targetIds.has(tId) || this.core.data.project?.activityType === 'sequencing')) {
+        matchedCount++;
+      }
+    });
+
+    // 1. Sahne açıldığında, tüm eşleştirmeler yapılmışsa:
+    //    Tüm eşleşmeler tamamlandı / Cevap anahtarını kontrol edebilirsin
+    // 2. Eşleştirmeler hiç yapılmamışsa:
+    //    Cevap anahtarı oluştur / Seçerek eşleştirmeye başla
+    // 3. Eşleştirme eksikse:
+    //    Eşleştirmeye devam et / Sıradaki nesneyi seçerek devam et.
+    if (totalDraggables > 0 && matchedCount >= totalDraggables) {
+      return {
+        status: 'all-completed',
+        title: 'Tüm eşleşmeler tamamlandı',
+        instruction: 'Cevap anahtarını kontrol edebilirsin',
+        matchedCount,
+        totalDraggables
+      };
+    } else if (matchedCount === 0) {
+      return {
+        status: 'none-completed',
+        title: 'Cevap anahtarı oluştur',
+        instruction: this.activeSourceId ? 'Hedef nesneyi seçerek eşleştirmeyi tamamla' : 'Seçerek eşleştirmeye başla',
+        matchedCount,
+        totalDraggables
+      };
+    } else {
+      return {
+        status: 'incomplete',
+        title: 'Eşleştirmeye devam et',
+        instruction: this.activeSourceId ? 'Hedef nesneyi seçerek eşleştirmeyi tamamla' : 'Sıradaki nesneyi seçerek devam et.',
+        matchedCount,
+        totalDraggables
+      };
+    }
+  }
+
+  updateGuideBar() {
+    const bar = this.getGuideBar();
+    if (!bar) return;
+
+    const isAnswerKey = this.core.getMode() === 'answer-key';
+    bar.style.display = isAnswerKey ? 'flex' : 'none';
+
+    if (!isAnswerKey) return;
+
+    const state = this.getGuideState();
+
+    const titleEl = bar.querySelector('#ak-guide-title');
+    const instructionEl = bar.querySelector('#ak-guide-instruction');
+    const counterEl = bar.querySelector('#ak-guide-counter');
+    const iconBadge = bar.querySelector('.ak-guide-icon-badge');
+
+    if (titleEl) titleEl.textContent = state.title;
+    if (instructionEl) instructionEl.textContent = state.instruction;
+
+    if (counterEl) {
+      counterEl.textContent = `${state.matchedCount} / ${state.totalDraggables} Eşleşti`;
+      counterEl.classList.toggle('is-complete', state.status === 'all-completed');
+    }
+
+    if (iconBadge) {
+      iconBadge.classList.toggle('is-complete', state.status === 'all-completed');
+    }
+
+    bar.setAttribute('data-guide-state', state.status);
   }
 
   setupClickInteraction() {
@@ -55,6 +163,7 @@ class AnswerKeyManager {
         if (this.activeSourceId) {
           this.activeSourceId = null;
           this.updateVisualHighlights();
+          this.updateGuideBar();
         }
         return;
       }
@@ -75,6 +184,7 @@ class AnswerKeyManager {
           this.activeSourceId = id;
         }
         this.updateVisualHighlights();
+        this.updateGuideBar();
         return;
       }
 
@@ -87,6 +197,7 @@ class AnswerKeyManager {
           this.activeSourceId = null;
           this.updateVisualHighlights();
           this.renderConnections();
+          this.updateGuideBar();
         }
       }
     });
@@ -105,6 +216,7 @@ class AnswerKeyManager {
     });
     this.core.emit('dataChanged', { source: 'answerKey' });
     this.core.autoSave();
+    this.updateGuideBar();
   }
 
   removeAnswer(draggableId) {
@@ -118,6 +230,7 @@ class AnswerKeyManager {
       this.core.emit('dataChanged', { source: 'answerKey' });
       this.core.autoSave();
       this.renderConnections();
+      this.updateGuideBar();
     }
   }
 

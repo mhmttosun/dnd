@@ -366,10 +366,6 @@ class UIManager {
       this.previewContainer.style.display = 'none';
       this.editorContainer.style.display = 'flex';
       this.stageManager.updateScale();
-
-      if (newMode === 'answer-key') {
-        this.showToast('🔑 Cevap Anahtarı: Kaynak nesneye ve ardından hedefe tıklayarak eşleştirin.', 'info', 4000);
-      }
     }
   }
 

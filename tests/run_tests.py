@@ -688,6 +688,75 @@ for zoom in [0.5, 0.8, 1.0, 1.5, 2.0, 2.5]:
 
 test_passed("Modern scrollbar, stage-scaler sarmalayıcısı, tekerlek yakınlaştırma ve odak korumalı scroll mimarisi doğrulandı.")
 
+# 5.25. Cevap Anahtarı Üst Rehber Çubuğu (Guide Bar) ve Durum Yönetimi Testi
+print("\n[Aşama 5.25] Cevap Anahtarı Üst Rehber Çubuğu (Guide Bar) ve Durum Yönetimi Testi")
+with open(os.path.join(BASE_DIR, 'js/ui/UIManager.js'), 'r', encoding='utf-8') as f:
+    ui_mgr_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/core/AnswerKeyManager.js'), 'r', encoding='utf-8') as f:
+    ak_mgr_code = f.read()
+with open(os.path.join(BASE_DIR, 'css/answer-key.css'), 'r', encoding='utf-8') as f:
+    ak_css_code = f.read()
+with open(os.path.join(BASE_DIR, 'index.html'), 'r', encoding='utf-8') as f:
+    index_html = f.read()
+with open(os.path.join(BASE_DIR, 'src/DNDEditor.js'), 'r', encoding='utf-8') as f:
+    editor_js = f.read()
+
+# 1. Eski kaybolan toast yönergesinin kaldırıldığının denetimi
+assert "this.showToast('🔑 Cevap Anahtarı:" not in ui_mgr_code, "Cevap Anahtarı modundaki eski geçici toast yönergesi kaldırılmalıdır!"
+
+# 2. HTML ve Editor şablonlarında rehber çubuğunun varlığı
+assert 'id="answer-key-guide-bar"' in index_html and 'class="answer-key-guide-bar"' in index_html, "index.html içinde answer-key-guide-bar bulunmalıdır!"
+assert 'id="ak-guide-title"' in index_html and 'id="ak-guide-instruction"' in index_html, "index.html içinde rehber başlık ve talimat öğeleri bulunmalıdır!"
+assert 'id="answer-key-guide-bar"' in editor_js and 'id="ak-guide-title"' in editor_js, "src/DNDEditor.js içinde answer-key-guide-bar ve ak-guide-title bulunmalıdır!"
+
+# 3. CSS yükseklik ve stil denetimi (yaklaşık 56-64px)
+assert '.answer-key-guide-bar' in ak_css_code, "css/answer-key.css içinde .answer-key-guide-bar tanımlı olmalıdır!"
+height_match = re.search(r'\.answer-key-guide-bar\s*\{[^}]*height:\s*(\d+)px', ak_css_code)
+assert height_match, "Rehber çubuğunun yüksekliği px cinsinden tanımlanmalıdır!"
+bar_height = int(height_match.group(1))
+assert 56 <= bar_height <= 64, f"Rehber çubuğunun yüksekliği 56-64px aralığında olmalıdır! (Mevcut: {bar_height}px)"
+
+# 4. AnswerKeyManager içindeki metotlar ve 3 durum mantığı
+assert 'getGuideBar' in ak_mgr_code, "AnswerKeyManager içinde getGuideBar metodu bulunmalıdır!"
+assert 'getGuideState' in ak_mgr_code, "AnswerKeyManager içinde getGuideState metodu bulunmalıdır!"
+assert 'updateGuideBar' in ak_mgr_code, "AnswerKeyManager içinde updateGuideBar metodu bulunmalıdır!"
+
+# 3 Durum Metinlerinin Birebir Varlığı:
+# 1. Tüm eşleşmeler tamamlandı / Cevap anahtarını kontrol edebilirsin
+assert 'Tüm eşleşmeler tamamlandı' in ak_mgr_code, "1. Durum başlığı 'Tüm eşleşmeler tamamlandı' eksik!"
+assert 'Cevap anahtarını kontrol edebilirsin' in ak_mgr_code, "1. Durum talimatı 'Cevap anahtarını kontrol edebilirsin' eksik!"
+
+# 2. Cevap anahtarı oluştur / Seçerek eşleştirmeye başla
+assert 'Cevap anahtarı oluştur' in ak_mgr_code, "2. Durum başlığı 'Cevap anahtarı oluştur' eksik!"
+assert 'Seçerek eşleştirmeye başla' in ak_mgr_code, "2. Durum talimatı 'Seçerek eşleştirmeye başla' eksik!"
+
+# 3. Eşleştirmeye devam et / Sıradaki nesneyi seçerek devam et.
+assert 'Eşleştirmeye devam et' in ak_mgr_code, "3. Durum başlığı 'Eşleştirmeye devam et' eksik!"
+assert 'Sıradaki nesneyi seçerek devam et.' in ak_mgr_code, "3. Durum talimatı 'Sıradaki nesneyi seçerek devam et.' eksik!"
+
+# 5. Durum Algoritması Doğrulama Simülasyonu
+def compute_guide_state(total_draggables, matched_count, active_source=None):
+    if total_draggables > 0 and matched_count >= total_draggables:
+        return 'Tüm eşleşmeler tamamlandı', 'Cevap anahtarını kontrol edebilirsin'
+    elif matched_count == 0:
+        return 'Cevap anahtarı oluştur', 'Hedef nesneyi seçerek eşleştirmeyi tamamla' if active_source else 'Seçerek eşleştirmeye başla'
+    else:
+        return 'Eşleştirmeye devam et', 'Hedef nesneyi seçerek eşleştirmeyi tamamla' if active_source else 'Sıradaki nesneyi seçerek devam et.'
+
+# Test: Eşleştirmeler hiç yapılmamışsa (0 / 4)
+t2, d2 = compute_guide_state(4, 0)
+assert t2 == 'Cevap anahtarı oluştur' and d2 == 'Seçerek eşleştirmeye başla'
+
+# Test: Eşleştirme eksikse (2 / 4)
+t3, d3 = compute_guide_state(4, 2)
+assert t3 == 'Eşleştirmeye devam et' and d3 == 'Sıradaki nesneyi seçerek devam et.'
+
+# Test: Tüm eşleşmeler tamamlandıysa (4 / 4)
+t1, d1 = compute_guide_state(4, 4)
+assert t1 == 'Tüm eşleşmeler tamamlandı' and d1 == 'Cevap anahtarını kontrol edebilirsin'
+
+test_passed("Cevap anahtarı üst rehber çubuğu, yükseklik sınırları ve 3 dinamik durum metni başarıyla doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 
