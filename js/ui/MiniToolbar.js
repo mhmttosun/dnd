@@ -18,6 +18,7 @@ class MiniToolbar {
     this.currentTargetProp = 'fill'; // 'fill' veya 'border' renk seçimi için
     this.showTextColorPalette = false; // Metin popup'ında tanımlı renkler paletinin açık olup olmadığı
     this.showStyleColorPalette = false; // Nesne görünümünde tanımlı renkler paletinin açık olup olmadığı
+    this.activeLineTab = 'type'; // Çizgi popup'ında aktif olan sekme ('type', 'width', 'color', 'arrows', 'align')
     this.isNewlyOpened = false;
     this.currentPlacementAbove = false;
 
@@ -496,58 +497,152 @@ class MiniToolbar {
 
     if (this.activePopup === 'line') {
       const bStyle = primary.borderStyle || 'solid';
+      const bWidth = primary.borderWidth || 3;
+      const bColor = primary.borderColor || '#1e293b';
       const rot = Math.round(primary.rotation || 0) % 360;
       const normalizedRot = (rot + 360) % 360;
       const isHoriz = normalizedRot === 0 || normalizedRot === 180;
       const isVert = normalizedRot === 90 || normalizedRot === 270;
+      const activeTab = this.activeLineTab || 'type';
+
+      const arrowMode = (primary.arrowStart && primary.arrowEnd) ? 'both' : (primary.arrowStart ? 'start' : (primary.arrowEnd ? 'end' : 'none'));
+
+      const paletteColors = [
+        '#1e293b', '#475569', '#94a3b8', '#ef4444',
+        '#f97316', '#f59e0b', '#10b981', '#06b6d4',
+        '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'
+      ];
 
       return `
         <div class="mt-popup-card mt-line-popup ${openClass}" id="mt-line-popup">
-          <!-- Çizgi Tipi -->
-          <div class="mt-line-popup-section">
-            <div class="mt-line-popup-title">Çizgi tipi</div>
-            <div class="mt-line-pill-group">
+          <div class="mt-line-title">Çizgi</div>
+
+          <!-- Üst Menü Sekmeleri -->
+          <div class="mt-line-tabs-bar">
+            <!-- 1. Çizgi Tipi -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'type' ? 'active' : ''}" data-line-tab="type" title="Çizgi tipi">
+              <svg width="20" height="12" viewBox="0 0 20 12"><line x1="2" y1="6" x2="18" y2="6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button>
+
+            <!-- 2. Çizgi Kalınlığı -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'width' ? 'active' : ''}" data-line-tab="width" title="Çizgi kalınlığı">
+              <span class="mt-line-tab-width-icon">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="4" x2="10" y2="4"/><line x1="2" y1="8" x2="10" y2="8"/></svg>
+              </span>
+              <span class="mt-line-tab-width-text" id="mt-tab-width-val">${bWidth}</span>
+            </button>
+
+            <!-- 3. Çizgi Rengi -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'color' ? 'active' : ''}" data-line-tab="color" title="Çizgi rengi">
+              <span class="mt-line-tab-swatch" id="mt-tab-color-swatch" style="background-color: ${bColor};"></span>
+            </button>
+
+            <!-- 4. Ok Uçları -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'arrows' ? 'active' : ''}" data-line-tab="arrows" title="Ok uçları">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="9 8 5 12 9 16"/><polyline points="15 8 19 12 15 16"/></svg>
+            </button>
+
+            <!-- 5. Hizalama -->
+            <button type="button" class="mt-line-tab-btn ${activeTab === 'align' ? 'active' : ''}" data-line-tab="align" title="Hizalama">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><polyline points="8 4 4 7 8 10"/><line x1="20" y1="17" x2="4" y2="17"/><polyline points="16 14 20 17 16 20"/></svg>
+            </button>
+          </div>
+
+          <!-- Alt Kart Panelleri -->
+
+          <!-- Panel 1: Çizgi tipi -->
+          <div class="mt-line-panel" data-panel="type" style="display: ${activeTab === 'type' ? 'flex' : 'none'};">
+            <div class="mt-line-panel-title">Çizgi tipi</div>
+            <div class="mt-line-type-row">
               <button type="button" class="mt-line-type-btn ${bStyle === 'solid' ? 'active' : ''}" data-line-style="solid" title="Düz Çizgi">
-                <svg width="32" height="16" viewBox="0 0 32 16"><line x1="2" y1="8" x2="30" y2="8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <svg width="28" height="12" viewBox="0 0 28 12"><line x1="2" y1="6" x2="26" y2="6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
               </button>
               <button type="button" class="mt-line-type-btn ${bStyle === 'dashed' ? 'active' : ''}" data-line-style="dashed" title="Kesikli Çizgi">
-                <svg width="32" height="16" viewBox="0 0 32 16"><line x1="2" y1="8" x2="30" y2="8" stroke="currentColor" stroke-width="3" stroke-dasharray="6 4" stroke-linecap="round"/></svg>
+                <svg width="28" height="12" viewBox="0 0 28 12"><line x1="2" y1="6" x2="26" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="6 4" stroke-linecap="round"/></svg>
               </button>
               <button type="button" class="mt-line-type-btn ${bStyle === 'dotted' ? 'active' : ''}" data-line-style="dotted" title="Noktalı Çizgi">
-                <svg width="32" height="16" viewBox="0 0 32 16"><line x1="2" y1="8" x2="30" y2="8" stroke="currentColor" stroke-width="3" stroke-dasharray="1 5" stroke-linecap="round"/></svg>
+                <svg width="28" height="12" viewBox="0 0 28 12"><line x1="2" y1="6" x2="26" y2="6" stroke="currentColor" stroke-width="3" stroke-dasharray="1 5" stroke-linecap="round"/></svg>
               </button>
             </div>
+            <div class="mt-line-panel-desc" id="mt-line-desc-type">${bStyle === 'dashed' ? 'Kesikli çizgi' : (bStyle === 'dotted' ? 'Noktalı çizgi' : 'Düz çizgi')}</div>
           </div>
 
-          <!-- Hizalama -->
-          <div class="mt-line-popup-section">
-            <div class="mt-line-popup-title">Hizalama</div>
-            <div class="mt-line-pill-group">
-              <button type="button" class="mt-line-align-btn ${isHoriz ? 'active' : ''}" data-line-align="horizontal" title="Yatay yap">
-                <svg width="18" height="14" viewBox="0 0 18 14"><line x1="1" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-                <span>Yatay yap</span>
+          <!-- Panel 2: Kalınlık -->
+          <div class="mt-line-panel" data-panel="width" style="display: ${activeTab === 'width' ? 'flex' : 'none'};">
+            <div class="mt-line-panel-title">Çizgi kalınlığı</div>
+            <div class="mt-line-stepper-wrap">
+              <button type="button" class="mt-line-step-btn" data-line-width-step="-1" title="Azalt">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
-              <div class="mt-line-group-divider"></div>
-              <button type="button" class="mt-line-align-btn ${isVert ? 'active' : ''}" data-line-align="vertical" title="Dikey yap">
-                <svg width="14" height="18" viewBox="0 0 14 18"><line x1="7" y1="1" x2="7" y2="17" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-                <span>Dikey yap</span>
+              <span class="mt-line-stepper-val" id="mt-line-val-width">${bWidth} px</span>
+              <button type="button" class="mt-line-step-btn" data-line-width-step="1" title="Artır">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
+            <div class="mt-line-chips-row">
+              ${[1, 2, 3, 4, 6, 8].map(w => `
+                <button type="button" class="mt-line-chip-btn ${bWidth === w ? 'active' : ''}" data-line-width-preset="${w}">${w}</button>
+              `).join('')}
+            </div>
+            <div class="mt-line-panel-desc" id="mt-line-desc-width">${bWidth <= 2 ? 'İnce çizgi' : (bWidth <= 4 ? 'Orta kalınlık' : 'Kalın çizgi')} (${bWidth}px)</div>
           </div>
 
-          <!-- Ok uçları -->
-          <div class="mt-line-popup-section">
-            <div class="mt-line-popup-title">Ok uçları</div>
-            <div class="mt-line-pill-group">
-              <button type="button" class="mt-line-arrow-btn ${primary.arrowStart ? 'active' : ''}" data-line-arrow="start" title="Başlangıç oku">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <!-- Panel 3: Renk -->
+          <div class="mt-line-panel" data-panel="color" style="display: ${activeTab === 'color' ? 'flex' : 'none'};">
+            <div class="mt-line-panel-title">Çizgi rengi</div>
+            <div class="mt-line-color-grid">
+              ${paletteColors.map(c => `
+                <button type="button" class="mt-line-color-swatch ${bColor.toLowerCase() === c.toLowerCase() ? 'is-active' : ''}" data-line-color="${c}" style="background-color: ${c};" title="${c}"></button>
+              `).join('')}
+            </div>
+            <div class="mt-line-color-custom-row">
+              <label class="mt-line-color-custom-btn" title="Özel Renk Seç">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10c0 2-2 3-3 3h-1a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-1"/></svg>
+                <span>Özel Renk Seç</span>
+                <input type="color" class="mt-line-color-picker-input" value="${bColor.startsWith('#') && bColor.length === 7 ? bColor : '#1e293b'}">
+              </label>
+            </div>
+            <div class="mt-line-panel-desc" id="mt-line-desc-color">Renk: ${bColor}</div>
+          </div>
+
+          <!-- Panel 4: Ok uçları -->
+          <div class="mt-line-panel" data-panel="arrows" style="display: ${activeTab === 'arrows' ? 'flex' : 'none'};">
+            <div class="mt-line-panel-title">Ok uçları</div>
+            <div class="mt-line-arrow-grid">
+              <button type="button" class="mt-line-arrow-btn ${arrowMode === 'none' ? 'active' : ''}" data-line-arrow="none" title="Uçsuz Düz">
+                <svg width="24" height="14" viewBox="0 0 24 14"><line x1="2" y1="7" x2="22" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                <span>Uçsuz</span>
+              </button>
+              <button type="button" class="mt-line-arrow-btn ${arrowMode === 'start' ? 'active' : ''}" data-line-arrow="start" title="Başlangıç Oku">
+                <svg width="24" height="14" viewBox="0 0 24 14"><line x1="6" y1="7" x2="22" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polygon points="6,3 0,7 6,11" fill="currentColor"/></svg>
                 <span>Başlangıç</span>
               </button>
-              <button type="button" class="mt-line-arrow-btn ${primary.arrowEnd ? 'active' : ''}" data-line-arrow="end" title="Bitiş oku">
+              <button type="button" class="mt-line-arrow-btn ${arrowMode === 'end' ? 'active' : ''}" data-line-arrow="end" title="Bitiş Oku">
+                <svg width="24" height="14" viewBox="0 0 24 14"><line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polygon points="18,3 24,7 18,11" fill="currentColor"/></svg>
                 <span>Bitiş</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              <button type="button" class="mt-line-arrow-btn ${arrowMode === 'both' ? 'active' : ''}" data-line-arrow="both" title="Çift Yönlü Ok">
+                <svg width="24" height="14" viewBox="0 0 24 14"><line x1="6" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="2.5"/><polygon points="6,3 0,7 6,11" fill="currentColor"/><polygon points="18,3 24,7 18,11" fill="currentColor"/></svg>
+                <span>Çift yön</span>
               </button>
             </div>
+            <div class="mt-line-panel-desc" id="mt-line-desc-arrow">${arrowMode === 'both' ? 'Çift yönlü ok' : (arrowMode === 'start' ? 'Başlangıç oku' : (arrowMode === 'end' ? 'Bitiş oku' : 'Uçsuz düz çizgi'))}</div>
+          </div>
+
+          <!-- Panel 5: Hizalama -->
+          <div class="mt-line-panel" data-panel="align" style="display: ${activeTab === 'align' ? 'flex' : 'none'};">
+            <div class="mt-line-panel-title">Hizalama</div>
+            <div class="mt-line-align-grid">
+              <button type="button" class="mt-line-align-btn ${isHoriz ? 'active' : ''}" data-line-align="horizontal" title="Yatay Yap">
+                <svg width="18" height="14" viewBox="0 0 18 14"><line x1="1" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <span>Yatay</span>
+              </button>
+              <button type="button" class="mt-line-align-btn ${isVert ? 'active' : ''}" data-line-align="vertical" title="Dikey Yap">
+                <svg width="14" height="18" viewBox="0 0 14 18"><line x1="7" y1="1" x2="7" y2="17" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <span>Dikey</span>
+              </button>
+            </div>
+            <div class="mt-line-panel-desc" id="mt-line-desc-align">${isHoriz ? 'Yatay çizgi (0°)' : (isVert ? 'Dikey çizgi (90°)' : `Açılı çizgi (${normalizedRot}°)`)}</div>
           </div>
         </div>
       `;
@@ -870,6 +965,20 @@ class MiniToolbar {
     const getTargets = () => this.selectionManager.getSelectedObjects();
     const getTextTargets = () => getTargets().filter(o => o.type === 'text' || o.text !== undefined || o.role === 'category' || o.role === 'sequence_slot');
 
+    // Çizgi Popup Sekme Değişimi
+    this.toolbarEl.querySelectorAll('[data-line-tab]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const tab = btn.getAttribute('data-line-tab');
+        this.activeLineTab = tab;
+        this.toolbarEl.querySelectorAll('[data-line-tab]').forEach(b => b.classList.toggle('active', b === btn));
+        this.toolbarEl.querySelectorAll('.mt-line-panel').forEach(p => {
+          p.style.display = p.getAttribute('data-panel') === tab ? 'flex' : 'none';
+        });
+        this.reposition();
+      };
+    });
+
     // Çizgi Tipi Seçimi
     this.toolbarEl.querySelectorAll('[data-line-style]').forEach(btn => {
       btn.onclick = (e) => {
@@ -878,8 +987,77 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderStyle: style }));
+        const descEl = this.root.getElementById('mt-line-desc-type');
+        if (descEl) {
+          descEl.textContent = style === 'dashed' ? 'Kesikli çizgi' : (style === 'dotted' ? 'Noktalı çizgi' : 'Düz çizgi');
+        }
       };
     });
+
+    // Çizgi Kalınlığı Stepper ve Ön Tanımlı Butonlar
+    const updateLineWidth = (newWidth) => {
+      const clamped = Math.max(1, Math.min(24, Math.round(newWidth)));
+      getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderWidth: clamped }));
+      const valEl = this.root.getElementById('mt-line-val-width');
+      if (valEl) valEl.textContent = `${clamped} px`;
+      const tabValEl = this.root.getElementById('mt-tab-width-val');
+      if (tabValEl) tabValEl.textContent = `${clamped}`;
+      const descEl = this.root.getElementById('mt-line-desc-width');
+      if (descEl) {
+        const desc = clamped <= 2 ? 'İnce çizgi' : (clamped <= 4 ? 'Orta kalınlık' : 'Kalın çizgi');
+        descEl.textContent = `${desc} (${clamped}px)`;
+      }
+      this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
+        const pVal = parseInt(b.getAttribute('data-line-width-preset'), 10);
+        b.classList.toggle('active', pVal === clamped);
+      });
+    };
+
+    this.toolbarEl.querySelectorAll('[data-line-width-step]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const step = parseInt(btn.getAttribute('data-line-width-step'), 10) || 0;
+        const currentObj = this.objectManager.getObject(primary.id) || primary;
+        const currentW = currentObj.borderWidth || 3;
+        updateLineWidth(currentW + step);
+      };
+    });
+
+    this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const preset = parseInt(btn.getAttribute('data-line-width-preset'), 10);
+        updateLineWidth(preset);
+      };
+    });
+
+    // Çizgi Rengi Seçimi (Palet ve Özel Renk Seçici)
+    const updateLineColor = (hex) => {
+      getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderColor: hex }));
+      const swatchEl = this.root.getElementById('mt-tab-color-swatch');
+      if (swatchEl) swatchEl.style.backgroundColor = hex;
+      const descEl = this.root.getElementById('mt-line-desc-color');
+      if (descEl) descEl.textContent = `Renk: ${hex}`;
+      this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
+        b.classList.toggle('is-active', (b.getAttribute('data-line-color') || '').toLowerCase() === hex.toLowerCase());
+      });
+    };
+
+    this.toolbarEl.querySelectorAll('[data-line-color]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const color = btn.getAttribute('data-line-color');
+        updateLineColor(color);
+      };
+    });
+
+    const lineColorPicker = this.toolbarEl.querySelector('.mt-line-color-picker-input');
+    if (lineColorPicker) {
+      lineColorPicker.oninput = (e) => {
+        e.stopPropagation();
+        updateLineColor(e.target.value);
+      };
+    }
 
     // Çizgi Hizalama (Yatay Yap / Dikey Yap)
     this.toolbarEl.querySelectorAll('[data-line-align]').forEach(btn => {
@@ -891,19 +1069,40 @@ class MiniToolbar {
         btn.classList.add('active');
         getTargets().forEach(o => this.objectManager.updateObject(o.id, { rotation: rot }));
         this.selectionManager.updateSelectionBox();
+        const descEl = this.root.getElementById('mt-line-desc-align');
+        if (descEl) {
+          descEl.textContent = align === 'horizontal' ? 'Yatay çizgi (0°)' : 'Dikey çizgi (90°)';
+        }
       };
     });
 
-    // Çizgi Ok Uçları (Başlangıç / Bitiş)
+    // Çizgi Ok Uçları (Uçsuz / Başlangıç / Bitiş / Çift Yön)
     this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
         const arrowType = btn.getAttribute('data-line-arrow');
-        const prop = arrowType === 'start' ? 'arrowStart' : 'arrowEnd';
-        const currentObj = this.objectManager.getObject(primary.id) || primary;
-        const newVal = !currentObj[prop];
-        btn.classList.toggle('active', newVal);
-        getTargets().forEach(o => this.objectManager.updateObject(o.id, { [prop]: newVal }));
+        let start = false;
+        let end = false;
+        if (arrowType === 'start') {
+          start = true;
+          end = false;
+        } else if (arrowType === 'end') {
+          start = false;
+          end = true;
+        } else if (arrowType === 'both') {
+          start = true;
+          end = true;
+        } else if (arrowType === 'none') {
+          start = false;
+          end = false;
+        }
+        this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        getTargets().forEach(o => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }));
+        const descEl = this.root.getElementById('mt-line-desc-arrow');
+        if (descEl) {
+          descEl.textContent = arrowType === 'both' ? 'Çift yönlü ok' : (arrowType === 'start' ? 'Başlangıç oku' : (arrowType === 'end' ? 'Bitiş oku' : 'Uçsuz düz çizgi'));
+        }
       };
     });
 

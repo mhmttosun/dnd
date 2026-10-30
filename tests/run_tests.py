@@ -884,6 +884,24 @@ assert '.stage-object[data-type="text"][data-role="decorative"]:hover' in stage_
 
 test_passed("Metin kutusunun normal kutulardan (şekillerden) ayırt edilerek şeffaf arka plan, kenarlıksız gövde ve hover kılavuzu ile sunulduğu doğrulandı.")
 
+# 5.29 Çizgi Sekmeli ve Gelişmiş Ayarlar Popup'ı Testi
+print("\n[Aşama 5.29] Çizgi Sekmeli ve Gelişmiş Ayarlar Popup'ı Testi")
+with open(mini_toolbar_path, 'r', encoding='utf-8') as f:
+    mt_line_code = f.read()
+with open(editor_css_path, 'r', encoding='utf-8') as f:
+    ed_line_css = f.read()
+
+assert 'mt-line-tabs-bar' in mt_line_code, "Çizgi popup kartında üst sekmeler çubuğu (.mt-line-tabs-bar) bulunmalıdır!"
+assert 'data-line-tab="type"' in mt_line_code and 'data-line-tab="width"' in mt_line_code, "Çizgi tipi ve kalınlık sekmeleri tanımlı olmalıdır!"
+assert 'data-line-tab="color"' in mt_line_code and 'data-line-tab="arrows"' in mt_line_code and 'data-line-tab="align"' in mt_line_code, "Renk, ok uçları ve hizalama sekmeleri tanımlı olmalıdır!"
+assert 'mt-line-panel' in mt_line_code, "Ayar panelleri (.mt-line-panel) bulunmalıdır!"
+assert 'data-line-width-step' in mt_line_code and 'data-line-width-preset' in mt_line_code, "Çizgi kalınlığı stepper ve preset butonları bulunmalıdır!"
+assert 'data-line-color' in mt_line_code, "Çizgi renk paleti swatchları bulunmalıdır!"
+assert '.mt-line-tabs-bar' in ed_line_css and '.mt-line-tab-btn' in ed_line_css, "Üst menü sekmeleri için CSS tanımlı olmalıdır!"
+assert '.mt-line-panel' in ed_line_css, "Alt kart paneli stili CSS içinde tanımlı olmalıdır!"
+
+test_passed("Çizgi mini popup'ı üst sekmeli menü ve alt ayar kartı yapısıyla başarıyla doğrulandı.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 

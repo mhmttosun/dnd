@@ -588,37 +588,127 @@
   min-width: 252px;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 10px 12px;
+  padding: 12px;
   gap: 8px;
   border-radius: var(--radius-lg);
   background: #ffffff;
   box-shadow: var(--shadow-popup);
   border: 1px solid var(--border-color);
-}
-
-.mt-line-popup-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
-.mt-line-pill-group {
+.mt-line-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+}
+
+/* Üst 5'li Menü / Sekme Çubuğu */
+.mt-line-tabs-bar {
   display: flex;
   align-items: center;
-  background: #f1f5f9;
-  border-radius: 8px;
-  padding: 2.5px;
-  gap: 2px;
   justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+}
+
+.mt-line-tab-btn {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mt-line-tab-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.mt-line-tab-btn.active {
+  background: #edf5fd;
+  border-color: #88b4e7;
+  color: #1d4ed8;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+}
+
+.mt-line-tab-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: inline-block;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.mt-line-tab-width-icon {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.mt-line-tab-width-text {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+/* Alt Ayar Kartı Paneli */
+.mt-line-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 10px;
+  border: 1px solid #f1f5f9;
+  box-sizing: border-box;
+}
+
+.mt-line-panel-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mt-line-panel-desc {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: #64748b;
+  margin-top: 2px;
+  user-select: none;
+}
+
+/* Çizgi Tipi Butonları */
+.mt-line-type-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
 }
 
 .mt-line-type-btn {
   flex: 1;
-  height: 30px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: #64748b;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #334155;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -627,47 +717,225 @@
 }
 
 .mt-line-type-btn:hover {
+  background: #e2e8f0;
   color: #0f172a;
-  background: rgba(255, 255, 255, 0.5);
 }
 
 .mt-line-type-btn.active {
   background: #ffffff;
-  color: #0f172a;
+  border-color: #88b4e7;
+  color: #1e293b;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
-.mt-line-align-btn,
-.mt-line-arrow-btn {
-  flex: 1;
-  height: 30px;
+/* Kalınlık Paneli Elemanları */
+.mt-line-stepper-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 3px 6px;
+  height: 34px;
+  box-sizing: border-box;
+}
+
+.mt-line-step-btn {
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   border: none;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.78rem;
+  background: #f1f5f9;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mt-line-step-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.mt-line-stepper-val {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.mt-line-chips-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mt-line-chip-btn {
+  flex: 1;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mt-line-chip-btn:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.mt-line-chip-btn.active {
+  background: #edf5fd;
+  border-color: #88b4e7;
+  color: #1d4ed8;
+}
+
+/* Renk Paneli Elemanları */
+.mt-line-color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.mt-line-color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.mt-line-color-swatch:hover {
+  transform: scale(1.08);
+}
+
+.mt-line-color-swatch.is-active {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+  transform: scale(1.05);
+}
+
+.mt-line-color-custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.mt-line-color-custom-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #475569;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.mt-line-color-picker-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Ok Uçları Butonları */
+.mt-line-arrow-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.mt-line-arrow-btn {
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.74rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.mt-line-align-btn:hover,
 .mt-line-arrow-btn:hover {
+  background: #e2e8f0;
   color: #0f172a;
-  background: rgba(255, 255, 255, 0.5);
 }
 
-.mt-line-align-btn.active,
 .mt-line-arrow-btn.active {
   background: #ffffff;
-  color: #0f172a;
+  border-color: #88b4e7;
+  color: #1e293b;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+/* Hizalama Butonları */
+.mt-line-align-grid {
+  display: flex;
+  gap: 6px;
+}
+
+.mt-line-align-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mt-line-align-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.mt-line-align-btn.active {
+  background: #ffffff;
+  border-color: #88b4e7;
+  color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
 .mt-line-group-divider {
