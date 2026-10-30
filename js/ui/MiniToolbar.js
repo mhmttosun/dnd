@@ -16,6 +16,7 @@ class MiniToolbar {
     this.toolbarEl = null;
     this.activePopup = null; // 'role' | 'style' | 'text' | 'layers' | 'align' | null
     this.activeStyleTab = 'fill'; // 'fill' | 'border' | 'width' | 'borderColor' | 'radius'
+    this.activeTextTab = 'font'; // 'font' | 'align' | 'color'
     this.showTextColorPalette = false; // Metin popup'ında tanımlı renkler paletinin açık olup olmadığı
     this.activeLineTab = 'type'; // Çizgi popup'ında aktif olan sekme ('type', 'width', 'color', 'arrows', 'align')
     this.isNewlyOpened = false;
@@ -164,19 +165,15 @@ class MiniToolbar {
     } else if (action === 'toggle-align-popup') {
       this.togglePopup('align');
     } else if (action === 'toggle-text-palette') {
-      this.showTextColorPalette = !this.showTextColorPalette;
-      const paletteSec = this.toolbarEl.querySelector('.mt-text-popup .mt-color-palette')?.parentElement;
-      const previewBtn = this.toolbarEl.querySelector('.mt-color-preview-btn');
-      if (paletteSec) {
-        paletteSec.style.display = this.showTextColorPalette ? 'flex' : 'none';
-        if (this.showTextColorPalette) {
-          paletteSec.classList.add('is-opening');
-        }
-        if (previewBtn) previewBtn.classList.toggle('active', this.showTextColorPalette);
-        this.reposition();
-      } else {
-        this.render();
-      }
+      this.activeTextTab = 'color';
+      this.showTextColorPalette = true;
+      this.toolbarEl.querySelectorAll('[data-text-tab]').forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-text-tab') === 'color');
+      });
+      this.toolbarEl.querySelectorAll('[data-text-panel]').forEach(panel => {
+        panel.style.display = panel.getAttribute('data-text-panel') === 'color' ? 'flex' : 'none';
+      });
+      this.reposition();
     } else if (action === 'start-inline-edit') {
       if (primary) {
         this.core.emit('requestInlineTextEdit', { objectId: primary.id });
@@ -719,72 +716,115 @@ class MiniToolbar {
       const tColor = primary.textColor || '#1e293b';
       const hAlign = primary.textAlign || 'center';
       const vAlign = primary.verticalAlign || 'middle';
+      const tab = this.activeTextTab || 'font';
+
+      const textColors = [
+        ['#1e293b', 'Koyu gri'], ['#ffffff', 'Beyaz'], ['#cbd5e1', 'Açık gri'],
+        ['#64748b', 'Gri'], ['#ef4444', 'Kırmızı'], ['#f97316', 'Turuncu'],
+        ['#eab308', 'Sarı'], ['#22c55e', 'Yeşil'], ['#14b8a6', 'Turkuaz'],
+        ['#0ea5e9', 'Açık mavi'], ['#2563eb', 'Mavi'], ['#6366f1', 'İndigo'],
+        ['#8b5cf6', 'Mor'], ['#ec4899', 'Pembe']
+      ];
 
       return `
         <div class="mt-popup-card mt-text-popup ${openClass}" id="mt-text-popup">
-          <div class="mt-popup-header-row">
-            <div class="mt-popup-title">Metin</div>
-            <button type="button" class="mt-inline-edit-btn" data-action="start-inline-edit" title="Metni Yerinde Düzenle (veya çift tıklayın)">✏️ Düzenle</button>
-          </div>
+          <div class="mt-text-title">Metin</div>
 
-          <!-- Font Stili, Boyut ve Renk -->
-          <div class="mt-row mt-text-format-row">
-            <div class="mt-pill-group">
-              <button type="button" class="mt-format-btn ${isBold ? 'active' : ''}" data-text-action="bold"><strong>B</strong></button>
-              <button type="button" class="mt-format-btn ${isItalic ? 'active' : ''}" data-text-action="italic"><em>I</em></button>
-              <button type="button" class="mt-format-btn ${isUnderline ? 'active' : ''}" data-text-action="underline"><u>U</u></button>
-            </div>
+          <!-- Üst Menü / 3 Sekme Çubuğu -->
+          <div class="mt-text-tabs-bar" role="group" aria-label="Metin ayarları">
+            <!-- 1. Biçimlendirme ve Font Sekmesi -->
+            <button type="button" class="mt-text-tab-btn ${tab === 'font' ? 'active' : ''}" data-text-tab="font" title="Biçimlendirme ve Yazı Tipi">
+              <span class="mt-text-tab-font-icon" style="font-weight: 700; font-size: 0.95rem; line-height: 1;">Aa</span>
+            </button>
 
-            <div class="mt-size-stepper">
-              <span class="mt-size-val">${fSize}</span>
-              <div class="mt-stepper-arrows">
-                <button type="button" data-text-action="size-up">▲</button>
-                <button type="button" data-text-action="size-down">▼</button>
-              </div>
-              <span class="mt-size-unit">pt</span>
-            </div>
+            <!-- 2. Hizalama Sekmesi -->
+            <button type="button" class="mt-text-tab-btn ${tab === 'align' ? 'active' : ''}" data-text-tab="align" title="Hizalama">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+            </button>
 
-            <button type="button" class="mt-color-preview-btn ${this.showTextColorPalette ? 'active' : ''}" data-action="toggle-text-palette" title="Metin Rengi (Tanımlı Renkler)">
-              <span class="mt-color-circle" style="background-color: ${tColor};"></span>
+            <!-- 3. Renk Sekmesi -->
+            <button type="button" class="mt-text-tab-btn mt-color-preview-btn ${tab === 'color' ? 'active' : ''}" data-text-tab="color" data-action="toggle-text-palette" title="Metin Rengi">
+              <span class="mt-text-tab-swatch mt-color-circle" id="mt-tab-text-color-swatch" style="background-color: ${tColor};"></span>
             </button>
           </div>
 
-          <!-- Yatay ve Dikey Hizalama -->
-          <div class="mt-row mt-align-row">
-            <div class="mt-pill-group">
-              <button type="button" class="mt-icon-btn ${hAlign === 'left' ? 'active' : ''}" data-align-h="left" title="Sola Hizala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
-              </button>
-              <button type="button" class="mt-icon-btn ${hAlign === 'center' ? 'active' : ''}" data-align-h="center" title="Ortala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-              </button>
-              <button type="button" class="mt-icon-btn ${hAlign === 'right' ? 'active' : ''}" data-align-h="right" title="Sağa Hizala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>
-              </button>
+          <!-- Alt Kart Panelleri -->
+
+          <!-- Panel 1: Biçimlendirme ve Font -->
+          <div class="mt-text-panel" data-text-panel="font" style="display: ${tab === 'font' ? 'flex' : 'none'};">
+            <div class="mt-text-panel-title">Biçimlendirme ve font</div>
+
+            <!-- B / I / U Butonları ve Düzenle Butonu -->
+            <div class="mt-row mt-text-format-row" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div class="mt-pill-group">
+                <button type="button" class="mt-format-btn ${isBold ? 'active' : ''}" data-text-action="bold" title="Kalın (Bold)"><strong>B</strong></button>
+                <button type="button" class="mt-format-btn ${isItalic ? 'active' : ''}" data-text-action="italic" title="İtalik (Italic)"><em>I</em></button>
+                <button type="button" class="mt-format-btn ${isUnderline ? 'active' : ''}" data-text-action="underline" title="Altı Çizili (Underline)"><u>U</u></button>
+              </div>
+              <button type="button" class="mt-inline-edit-btn" data-action="start-inline-edit" title="Metni Yerinde Düzenle (veya çift tıklayın)">✏️ Düzenle</button>
             </div>
 
-            <div class="mt-pill-group">
-              <button type="button" class="mt-icon-btn ${vAlign === 'top' ? 'active' : ''}" data-align-v="top" title="Üste Hizala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="4" x2="21" y2="4"/><path d="M12 20V8"/><polyline points="8 12 12 8 16 12"/></svg>
-              </button>
-              <button type="button" class="mt-icon-btn ${vAlign === 'middle' ? 'active' : ''}" data-align-v="middle" title="Dikey Ortala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><path d="M8 7l4 5 4-5"/><path d="M8 17l4-5 4 5"/></svg>
-              </button>
-              <button type="button" class="mt-icon-btn ${vAlign === 'bottom' ? 'active' : ''}" data-align-v="bottom" title="Alta Hizala">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="20" x2="21" y2="20"/><path d="M12 4v12"/><polyline points="8 12 12 16 16 12"/></svg>
-              </button>
+            <!-- Font Boyutu Stepper (+/-) -->
+            <div class="mt-stepper-group" role="group" aria-label="Yazı boyutu">
+              <button type="button" class="mt-step-btn" data-text-action="size-down" title="Yazı boyutunu küçült">−</button>
+              <div class="mt-style-step-value">
+                <span class="mt-step-val mt-size-val" id="mt-val-fontSize" aria-live="polite">${fSize}</span>
+                <span class="mt-step-unit mt-size-unit">pt</span>
+              </div>
+              <button type="button" class="mt-step-btn" data-text-action="size-up" title="Yazı boyutunu büyüt">+</button>
+            </div>
+
+            <!-- Hazır Boyut Seçenekleri -->
+            <div class="mt-text-chips-row" role="group" aria-label="Hazır yazı boyutları">
+              ${[12, 14, 16, 18, 24, 32].map(s => `
+                <button type="button" class="mt-text-chip-btn ${fSize === s ? 'active' : ''}" data-text-size-preset="${s}" title="${s} pt">
+                  ${s}
+                </button>
+              `).join('')}
             </div>
           </div>
 
-          <!-- Tanımlı Renkler Izgarası (En Altta, Özel Renk Seç Yok) -->
-          <div class="mt-text-palette-section" style="display: ${this.showTextColorPalette ? 'flex' : 'none'};">
-            <div class="mt-palette-header">Tanımlı Renkler</div>
-            <div class="mt-color-palette">
-              ${[
-                '#1e293b', '#ffffff', '#cbd5e1', '#64748b', '#ef4444', '#f97316', '#eab308',
-                '#22c55e', '#14b8a6', '#0ea5e9', '#2563eb', '#6366f1', '#8b5cf6', '#ec4899'
-              ].map(c => `
-                <button type="button" class="mt-color-swatch ${c.toLowerCase() === (tColor || '').toLowerCase() ? 'is-active-swatch' : ''}" data-text-color-val="${c}" style="background-color: ${c};" title="${c}">
+          <!-- Panel 2: Hizalama -->
+          <div class="mt-text-panel" data-text-panel="align" style="display: ${tab === 'align' ? 'flex' : 'none'};">
+            <div class="mt-text-panel-title">Hizalama</div>
+            <div class="mt-row mt-align-row" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span class="mt-align-section-label" style="font-size: 0.74rem; color: #64748b; font-weight: 500;">Yatay</span>
+                <div class="mt-pill-group">
+                  <button type="button" class="mt-icon-btn ${hAlign === 'left' ? 'active' : ''}" data-align-h="left" title="Sola Hizala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+                  </button>
+                  <button type="button" class="mt-icon-btn ${hAlign === 'center' ? 'active' : ''}" data-align-h="center" title="Ortala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                  </button>
+                  <button type="button" class="mt-icon-btn ${hAlign === 'right' ? 'active' : ''}" data-align-h="right" title="Sağa Hizala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span class="mt-align-section-label" style="font-size: 0.74rem; color: #64748b; font-weight: 500;">Dikey</span>
+                <div class="mt-pill-group">
+                  <button type="button" class="mt-icon-btn ${vAlign === 'top' ? 'active' : ''}" data-align-v="top" title="Üste Hizala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="4" x2="21" y2="4"/><path d="M12 20V8"/><polyline points="8 12 12 8 16 12"/></svg>
+                  </button>
+                  <button type="button" class="mt-icon-btn ${vAlign === 'middle' ? 'active' : ''}" data-align-v="middle" title="Dikey Ortala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><path d="M8 7l4 5 4-5"/><path d="M8 17l4-5 4 5"/></svg>
+                  </button>
+                  <button type="button" class="mt-icon-btn ${vAlign === 'bottom' ? 'active' : ''}" data-align-v="bottom" title="Alta Hizala">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="20" x2="21" y2="20"/><path d="M12 4v12"/><polyline points="8 12 12 16 16 12"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 3: Renk -->
+          <div class="mt-text-panel mt-text-palette-section" data-text-panel="color" style="display: ${tab === 'color' ? 'flex' : 'none'};">
+            <div class="mt-text-panel-title">Metin rengi</div>
+            <div class="mt-color-palette" role="group" aria-label="Metin rengi">
+              ${textColors.map(([c, name]) => `
+                <button type="button" class="mt-color-swatch ${c.toLowerCase() === (tColor || '').toLowerCase() ? 'is-active-swatch' : ''}" data-text-color-val="${c}" style="background-color: ${c};" title="${name}" aria-label="${name}">
                   ${c.toLowerCase() === (tColor || '').toLowerCase() ? '<span class="swatch-check">✓</span>' : ''}
                 </button>
               `).join('')}
@@ -896,7 +936,7 @@ class MiniToolbar {
 
     // İkonlu kontrollerin adı ve seçili durumu yardımcı teknolojilere de aktarılır.
     const syncAppearanceControls = () => {
-      this.toolbarEl.querySelectorAll('.mt-line-popup button, .mt-style-popup button').forEach(button => {
+      this.toolbarEl.querySelectorAll('.mt-line-popup button, .mt-style-popup button, .mt-text-popup button').forEach(button => {
         if (!button.hasAttribute('data-step-prop')) {
           button.setAttribute('aria-pressed', String(button.classList.contains('active') || button.classList.contains('is-active')));
         }
@@ -1109,6 +1149,34 @@ class MiniToolbar {
       };
     });
 
+    // Metin Sekmeleri Değiştirme (Biçimlendirme/Font, Hizalama, Renk)
+    this.toolbarEl.querySelectorAll('[data-text-tab]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        this.activeTextTab = btn.getAttribute('data-text-tab');
+        this.toolbarEl.querySelectorAll('[data-text-tab]').forEach(button => {
+          button.classList.toggle('active', button === btn);
+        });
+        this.toolbarEl.querySelectorAll('[data-text-panel]').forEach(panel => {
+          panel.style.display = panel.getAttribute('data-text-panel') === this.activeTextTab ? 'flex' : 'none';
+        });
+        syncAppearanceControls();
+        this.reposition();
+      };
+    });
+
+    // Hazır Yazı Boyutu Seçenekleri (Chips)
+    this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const newSize = parseInt(btn.getAttribute('data-text-size-preset'), 10);
+        this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => b.classList.toggle('active', b === btn));
+        const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
+        if (sizeVal) sizeVal.textContent = newSize;
+        getTextTargets().forEach(o => this.objectManager.updateObject(o.id, { fontSize: newSize }));
+      };
+    });
+
     // Metin Formatlama
     this.toolbarEl.querySelectorAll('[data-text-action]').forEach(btn => {
       btn.onclick = (e) => {
@@ -1135,11 +1203,17 @@ class MiniToolbar {
           const newSize = (primary.fontSize || 16) + 2;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
+          this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => {
+            b.classList.toggle('active', parseInt(b.getAttribute('data-text-size-preset'), 10) === newSize);
+          });
           tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + 2) }));
         } else if (act === 'size-down') {
           const newSize = Math.max(10, (primary.fontSize || 16) - 2);
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
+          this.toolbarEl.querySelectorAll('[data-text-size-preset]').forEach(b => {
+            b.classList.toggle('active', parseInt(b.getAttribute('data-text-size-preset'), 10) === newSize);
+          });
           tTargets.forEach(o => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) - 2) }));
         }
       };
@@ -1152,6 +1226,8 @@ class MiniToolbar {
         const c = btn.getAttribute('data-text-color-val');
         const previewCircle = this.toolbarEl.querySelector('.mt-color-circle');
         if (previewCircle) previewCircle.style.backgroundColor = c;
+        const tabSwatch = this.toolbarEl.querySelector('#mt-tab-text-color-swatch');
+        if (tabSwatch) tabSwatch.style.backgroundColor = c;
         this.toolbarEl.querySelectorAll('[data-text-color-val]').forEach(b => {
           b.classList.remove('is-active-swatch');
           b.innerHTML = '';

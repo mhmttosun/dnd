@@ -905,6 +905,27 @@ assert '.mt-line-panel' in ed_line_css, "Alt kart paneli stili CSS içinde tanı
 
 test_passed("Çizgi mini popup'ı üst sekmeli menü ve alt ayar kartı yapısıyla başarıyla doğrulandı.")
 
+# 5.30 Metin Sekmeli ve Gelişmiş Ayarlar Popup'ı Testi (Biçimlendirme/Font, Hizalama, Renk)
+print("\n[Aşama 5.30] Metin Sekmeli ve Gelişmiş Ayarlar Popup'ı Testi")
+with open(mini_toolbar_path, 'r', encoding='utf-8') as f:
+    mt_text_code = f.read()
+with open(editor_css_path, 'r', encoding='utf-8') as f:
+    ed_text_css = f.read()
+
+assert 'activeTextTab' in mt_text_code, "MiniToolbar içinde activeTextTab durumu tanımlı olmalıdır!"
+assert 'mt-text-tabs-bar' in mt_text_code, "Metin popup kartında 3 sekmeli üst çubuk (.mt-text-tabs-bar) bulunmalıdır!"
+assert 'data-text-tab="font"' in mt_text_code, "Metin menüsünde biçimlendirme ve font sekmesi tanımlı olmalıdır!"
+assert 'data-text-tab="align"' in mt_text_code, "Metin menüsünde hizalama sekmesi tanımlı olmalıdır!"
+assert 'data-text-tab="color"' in mt_text_code, "Metin menüsünde renk sekmesi tanımlı olmalıdır!"
+assert 'data-text-panel="font"' in mt_text_code, "Biçimlendirme ve font ayar paneli bulunmalıdır!"
+assert 'data-text-panel="align"' in mt_text_code, "Hizalama ayar paneli bulunmalıdır!"
+assert 'data-text-panel="color"' in mt_text_code, "Renk ayar paneli bulunmalıdır!"
+assert 'data-text-size-preset' in mt_text_code, "Hazır yazı boyutu çipleri (presets) bulunmalıdır!"
+assert '.mt-text-tabs-bar' in ed_text_css and '.mt-text-tab-btn' in ed_text_css, "Metin sekme çubuğu ve buton CSS'leri tanımlı olmalıdır!"
+assert '.mt-text-panel' in ed_text_css and '.mt-text-chips-row' in ed_text_css, "Metin alt paneli ve boyut çipleri CSS'leri tanımlı olmalıdır!"
+
+test_passed("Metin ayarları popup'ı 3 sekmeli yapıya (Biçimlendirme/Font, Hizalama, Renk) kavuşturuldu ve nesne görünümüyle bütünleştirildi.")
+
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
 
