@@ -569,15 +569,6 @@ class MiniToolbar {
           <!-- Panel 2: Kalınlık -->
           <div class="mt-line-panel" data-panel="width" style="display: ${activeTab === 'width' ? 'flex' : 'none'};">
             <div class="mt-line-panel-title">Çizgi kalınlığı</div>
-            <div class="mt-line-stepper-wrap">
-              <button type="button" class="mt-line-step-btn" data-line-width-step="-1" title="Azalt">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-              <span class="mt-line-stepper-val" id="mt-line-val-width">${bWidth} px</span>
-              <button type="button" class="mt-line-step-btn" data-line-width-step="1" title="Artır">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-            </div>
             <div class="mt-line-chips-row">
               ${[1, 2, 3, 4, 6, 8].map(w => `
                 <button type="button" class="mt-line-chip-btn ${bWidth === w ? 'active' : ''}" data-line-width-preset="${w}">${w}</button>
@@ -978,12 +969,10 @@ class MiniToolbar {
       };
     });
 
-    // Çizgi Kalınlığı Stepper ve Ön Tanımlı Butonlar
+    // Çizgi Kalınlığı Hızlı Seçim Butonları
     const updateLineWidth = (newWidth) => {
       const clamped = Math.max(1, Math.min(24, Math.round(newWidth)));
       getTargets().forEach(o => this.objectManager.updateObject(o.id, { borderWidth: clamped }));
-      const valEl = this.root.getElementById('mt-line-val-width');
-      if (valEl) valEl.textContent = `${clamped} px`;
       const tabValEl = this.root.getElementById('mt-tab-width-val');
       if (tabValEl) tabValEl.textContent = `${clamped}`;
       this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
@@ -991,16 +980,6 @@ class MiniToolbar {
         b.classList.toggle('active', pVal === clamped);
       });
     };
-
-    this.toolbarEl.querySelectorAll('[data-line-width-step]').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const step = parseInt(btn.getAttribute('data-line-width-step'), 10) || 0;
-        const currentObj = this.objectManager.getObject(primary.id) || primary;
-        const currentW = currentObj.borderWidth || 3;
-        updateLineWidth(currentW + step);
-      };
-    });
 
     this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(btn => {
       btn.onclick = (e) => {

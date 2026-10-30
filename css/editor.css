@@ -730,72 +730,41 @@ body.is-embedded .editor-workspace {
 }
 
 /* Kalınlık Paneli Elemanları */
-.mt-line-stepper-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 3px 6px;
-  height: 34px;
-  box-sizing: border-box;
-}
-
-.mt-line-step-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
-  background: #f1f5f9;
-  color: #334155;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.mt-line-step-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.mt-line-stepper-val {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
 .mt-line-chips-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
+  width: 100%;
 }
 
 .mt-line-chip-btn {
   flex: 1;
-  height: 26px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #475569;
-  font-size: 0.72rem;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.82rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mt-line-chip-btn:hover {
-  border-color: #cbd5e1;
+  background: #e2e8f0;
   color: #0f172a;
 }
 
 .mt-line-chip-btn.active {
-  background: #edf5fd;
+  background: #ffffff;
   border-color: #88b4e7;
-  color: #1d4ed8;
+  color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
 /* Renk Paneli Elemanları */

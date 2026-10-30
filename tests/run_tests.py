@@ -895,7 +895,7 @@ assert 'mt-line-tabs-bar' in mt_line_code, "Çizgi popup kartında üst sekmeler
 assert 'data-line-tab="type"' in mt_line_code and 'data-line-tab="width"' in mt_line_code, "Çizgi tipi ve kalınlık sekmeleri tanımlı olmalıdır!"
 assert 'data-line-tab="color"' in mt_line_code and 'data-line-tab="arrows"' in mt_line_code and 'data-line-tab="align"' in mt_line_code, "Renk, ok uçları ve hizalama sekmeleri tanımlı olmalıdır!"
 assert 'mt-line-panel' in mt_line_code, "Ayar panelleri (.mt-line-panel) bulunmalıdır!"
-assert 'data-line-width-step' in mt_line_code and 'data-line-width-preset' in mt_line_code, "Çizgi kalınlığı stepper ve preset butonları bulunmalıdır!"
+assert 'data-line-width-preset' in mt_line_code, "Çizgi kalınlığı hazır seçenek (preset) butonları bulunmalıdır!"
 assert 'data-line-color' in mt_line_code, "Çizgi renk paleti swatchları bulunmalıdır!"
 assert '.mt-line-tabs-bar' in ed_line_css and '.mt-line-tab-btn' in ed_line_css, "Üst menü sekmeleri için CSS tanımlı olmalıdır!"
 assert '.mt-line-panel' in ed_line_css, "Alt kart paneli stili CSS içinde tanımlı olmalıdır!"
