@@ -38,7 +38,11 @@
   "scripts": {
     "start": "python3 -m http.server 8000",
     "build": "python3 scripts/build.py",
-    "test": "python3 tests/run_tests.py"
+    "test": "python3 tests/run_tests.py",
+    "prepublishOnly": "python3 scripts/build.py && python3 tests/run_tests.py"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "drag-and-drop",
