@@ -54,6 +54,7 @@ bundled_webcomp_code = webcomp_code.replace('export class DNDPlayerElement', 'cl
 # while the public API is a normal ESM export and renders inside Shadow DOM.
 editor_sources = [
     'js/utils/AudioSynthesizer.js',
+    'js/utils/InteractionUtils.js',
     'js/engine/ValidationEngine.js',
     'js/core/EditorCore.js',
     'js/core/StageManager.js',

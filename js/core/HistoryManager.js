@@ -16,6 +16,7 @@ class HistoryManager {
     this.redoStack = [];
     this.isApplying = false;
     this.signal = options.signal;
+    this.root = options.root || document;
 
     this.init();
 
@@ -77,11 +78,8 @@ class HistoryManager {
     });
 
     // Klavye kısayolları: Ctrl+Z / Ctrl+Y
-    window.addEventListener('keydown', (e) => {
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) ||
-          document.activeElement?.isContentEditable) {
-        return;
-      }
+    this.root.addEventListener('keydown', (e) => {
+      if (window.DND.InteractionUtils.shouldIgnoreEditorShortcut(e, this.root)) return;
 
       if (this.core.getMode() !== 'design') return;
 

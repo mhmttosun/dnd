@@ -9,6 +9,7 @@ class SelectionManager {
     this.objectManager = objectManager;
     this.stage = stageEl;
     this.signal = options.signal;
+    this.root = options.root || (stageEl && typeof stageEl.getRootNode === 'function' ? stageEl.getRootNode() : document);
 
     this.selectedIds = new Set();
     this.clipboard = [];
@@ -22,6 +23,9 @@ class SelectionManager {
     this.core.on('projectLoaded', () => this.clearSelection());
     this.core.on('objectDeleted', (e) => this.deselect(e.object.id));
     this.core.on('objectUpdated', () => this.updateSelectionBox());
+    this.core.on('requestObjectSelection', ({ objectId, multi = false } = {}) => {
+      if (objectId) this.select(objectId, multi);
+    });
     this.core.on('modeChanged', () => {
       if (this.core.getMode() !== 'design') {
         this.clearSelection();
@@ -31,12 +35,11 @@ class SelectionManager {
 
   setupEventListeners() {
     // Klavye kısayolları
-    window.addEventListener('keydown', (e) => {
-      // Eğer kullanıcı bir input, textarea veya contenteditable içindeyse dinleme
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) ||
-          document.activeElement?.isContentEditable) {
-        return;
-      }
+    this.root.addEventListener('keydown', (e) => {
+      // Shadow DOM içinde gerçek hedef event.target üzerinden görülemeyebilir.
+      // composedPath ve root.activeElement birlikte değerlendirilerek metin/form
+      // düzenleme sırasında tasarım kısayollarının çalışması engellenir.
+      if (window.DND.InteractionUtils.shouldIgnoreEditorShortcut(e, this.root)) return;
 
       if (this.core.getMode() !== 'design') return;
 
@@ -387,9 +390,6 @@ class SelectionManager {
             selectedIds: Array.from(this.selectedIds),
             primaryObject: this.objectManager.getObject(obj.id)
           });
-          if (window.app && window.app.miniToolbar) {
-            window.app.miniToolbar.show();
-          }
         };
       }
       return;

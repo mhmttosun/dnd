@@ -18,13 +18,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const objectManager = new window.DND.ObjectManager(core, stageEl);
 
     // 4. Seçim ve Dönüşüm Yönetimi
-    const selectionManager = new window.DND.SelectionManager(core, stageManager, objectManager, stageEl);
-    const historyManager = new window.DND.HistoryManager(core);
+    const selectionManager = new window.DND.SelectionManager(core, stageManager, objectManager, stageEl, { root: document });
+    const historyManager = new window.DND.HistoryManager(core, 40, { root: document });
     const layerManager = new window.DND.LayerManager(core, objectManager);
 
     // 5. Cevap Anahtarı ve Dönüşüm Motorları
     const answerKeyManager = new window.DND.AnswerKeyManager(core, stageManager, objectManager, stageEl);
-    const transformEngine = new window.DND.TransformEngine(core, stageManager, objectManager, selectionManager, historyManager, stageEl);
+    const transformEngine = new window.DND.TransformEngine(core, stageManager, objectManager, selectionManager, historyManager, stageEl, { root: document });
 
     // 6. Dışa Aktarma, MiniToolbar ve Arayüz
     const exportManager = new window.DND.ExportManager(core);

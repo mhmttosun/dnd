@@ -1795,7 +1795,12 @@ class ActivityEngine {
   }
 
   handleKeyDown(e) {
-    const activeEl = document.activeElement;
+    const root = this.container && typeof this.container.getRootNode === 'function'
+      ? this.container.getRootNode()
+      : document;
+    const activeEl = window.DND.InteractionUtils
+      ? window.DND.InteractionUtils.getDeepActiveElement(root)
+      : (root.activeElement || document.activeElement);
     if (!activeEl) return;
 
       if (e.key === ' ' || e.key === 'Enter') {

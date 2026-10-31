@@ -12,6 +12,7 @@ class TransformEngine {
     this.historyManager = historyManager;
     this.stage = stageEl;
     this.signal = options.signal;
+    this.root = options.root || (stageEl && typeof stageEl.getRootNode === 'function' ? stageEl.getRootNode() : document);
 
     this.activeAction = null; // 'move' | 'resize' | 'rotate' | 'marquee'
     this.activeHandle = null; // 'nw', 'n', 'se', vb.
@@ -30,6 +31,11 @@ class TransformEngine {
   }
 
   init() {
+    // Sahne klavye kısayolları için gerçek bir focus hedefidir. Böylece
+    // Shadow DOM içindeki keydown olayları yalnızca ilgili editör root'unda kalır.
+    if (!this.stage.hasAttribute('tabindex')) this.stage.tabIndex = 0;
+    if (!this.stage.hasAttribute('aria-label')) this.stage.setAttribute('aria-label', 'Tasarım sahnesi');
+
     const options = this.signal ? { signal: this.signal } : undefined;
     this.stage.addEventListener('pointerdown', (e) => this.onPointerDown(e), options);
     window.addEventListener('pointermove', (e) => this.onPointerMove(e), options);
@@ -47,10 +53,15 @@ class TransformEngine {
       return;
     }
 
-    // Eğer başka bir yerde metin düzenleniyorsa ve dışarı tıklandıysa, düzenlemeyi sonlandır
-    if (window.app && window.app.uiManager && window.app.uiManager.isEditingText) {
-      if (!e.target.closest('#contextual-mini-toolbar')) {
-        window.app.uiManager.finishInlineEditing();
+    // Sahne veya nesne tıklaması bu editörü klavye etkileşimleri için aktif eder.
+    // Buton ve form elemanlarının kendi focus davranışı korunur.
+    const utils = window.DND.InteractionUtils;
+    const hasInteractiveTarget = utils.getEventPath(e).some(node => utils.isInteractiveElement(node));
+    if (!hasInteractiveTarget && typeof this.stage.focus === 'function') {
+      try {
+        this.stage.focus({ preventScroll: true });
+      } catch (error) {
+        this.stage.focus();
       }
     }
 
@@ -98,9 +109,6 @@ class TransformEngine {
           selectedIds: Array.from(this.selectionManager.selectedIds),
           primaryObject: this.objectManager.getObject(primary.id)
         });
-        if (window.app && window.app.miniToolbar) {
-          window.app.miniToolbar.show();
-        }
       }
       return;
     }

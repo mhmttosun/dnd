@@ -318,9 +318,7 @@ class ObjectManager {
         e.stopPropagation();
         e.preventDefault();
         this.updateObject(obj.id, { locked: false });
-        if (window.app && window.app.selectionManager) {
-          window.app.selectionManager.select(obj.id);
-        }
+        this.core.emit('requestObjectSelection', { objectId: obj.id, multi: false });
       };
       el.appendChild(lockIcon);
     }

@@ -20,6 +20,7 @@ class MiniToolbar {
     this.activeLineTab = 'type'; // Çizgi popup'ında aktif olan sekme ('type', 'width', 'color', 'arrows', 'align')
     this.isNewlyOpened = false;
     this.currentPlacementAbove = false;
+    this.isInlineEditing = false;
 
     this.init();
   }
@@ -56,7 +57,7 @@ class MiniToolbar {
           this.hide();
           return;
         }
-        if (!window.app || !window.app.uiManager || !window.app.uiManager.isEditingText) {
+        if (!this.isInlineEditing) {
           this.show();
         }
       } else {
@@ -103,9 +104,17 @@ class MiniToolbar {
       }
     });
 
+    this.core.on('inlineEditingChanged', ({ isEditing } = {}) => {
+      this.isInlineEditing = !!isEditing;
+      if (this.isInlineEditing) this.hide();
+    });
+
     // Tuvalde boşluğa tıklandığında popupları kapat
     window.addEventListener('pointerdown', (e) => {
-      if (this.toolbarEl && !this.toolbarEl.contains(e.target) && !e.target.closest('.resize-handle, .rotate-handle')) {
+      const utils = window.DND.InteractionUtils;
+      const isToolbarInteraction = utils.pathContains(e, this.toolbarEl);
+      const isTransformHandle = utils.pathMatches(e, '.resize-handle, .rotate-handle');
+      if (this.toolbarEl && !isToolbarInteraction && !isTransformHandle) {
         this.closePopup();
       }
     }, this.signal ? { signal: this.signal } : undefined);
@@ -119,7 +128,8 @@ class MiniToolbar {
   }
 
   createDOM() {
-    this.toolbarEl = document.createElement('div');
+    const ownerDocument = this.root.ownerDocument || document;
+    this.toolbarEl = ownerDocument.createElement('div');
     this.toolbarEl.id = 'contextual-mini-toolbar';
     this.toolbarEl.className = 'mini-toolbar-container';
     this.toolbarEl.style.display = 'none';

@@ -749,10 +749,14 @@ class PropertyPanel {
   updateFieldsIfSelected() {
     const selectedObj = this.selectionManager.getPrimarySelected();
     if (!selectedObj) return;
+    const root = this.panel && typeof this.panel.getRootNode === 'function'
+      ? this.panel.getRootNode()
+      : document;
+    const activeElement = window.DND.InteractionUtils.getDeepActiveElement(root);
 
     const setVal = (id, val) => {
       const el = this.panel.querySelector(id);
-      if (el && document.activeElement !== el) el.value = val;
+      if (el && activeElement !== el) el.value = val;
     };
 
     setVal('#prop-x', Math.round(selectedObj.x));

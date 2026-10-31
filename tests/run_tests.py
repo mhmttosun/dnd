@@ -39,6 +39,7 @@ required_files = [
     'css/answer-key.css',
     'css/player.css',
     'js/utils/AudioSynthesizer.js',
+    'js/utils/InteractionUtils.js',
     'js/engine/ValidationEngine.js',
     'js/core/EditorCore.js',
     'js/core/StageManager.js',
@@ -1247,6 +1248,49 @@ assert 'more-dropdown-menu' in ui_content, "UIManager.js içinde more-dropdown-m
 assert 'btn-new-project' not in ui_content, "UIManager.js içinde artık btn-new-project referansı bulunmamalıdır!"
 
 test_passed("Üst header kaldırılması, 'Yeni Proje' butonunun iptali ve alt nav bar 3 nokta menüsü entegrasyonu başarıyla doğrulandı.")
+
+# 5.33 Shadow DOM Klavye, Focus ve Editör Instance İzolasyonu Testi
+print("\n[Aşama 5.33] Shadow DOM Klavye, Focus ve Editör Instance İzolasyonu Testi")
+with open(os.path.join(BASE_DIR, 'js/utils/InteractionUtils.js'), 'r', encoding='utf-8') as f:
+    interaction_utils_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/core/SelectionManager.js'), 'r', encoding='utf-8') as f:
+    selection_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/core/HistoryManager.js'), 'r', encoding='utf-8') as f:
+    history_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/engine/TransformEngine.js'), 'r', encoding='utf-8') as f:
+    transform_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/ui/MiniToolbar.js'), 'r', encoding='utf-8') as f:
+    mini_toolbar_code = f.read()
+with open(os.path.join(BASE_DIR, 'src/DNDEditor.js'), 'r', encoding='utf-8') as f:
+    editor_api_code = f.read()
+
+assert 'composedPath' in interaction_utils_code, "InteractionUtils Shadow DOM event yolunu composedPath ile çözmelidir!"
+assert 'getDeepActiveElement' in interaction_utils_code, "InteractionUtils root içindeki gerçek aktif elementi çözmelidir!"
+assert 'shouldIgnoreEditorShortcut' in interaction_utils_code, "Editable ve interaktif alanlar için ortak kısayol koruması bulunmalıdır!"
+assert "this.root.addEventListener('keydown'" in selection_code, "SelectionManager klavye olaylarını kendi editör root'unda dinlemelidir!"
+assert "this.root.addEventListener('keydown'" in history_code, "HistoryManager klavye olaylarını kendi editör root'unda dinlemelidir!"
+assert "window.addEventListener('keydown'" not in selection_code, "SelectionManager global window keydown dinleyicisi kullanmamalıdır!"
+assert "window.addEventListener('keydown'" not in history_code, "HistoryManager global window keydown dinleyicisi kullanmamalıdır!"
+assert 'this.stage.tabIndex = 0' in transform_code, "Tasarım sahnesi editör örneğini aktifleştiren gerçek bir focus hedefi olmalıdır!"
+assert 'getDeepActiveElement(root)' in ae_code, "Shadow DOM içindeki player klavye odağı gerçek aktif element üzerinden çözülmelidir!"
+assert 'pathContains(e, miniToolbar)' in ui_content, "Inline düzenleme dış tıklama kontrolü Shadow DOM event yolunu kullanmalıdır!"
+assert 'inlineEditingChanged' in ui_content and 'inlineEditingChanged' in mini_toolbar_code, "Inline düzenleme durumu UIManager ile MiniToolbar arasında instance içi olayla paylaşılmalıdır!"
+assert 'window.app' not in selection_code and 'window.app' not in transform_code and 'window.app' not in mini_toolbar_code, "Paket etkileşim akışı window.app singleton'ına bağlı olmamalıdır!"
+assert '{ root, signal: lifecycle.signal }' in editor_api_code, "Shadow DOM root'u manager sınıflarına açıkça aktarılmalıdır!"
+
+shadow_runtime_test = subprocess.run(
+    ['node', os.path.join(BASE_DIR, 'tests/test_shadow_interactions.js')],
+    capture_output=True,
+    text=True
+)
+assert shadow_runtime_test.returncode == 0, (
+    "Shadow DOM çalışma zamanı regresyon testi başarısız:\n"
+    + shadow_runtime_test.stdout
+    + shadow_runtime_test.stderr
+)
+assert 'Shadow DOM interaction isolation: OK' in shadow_runtime_test.stdout
+
+test_passed("Inline düzenleme kısayol koruması, root bazlı instance izolasyonu ve listener yaşam döngüsü çalışma zamanında doğrulandı.")
 
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")

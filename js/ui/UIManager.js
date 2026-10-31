@@ -448,8 +448,16 @@ class UIManager {
     // 3. Dışarı Tıklamada Düzenlemeyi Tamamlama
     window.addEventListener('pointerdown', (e) => {
       if (!this.isEditingText) return;
-      // Eğer tıklama düzenlenen metin kutusu içindeyse veya mini araç çubuğundaysa kapatma
-      if (e.target.closest('.is-editing-text') || e.target.closest('#contextual-mini-toolbar')) {
+      // Shadow DOM event retargeting nedeniyle window seviyesinde e.target host
+      // element olabilir. Gerçek tıklama yolu üzerinden düzenlenen alanı ve bu
+      // editöre ait mini toolbar'ı ayırt et.
+      const utils = window.DND.InteractionUtils;
+      const clickedEditingTarget = utils.pathMatches(e, '.is-editing-text, .is-editing-text-target');
+      const miniToolbar = this.root.getElementById
+        ? this.root.getElementById('contextual-mini-toolbar')
+        : this.root.querySelector('#contextual-mini-toolbar');
+      const clickedMiniToolbar = utils.pathContains(e, miniToolbar);
+      if (clickedEditingTarget || clickedMiniToolbar) {
         return;
       }
       this.finishInlineEditing();
@@ -495,6 +503,7 @@ class UIManager {
 
     this.isEditingText = true;
     this.activeEditingObjId = objId;
+    this.core.emit('inlineEditingChanged', { isEditing: true, objectId: objId });
 
     objEl.classList.add('is-editing-text');
     targetEl.classList.add('is-editing-text-target');
@@ -570,6 +579,8 @@ class UIManager {
       this.selectionManager.selectionOverlay.classList.remove('is-editing-text');
       this.selectionManager.updateSelectionBox();
     }
+
+    this.core.emit('inlineEditingChanged', { isEditing: false, objectId: objId });
   }
 
   showToast(message, type = 'info', duration = 3000) {
