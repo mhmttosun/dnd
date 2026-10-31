@@ -370,22 +370,6 @@ class ObjectManager {
     // İçerik Oluşturma
     el.innerHTML = '';
 
-    // Kilit İkonu (Tıklanabilir buton)
-    if (obj.locked) {
-      const lockIcon = document.createElement('button');
-      lockIcon.type = 'button';
-      lockIcon.className = 'lock-indicator lock-badge-btn';
-      lockIcon.innerHTML = '🔒';
-      lockIcon.title = 'Nesne kilitli. Kilidi açmak için tıklayın.';
-      lockIcon.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        this.updateObject(obj.id, { locked: false });
-        this.core.emit('requestObjectSelection', { objectId: obj.id, multi: false });
-      };
-      el.appendChild(lockIcon);
-    }
-
     // Gövde İçeriği
     const content = document.createElement('div');
     content.className = 'object-inner-content';

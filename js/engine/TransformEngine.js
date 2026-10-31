@@ -134,13 +134,6 @@ class TransformEngine {
       const objId = objEl.getAttribute('data-id');
       const obj = this.objectManager.getObject(objId);
 
-      // Doğrudan kilit ikonuna tıklandıysa kilidi aç
-      if (e.target.closest('.lock-indicator, .lock-badge-btn')) {
-        this.objectManager.updateObject(objId, { locked: false });
-        this.selectionManager.select(objId, false);
-        return;
-      }
-
       if (obj) {
         if (e.shiftKey) {
           this.selectionManager.toggleSelect(objId);

@@ -237,7 +237,7 @@ assert 'lock-pill-unlock-btn' in sel_code, "Kilitli nesne üzeri tek tıkla kili
 
 with open(os.path.join(BASE_DIR, 'js/core/ObjectManager.js'), 'r', encoding='utf-8') as f:
     obj_code = f.read()
-assert 'lock-badge-btn' in obj_code, "Tuval üzerindeki kilit ikonu tıklanabilir buton olarak tanımlanmamış!"
+assert 'lock-badge-btn' not in obj_code, "Kilitli nesne üzerindeki kilit ikonu kaldırılmış olmalıdır!"
 
 with open(os.path.join(BASE_DIR, 'js/ui/PropertyPanel.js'), 'r', encoding='utf-8') as f:
     prop_code = f.read()
@@ -248,7 +248,7 @@ with open(os.path.join(BASE_DIR, 'js/ui/MiniToolbar.js'), 'r', encoding='utf-8')
     mt_code = f.read()
 assert 'toggle-lock' in mt_code, "Mini araç çubuğunda kilit açma/kapama fonksiyonu eksik!"
 assert 'selectedObjs.length === 1 && selectedObjs[0].locked' in mt_code, "Mini araç çubuğu sadece tek kilitli nesne seçildiğinde gizlenmelidir!"
-test_passed("Kilitli nesnelerin tuval üzerinden açılabilmesi ve tek kilitli nesnede sadece Kilidi Aç butonunun görünmesi doğrulandı.")
+test_passed("Kilitli nesnelerin seçilebilmesi, nesne üstü kilit ikonunun kaldırılması ve seçim çerçevesinde tek 'Kilidi Aç' butonunun görünmesi doğrulandı.")
 
 # 5.2 Nesnelerin Sahne Dışına Taşmasını Engelleme Testi
 print("\n[Aşama 5.2] Nesnelerin Sahne Dışına Taşmasını Engelleme Testi")
