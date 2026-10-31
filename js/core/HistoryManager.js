@@ -45,6 +45,7 @@ class HistoryManager {
     // Nesne ekleme işlemi
     this.core.on('objectAdded', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Nesne Eklendi');
     });
@@ -52,6 +53,7 @@ class HistoryManager {
     // Nesne silme işlemi
     this.core.on('objectDeleted', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Nesne Silindi');
     });
@@ -59,13 +61,15 @@ class HistoryManager {
     // Nesne özelliği güncelleme (renk, rol, metin, boyut vb.)
     this.core.on('objectUpdated', (payload) => {
       if (this.isApplying) return;
-      if (payload && payload.saveHistory === false) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
+      if (payload && (payload.saveHistory === false || payload.options?.saveHistory === false)) return;
       this.pushState('Nesne Güncellendi');
     });
 
     // Katman sırası değişimi
     this.core.on('layerChanged', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Katman Değiştirildi');
     });
@@ -73,6 +77,7 @@ class HistoryManager {
     // Cevap anahtarı eşleşme değişimi
     this.core.on('answerKeyChanged', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Cevap Anahtarı Güncellendi');
     });

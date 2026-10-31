@@ -20,6 +20,20 @@ class LayerManager {
     });
   }
 
+  emitLayerChange(obj, saveHistory) {
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    if (inTx) {
+      this.core.recordMutation({ source: 'layer', description: 'Katman Değiştirildi' });
+      this.core.emit('layerChanged', { object: obj, saveHistory: false });
+    } else {
+      this.core.emit('layerChanged', { object: obj, saveHistory });
+      this.core.emit('dataChanged', { source: 'layer' });
+      if (this.core && typeof this.core.autoSave === 'function') {
+        this.core.autoSave();
+      }
+    }
+  }
+
   bringToFront(id, saveHistory = true) {
     const obj = this.objectManager.getObject(id);
     if (!obj) return;
@@ -30,8 +44,7 @@ class LayerManager {
     obj.zIndex = maxZ + 1;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj, saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(obj, saveHistory);
   }
 
   sendToBack(id, saveHistory = true) {
@@ -42,8 +55,7 @@ class LayerManager {
     obj.zIndex = 0;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj, saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(obj, saveHistory);
   }
 
   bringForward(id, saveHistory = true) {
@@ -59,8 +71,7 @@ class LayerManager {
     nextObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(sorted[idx], saveHistory);
   }
 
   sendBackward(id, saveHistory = true) {
@@ -76,8 +87,7 @@ class LayerManager {
     prevObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(sorted[idx], saveHistory);
   }
 }
 

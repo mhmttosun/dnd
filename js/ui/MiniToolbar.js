@@ -25,6 +25,21 @@ class MiniToolbar {
     this.init();
   }
 
+  batchUpdateObjects(targets, getChangesFn, description = 'Nesneleri Güncelle', source = 'miniToolbar') {
+    if (!targets || targets.length === 0) return;
+    if (targets.length === 1) {
+      const changes = typeof getChangesFn === 'function' ? getChangesFn(targets[0]) : getChangesFn;
+      this.objectManager.updateObject(targets[0].id, changes, true);
+    } else {
+      this.core.runTransaction(() => {
+        targets.forEach(o => {
+          const changes = typeof getChangesFn === 'function' ? getChangesFn(o) : getChangesFn;
+          this.objectManager.updateObject(o.id, changes, false);
+        });
+      }, { description, source });
+    }
+  }
+
   init() {
     this.createDOM();
     this.bindEvents();
@@ -982,7 +997,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { borderStyle: style }, 'Çizgi Stili Değiştir');
         syncAppearanceControls();
       };
     });
@@ -991,7 +1006,7 @@ class MiniToolbar {
     const updateLineWidth = (newWidth) => {
       const clamped = Math.max(1, Math.min(24, Math.round(newWidth)));
       const targets = getTargets();
-      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderWidth: clamped }, i === targets.length - 1));
+      this.batchUpdateObjects(targets, { borderWidth: clamped }, 'Çizgi Kalınlığı Değiştir');
       const tabValEl = this.root.getElementById('mt-tab-width-val');
       if (tabValEl) tabValEl.textContent = `${clamped}`;
       this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
@@ -1012,7 +1027,7 @@ class MiniToolbar {
     // Çizgi Rengi Seçimi (Palet Swatchları)
     const updateLineColor = (hex) => {
       const targets = getTargets();
-      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderColor: hex }, i === targets.length - 1));
+      this.batchUpdateObjects(targets, { borderColor: hex }, 'Çizgi Rengi Değiştir');
       const swatchEl = this.root.getElementById('mt-tab-color-swatch');
       if (swatchEl) swatchEl.style.backgroundColor = hex;
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
@@ -1038,7 +1053,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-align]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { rotation: rot }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { rotation: rot }, 'Çizgi Açısı Değiştir');
         syncAppearanceControls();
         this.selectionManager.updateSelectionBox();
       };
@@ -1067,7 +1082,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { arrowStart: start, arrowEnd: end }, 'Ok Ucu Değiştir');
         syncAppearanceControls();
       };
     });
@@ -1084,7 +1099,7 @@ class MiniToolbar {
         btn.classList.add('active');
         btn.setAttribute('aria-checked', 'true');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { role }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { role }, 'Rol Değiştir');
       };
     });
 
@@ -1096,7 +1111,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-border-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { borderStyle: style }, 'Kenarlık Stili Değiştir');
         syncAppearanceControls();
       };
     });
@@ -1116,7 +1131,7 @@ class MiniToolbar {
         const newVal = Math.max(minVal, Math.min(maxVal, currentVal + (dir * step)));
 
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { [prop]: newVal }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { [prop]: newVal }, 'Görünüm Ayarı Değiştir');
 
         const valEl = this.toolbarEl.querySelector(`#mt-val-${prop}`);
         if (valEl) {
@@ -1134,13 +1149,13 @@ class MiniToolbar {
         const color = btn.getAttribute('data-style-color');
         const prop = btn.getAttribute('data-style-color-prop');
         const targets = getTargets();
-        targets.forEach((object, i) => {
+        this.batchUpdateObjects(targets, (object) => {
           const changes = { [prop]: color };
           if (prop === 'borderColor') {
             changes.borderStyle = color === 'transparent' ? 'none' : (object.borderStyle === 'none' ? 'solid' : object.borderStyle || 'solid');
           }
-          this.objectManager.updateObject(object.id, changes, i === targets.length - 1);
-        });
+          return changes;
+        }, 'Renk Değiştir');
         this.toolbarEl.querySelectorAll(`[data-style-color-prop="${prop}"]`).forEach(button => {
           button.classList.toggle('is-active', button.getAttribute('data-style-color') === color);
         });
@@ -1185,20 +1200,20 @@ class MiniToolbar {
           const isBold = textPrimary.fontWeight === 'bold' || textPrimary.fontWeight === '700' || textPrimary.fontWeight === '800';
           const newWeight = isBold ? 'normal' : '700';
           btn.classList.toggle('active', newWeight === '700');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontWeight: newWeight }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { fontWeight: newWeight }, 'Metin Kalınlığı Değiştir');
         } else if (act === 'italic') {
           const isItalic = textPrimary.fontStyle === 'italic';
           const newStyle = isItalic ? 'normal' : 'italic';
           btn.classList.toggle('active', newStyle === 'italic');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontStyle: newStyle }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { fontStyle: newStyle }, 'Metin Stili Değiştir');
         } else if (act === 'underline') {
           const isUnderline = textPrimary.textDecoration === 'underline';
           const newDecor = isUnderline ? 'none' : 'underline';
           btn.classList.toggle('active', newDecor === 'underline');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textDecoration: newDecor }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { textDecoration: newDecor }, 'Metin Alt Çizgi Değiştir');
         } else if (act === 'size-up' || act === 'size-down') {
           const delta = act === 'size-up' ? 2 : -2;
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + delta) }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, (o) => ({ fontSize: Math.max(10, (o.fontSize || 16) + delta) }), 'Metin Boyutu Değiştir');
           const newSize = textPrimary.fontSize || 16;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
@@ -1221,7 +1236,7 @@ class MiniToolbar {
         btn.classList.add('is-active-swatch');
         btn.innerHTML = '<span class="swatch-check">✓</span>';
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textColor: c }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { textColor: c }, 'Metin Rengi Değiştir');
         syncAppearanceControls();
       };
     });
@@ -1234,7 +1249,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-h]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textAlign: align }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { textAlign: align }, 'Metin Hizalama Değiştir');
         syncAppearanceControls();
       };
     });
@@ -1247,7 +1262,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-v]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { verticalAlign: vAlign }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { verticalAlign: vAlign }, 'Metin Dikey Hizalama Değiştir');
         syncAppearanceControls();
       };
     });
@@ -1260,24 +1275,28 @@ class MiniToolbar {
         const targets = getTargets();
         if (act === 'forward') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringForward(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.bringForward(o.id, false));
+          }, { description: 'Katmanı Öne Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı Öne Al');
         } else if (act === 'front') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringToFront(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.bringToFront(o.id, false));
+          }, { description: 'Katmanı En Öne Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı En Öne Al');
         } else if (act === 'backward') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendBackward(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.sendBackward(o.id, false));
+          }, { description: 'Katmanı Arkaya Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı Arkaya Al');
         } else if (act === 'back') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendToBack(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.sendToBack(o.id, false));
+          }, { description: 'Katmanı En Arkaya Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı En Arkaya Al');
         } else if (act === 'toggle-lock') {
           const allLocked = targets.every(o => o.locked);
           const newLocked = !allLocked;
@@ -1295,9 +1314,10 @@ class MiniToolbar {
           if (labelSpan) {
             labelSpan.textContent = newLocked ? 'Kilidi Aç' : 'Kilit';
           }
-          targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }, false));
+          this.core.runTransaction(() => {
+            targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }, false));
+          }, { description: newLocked ? 'Nesneyi Kilitle' : 'Kilidi Aç', source: 'lock' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState(newLocked ? 'Nesneyi Kilitle' : 'Kilidi Aç');
         }
       };
     });
@@ -1401,45 +1421,44 @@ class MiniToolbar {
     const units = this.getSelectionUnits(selected);
     if (units.length < 3) return;
 
-    if (axis === 'horizontal') {
-      units.sort((a, b) => a.minX - b.minX);
-      const minX = units[0].minX;
-      const lastUnit = units[units.length - 1];
-      const maxX = lastUnit.maxX;
-      const totalWidths = units.reduce((s, u) => s + u.width, 0);
-      const totalGap = (maxX - minX) - totalWidths;
-      const gap = totalGap / (units.length - 1);
+    this.core.runTransaction(() => {
+      if (axis === 'horizontal') {
+        units.sort((a, b) => a.minX - b.minX);
+        const minX = units[0].minX;
+        const lastUnit = units[units.length - 1];
+        const maxX = lastUnit.maxX;
+        const totalWidths = units.reduce((s, u) => s + u.width, 0);
+        const totalGap = (maxX - minX) - totalWidths;
+        const gap = totalGap / (units.length - 1);
 
-      let curX = minX;
-      units.forEach(u => {
-        const deltaX = Math.round(curX) - u.minX;
-        u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false);
+        let curX = minX;
+        units.forEach(u => {
+          const deltaX = Math.round(curX) - u.minX;
+          u.objects.forEach(o => {
+            this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false);
+          });
+          curX += u.width + gap;
         });
-        curX += u.width + gap;
-      });
-    } else if (axis === 'vertical') {
-      units.sort((a, b) => a.minY - b.minY);
-      const minY = units[0].minY;
-      const lastUnit = units[units.length - 1];
-      const maxY = lastUnit.maxY;
-      const totalHeights = units.reduce((s, u) => s + u.height, 0);
-      const totalGap = (maxY - minY) - totalHeights;
-      const gap = totalGap / (units.length - 1);
+      } else if (axis === 'vertical') {
+        units.sort((a, b) => a.minY - b.minY);
+        const minY = units[0].minY;
+        const lastUnit = units[units.length - 1];
+        const maxY = lastUnit.maxY;
+        const totalHeights = units.reduce((s, u) => s + u.height, 0);
+        const totalGap = (maxY - minY) - totalHeights;
+        const gap = totalGap / (units.length - 1);
 
-      let curY = minY;
-      units.forEach(u => {
-        const deltaY = Math.round(curY) - u.minY;
-        u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false);
+        let curY = minY;
+        units.forEach(u => {
+          const deltaY = Math.round(curY) - u.minY;
+          u.objects.forEach(o => {
+            this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false);
+          });
+          curY += u.height + gap;
         });
-        curY += u.height + gap;
-      });
-    }
+      }
+    }, { description: 'Eşit Dağıt', source: 'distribute' });
 
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Eşit Dağıt');
-    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -1453,17 +1472,16 @@ class MiniToolbar {
 
     const stageW = (this.core && this.core.data && this.core.data.stage && this.core.data.stage.width) || 1200;
 
-    selected.forEach(o => {
-      let newX = o.x;
-      if (newX + targetWidth > stageW) {
-        newX = Math.max(0, stageW - targetWidth);
-      }
-      this.objectManager.updateObject(o.id, { width: targetWidth, x: newX }, false);
-    });
+    this.core.runTransaction(() => {
+      selected.forEach(o => {
+        let newX = o.x;
+        if (newX + targetWidth > stageW) {
+          newX = Math.max(0, stageW - targetWidth);
+        }
+        this.objectManager.updateObject(o.id, { width: targetWidth, x: newX }, false);
+      });
+    }, { description: 'Genişlikleri Eşitle', source: 'equalizeWidth' });
 
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Genişlikleri Eşitle');
-    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -1477,76 +1495,75 @@ class MiniToolbar {
     const stageW = (this.stageManager && this.stageManager.logicalWidth) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.width) || 1200;
     const stageH = (this.stageManager && this.stageManager.logicalHeight) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.height) || 675;
 
-    if (units.length === 1) {
-      // Tek bir birim (örneğin grup haline getirilmiş bir nesneler topluluğu) sahneye tek parça olarak hizalanır
-      const unit = units[0];
-      let deltaX = 0;
-      let deltaY = 0;
+    this.core.runTransaction(() => {
+      if (units.length === 1) {
+        // Tek bir birim (örneğin grup haline getirilmiş bir nesneler topluluğu) sahneye tek parça olarak hizalanır
+        const unit = units[0];
+        let deltaX = 0;
+        let deltaY = 0;
 
-      if (direction === 'left') {
-        deltaX = 0 - unit.minX;
-      } else if (direction === 'right') {
-        deltaX = (stageW - unit.width) - unit.minX;
-      } else if (direction === 'center') {
-        deltaX = Math.round((stageW - unit.width) / 2) - unit.minX;
-      } else if (direction === 'top') {
-        deltaY = 0 - unit.minY;
-      } else if (direction === 'bottom') {
-        deltaY = (stageH - unit.height) - unit.minY;
-      } else if (direction === 'middle') {
-        deltaY = Math.round((stageH - unit.height) / 2) - unit.minY;
+        if (direction === 'left') {
+          deltaX = 0 - unit.minX;
+        } else if (direction === 'right') {
+          deltaX = (stageW - unit.width) - unit.minX;
+        } else if (direction === 'center') {
+          deltaX = Math.round((stageW - unit.width) / 2) - unit.minX;
+        } else if (direction === 'top') {
+          deltaY = 0 - unit.minY;
+        } else if (direction === 'bottom') {
+          deltaY = (stageH - unit.height) - unit.minY;
+        } else if (direction === 'middle') {
+          deltaY = Math.round((stageH - unit.height) / 2) - unit.minY;
+        }
+
+        unit.objects.forEach(o => {
+          this.objectManager.updateObject(o.id, {
+            x: Math.round(o.x + deltaX),
+            y: Math.round(o.y + deltaY)
+          }, false);
+        });
+      } else {
+        // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
+        if (direction === 'left') {
+          const minX = Math.min(...units.map(u => u.minX));
+          units.forEach(u => {
+            const deltaX = minX - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'right') {
+          const maxR = Math.max(...units.map(u => u.maxX));
+          units.forEach(u => {
+            const deltaX = (maxR - u.width) - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'center') {
+          const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
+          units.forEach(u => {
+            const deltaX = Math.round(avgX - u.width / 2) - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'top') {
+          const minY = Math.min(...units.map(u => u.minY));
+          units.forEach(u => {
+            const deltaY = minY - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        } else if (direction === 'bottom') {
+          const maxB = Math.max(...units.map(u => u.maxY));
+          units.forEach(u => {
+            const deltaY = (maxB - u.height) - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        } else if (direction === 'middle') {
+          const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
+          units.forEach(u => {
+            const deltaY = Math.round(avgY - u.height / 2) - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        }
       }
+    }, { description: 'Nesneleri Hizala', source: 'align' });
 
-      unit.objects.forEach(o => {
-        this.objectManager.updateObject(o.id, {
-          x: Math.round(o.x + deltaX),
-          y: Math.round(o.y + deltaY)
-        }, false);
-      });
-    } else {
-      // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
-      if (direction === 'left') {
-        const minX = Math.min(...units.map(u => u.minX));
-        units.forEach(u => {
-          const deltaX = minX - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'right') {
-        const maxR = Math.max(...units.map(u => u.maxX));
-        units.forEach(u => {
-          const deltaX = (maxR - u.width) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'center') {
-        const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
-        units.forEach(u => {
-          const deltaX = Math.round(avgX - u.width / 2) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'top') {
-        const minY = Math.min(...units.map(u => u.minY));
-        units.forEach(u => {
-          const deltaY = minY - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      } else if (direction === 'bottom') {
-        const maxB = Math.max(...units.map(u => u.maxY));
-        units.forEach(u => {
-          const deltaY = (maxB - u.height) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      } else if (direction === 'middle') {
-        const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
-        units.forEach(u => {
-          const deltaY = Math.round(avgY - u.height / 2) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      }
-    }
-
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Nesneleri Hizala');
-    }
     this.selectionManager.updateSelectionBox();
   }
 }

@@ -160,9 +160,18 @@ class ObjectManager {
     this.core.data.objects.push(finalObj);
     this.renderObjectDOM(finalObj);
 
-    this.core.emit('objectAdded', { object: finalObj, saveHistory });
-    this.core.emit('dataChanged', { source: 'createObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    const shouldSaveHistory = typeof saveHistory === 'object' ? (saveHistory.saveHistory ?? true) : !!saveHistory;
+    const addSource = typeof saveHistory === 'object' && saveHistory.source ? saveHistory.source : 'createObject';
+
+    if (inTx) {
+      this.core.recordMutation({ source: addSource, description: 'Nesne Eklendi' });
+      this.core.emit('objectAdded', { object: finalObj, saveHistory: false });
+    } else {
+      this.core.emit('objectAdded', { object: finalObj, saveHistory: shouldSaveHistory });
+      this.core.emit('dataChanged', { source: addSource });
+      this.core.autoSave();
+    }
 
     return finalObj;
   }
@@ -191,9 +200,43 @@ class ObjectManager {
     return this.core.data.objects;
   }
 
-  updateObject(id, partialProps, saveHistory = true) {
+  normalizeUpdateOptions(options) {
+    if (typeof options === 'boolean') {
+      return {
+        saveHistory: options,
+        emitDataChanged: true,
+        persist: true,
+        autoSave: true,
+        transient: false,
+        source: 'updateObject'
+      };
+    }
+    if (!options || typeof options !== 'object') {
+      return {
+        saveHistory: true,
+        emitDataChanged: true,
+        persist: true,
+        autoSave: true,
+        transient: false,
+        source: 'updateObject'
+      };
+    }
+    const isTransient = !!options.transient;
+    return {
+      saveHistory: options.saveHistory !== undefined ? options.saveHistory : !isTransient,
+      emitDataChanged: options.emitDataChanged !== undefined ? options.emitDataChanged : !isTransient,
+      persist: options.persist !== undefined ? options.persist : (options.autoSave !== undefined ? options.autoSave : !isTransient),
+      autoSave: options.autoSave !== undefined ? options.autoSave : (options.persist !== undefined ? options.persist : !isTransient),
+      transient: isTransient,
+      source: options.source || 'updateObject'
+    };
+  }
+
+  updateObject(id, partialProps, options = true) {
     const obj = this.getObject(id);
     if (!obj) return null;
+
+    const opts = this.normalizeUpdateOptions(options);
 
     // Sahne dışına taşmayı engelle (nesne sahne içinde kalmalı)
     if (this.core && this.core.data && this.core.data.stage) {
@@ -213,9 +256,20 @@ class ObjectManager {
     Object.assign(obj, partialProps);
     this.updateObjectDOM(obj);
 
-    this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory });
-    this.core.emit('dataChanged', { source: 'updateObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+
+    if (inTx) {
+      this.core.recordMutation({ source: opts.source, description: 'Nesne Güncellendi' });
+      this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory: false, options: opts });
+    } else {
+      this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory: opts.saveHistory, options: opts });
+      if (opts.emitDataChanged && !opts.transient) {
+        this.core.emit('dataChanged', { source: opts.source });
+      }
+      if (opts.persist && !opts.transient) {
+        this.core.autoSave();
+      }
+    }
     return obj;
   }
 
@@ -238,9 +292,18 @@ class ObjectManager {
       }
     }
 
-    this.core.emit('objectDeleted', { object: removed, saveHistory });
-    this.core.emit('dataChanged', { source: 'deleteObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    const shouldSaveHistory = typeof saveHistory === 'object' ? (saveHistory.saveHistory ?? true) : !!saveHistory;
+    const delSource = typeof saveHistory === 'object' && saveHistory.source ? saveHistory.source : 'deleteObject';
+
+    if (inTx) {
+      this.core.recordMutation({ source: delSource, description: 'Nesne Silindi' });
+      this.core.emit('objectDeleted', { object: removed, saveHistory: false });
+    } else {
+      this.core.emit('objectDeleted', { object: removed, saveHistory: shouldSaveHistory });
+      this.core.emit('dataChanged', { source: delSource });
+      this.core.autoSave();
+    }
   }
 
   duplicateObject(id, saveHistory = true) {

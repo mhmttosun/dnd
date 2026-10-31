@@ -596,11 +596,12 @@ class PropertyPanel {
         const targets = this.selectionManager.getSelectedObjects();
 
         if (targets.length > 1) {
-          targets.forEach(object => {
-            this.objectManager.updateObject(object.id, props, false);
-          });
-
-          this.core.pushHistoryState('Seçili Nesneleri Güncelle');
+          this.core.runTransaction(() => {
+            targets.forEach(object => {
+              this.objectManager.updateObject(object.id, props, false);
+            });
+            this.core.pushHistoryState('Seçili Nesneleri Güncelle');
+          }, { description: 'Seçili Nesneleri Güncelle', source: 'batchUpdate' });
         } else {
           this.objectManager.updateObject(id, props, true);
         }

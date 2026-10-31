@@ -218,10 +218,12 @@ class SelectionManager {
     if (selected.length < 2) return null;
 
     const newGroupId = 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
-    selected.forEach(o => {
-      this.objectManager.updateObject(o.id, { groupId: newGroupId }, false);
-    });
-    this.core.pushHistoryState('Nesneleri Grupla');
+    this.core.runTransaction(() => {
+      selected.forEach(o => {
+        this.objectManager.updateObject(o.id, { groupId: newGroupId }, false);
+      });
+    }, { description: 'Nesneleri Grupla', source: 'group' });
+
     this.updateSelectionBox();
     this.core.emit('selectionChanged', {
       selectedIds: Array.from(this.selectedIds),
@@ -236,12 +238,14 @@ class SelectionManager {
     if (groupIds.size === 0) return false;
 
     const allObjects = this.objectManager.getObjects();
-    allObjects.forEach(o => {
-      if (groupIds.has(o.groupId)) {
-        this.objectManager.updateObject(o.id, { groupId: null }, false);
-      }
-    });
-    this.core.pushHistoryState('Grubu Çöz');
+    this.core.runTransaction(() => {
+      allObjects.forEach(o => {
+        if (groupIds.has(o.groupId)) {
+          this.objectManager.updateObject(o.id, { groupId: null }, false);
+        }
+      });
+    }, { description: 'Grubu Çöz', source: 'ungroup' });
+
     this.updateSelectionBox();
     this.core.emit('selectionChanged', {
       selectedIds: Array.from(this.selectedIds),
@@ -257,8 +261,10 @@ class SelectionManager {
     if (ids.length === 1) {
       this.objectManager.deleteObject(ids[0], true);
     } else {
-      ids.forEach(id => this.objectManager.deleteObject(id, false));
-      this.core.pushHistoryState('Seçili Nesneleri Sil');
+      this.core.runTransaction(() => {
+        ids.forEach(id => this.objectManager.deleteObject(id, false));
+        this.core.pushHistoryState('Seçili Nesneleri Sil');
+      }, { description: 'Seçili Nesneleri Sil', source: 'deleteSelected' });
     }
   }
 
@@ -268,25 +274,27 @@ class SelectionManager {
     this.clearSelection();
     const groupMap = new Map();
     const newIds = [];
-    ids.forEach(id => {
-      const src = this.objectManager.getObject(id);
-      let targetGroupId = undefined;
-      if (src && src.groupId) {
-        if (!groupMap.has(src.groupId)) {
-          groupMap.set(src.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+    this.core.runTransaction(() => {
+      ids.forEach(id => {
+        const src = this.objectManager.getObject(id);
+        let targetGroupId = undefined;
+        if (src && src.groupId) {
+          if (!groupMap.has(src.groupId)) {
+            groupMap.set(src.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+          }
+          targetGroupId = groupMap.get(src.groupId);
         }
-        targetGroupId = groupMap.get(src.groupId);
-      }
-      const dup = this.objectManager.duplicateObject(id, false);
-      if (dup) {
-        if (targetGroupId !== undefined) {
-          this.objectManager.updateObject(dup.id, { groupId: targetGroupId }, false);
+        const dup = this.objectManager.duplicateObject(id, false);
+        if (dup) {
+          if (targetGroupId !== undefined) {
+            this.objectManager.updateObject(dup.id, { groupId: targetGroupId }, false);
+          }
+          newIds.push(dup.id);
         }
-        newIds.push(dup.id);
-      }
-    });
+      });
+      this.core.pushHistoryState('Seçili Nesneleri Çoğalt');
+    }, { description: 'Seçili Nesneleri Çoğalt', source: 'duplicateSelected' });
     newIds.forEach(id => this.select(id, true));
-    this.core.pushHistoryState('Seçili Nesneleri Çoğalt');
   }
 
   copy() {
@@ -298,35 +306,39 @@ class SelectionManager {
     this.clearSelection();
     const groupMap = new Map();
     const newIds = [];
-    this.clipboard.forEach(item => {
-      const copyProps = Object.assign({}, item);
-      delete copyProps.id;
-      copyProps.name = `${item.name} (Kopya)`;
-      copyProps.x = Math.min(this.core.data.stage.width - item.width, item.x + 25);
-      copyProps.y = Math.min(this.core.data.stage.height - item.height, item.y + 25);
-      if (item.groupId) {
-        if (!groupMap.has(item.groupId)) {
-          groupMap.set(item.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+    this.core.runTransaction(() => {
+      this.clipboard.forEach(item => {
+        const copyProps = Object.assign({}, item);
+        delete copyProps.id;
+        copyProps.name = `${item.name} (Kopya)`;
+        copyProps.x = Math.min(this.core.data.stage.width - item.width, item.x + 25);
+        copyProps.y = Math.min(this.core.data.stage.height - item.height, item.y + 25);
+        if (item.groupId) {
+          if (!groupMap.has(item.groupId)) {
+            groupMap.set(item.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+          }
+          copyProps.groupId = groupMap.get(item.groupId);
         }
-        copyProps.groupId = groupMap.get(item.groupId);
-      }
-      const newObj = this.objectManager.createObject(item.type, item.role, copyProps, false);
-      if (newObj) newIds.push(newObj.id);
-    });
+        const newObj = this.objectManager.createObject(item.type, item.role, copyProps, false);
+        if (newObj) newIds.push(newObj.id);
+      });
+      this.core.pushHistoryState('Yapıştır');
+    }, { description: 'Yapıştır', source: 'paste' });
     newIds.forEach(id => this.select(id, true));
-    this.core.pushHistoryState('Yapıştır');
   }
 
   nudgeSelected(dx, dy) {
     const targets = this.getSelectedObjects().filter(obj => !obj.locked);
     if (targets.length === 0) return;
-    targets.forEach(obj => {
-      this.objectManager.updateObject(obj.id, {
-        x: Math.max(0, Math.min(this.core.data.stage.width - obj.width, obj.x + dx)),
-        y: Math.max(0, Math.min(this.core.data.stage.height - obj.height, obj.y + dy))
-      }, false);
-    });
-    this.core.pushHistoryState('Nesneleri Kaydır');
+    this.core.runTransaction(() => {
+      targets.forEach(obj => {
+        this.objectManager.updateObject(obj.id, {
+          x: Math.max(0, Math.min(this.core.data.stage.width - obj.width, obj.x + dx)),
+          y: Math.max(0, Math.min(this.core.data.stage.height - obj.height, obj.y + dy))
+        }, false);
+      });
+      this.core.pushHistoryState('Nesneleri Kaydır');
+    }, { description: 'Nesneleri Kaydır', source: 'nudge' });
     this.updateSelectionBox();
   }
 

@@ -180,6 +180,10 @@ class TransformEngine {
       width: o.width,
       height: o.height
     }));
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'move', description: 'Nesneleri Taşı' });
+    }
   }
 
   startResize(handle, stagePos) {
@@ -208,6 +212,10 @@ class TransformEngine {
       }
       return item;
     });
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'resize', description: 'Nesneyi Boyutlandır' });
+    }
   }
 
   startRotate(stagePos) {
@@ -225,6 +233,10 @@ class TransformEngine {
       centerX: primary.x + primary.width / 2,
       centerY: primary.y + primary.height / 2
     }];
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'rotate', description: 'Nesneyi Döndür' });
+    }
   }
 
   startMarquee(stagePos, shiftKey = false) {
@@ -252,6 +264,10 @@ class TransformEngine {
       if (clientDist > 4) {
         this.hasMovedOrDragged = true;
       }
+    }
+
+    if (!this.hasMovedOrDragged && this.activeAction !== 'marquee') {
+      return;
     }
 
     const currentStagePos = this.stageManager.clientToStage(e.clientX, e.clientY);
@@ -335,7 +351,7 @@ class TransformEngine {
       const newX = Math.round(Math.max(0, Math.min(stageW - item.width, item.x + snappedDx)));
       const newY = Math.round(Math.max(0, Math.min(stageH - item.height, item.y + snappedDy)));
 
-      this.objectManager.updateObject(item.id, { x: newX, y: newY }, false);
+      this.objectManager.updateObject(item.id, { x: newX, y: newY }, { transient: true, saveHistory: false, source: 'move' });
     });
 
     this.selectionManager.updateSelectionBox();
@@ -402,7 +418,7 @@ class TransformEngine {
           width: newW,
           height: newH,
           rotation: newRot
-        }, false);
+        }, { transient: true, saveHistory: false, source: 'resize' });
         this.selectionManager.updateSelectionBox();
         return;
       } else if (handle.includes('w')) {
@@ -446,7 +462,7 @@ class TransformEngine {
           width: newW,
           height: newH,
           rotation: newRot
-        }, false);
+        }, { transient: true, saveHistory: false, source: 'resize' });
         this.selectionManager.updateSelectionBox();
         return;
       }
@@ -502,7 +518,7 @@ class TransformEngine {
       y: Math.round(newY),
       width: Math.round(newW),
       height: Math.round(newH)
-    }, false);
+    }, { transient: true, saveHistory: false, source: 'resize' });
 
     this.selectionManager.updateSelectionBox();
   }
@@ -523,7 +539,7 @@ class TransformEngine {
 
     this.objectManager.updateObject(start.id, {
       rotation: Math.round(deg)
-    }, false);
+    }, { transient: true, saveHistory: false, source: 'rotate' });
 
     this.selectionManager.updateSelectionBox();
   }
@@ -601,23 +617,52 @@ class TransformEngine {
       });
     }
 
-    if (['move', 'resize', 'rotate'].includes(this.activeAction)) {
-      if (this.hasMovedOrDragged) {
-        // Değişiklik geçmişe kaydedilir
-        this.historyManager.pushState();
-      }
-    }
-
     const prevAction = this.activeAction;
     const wasDragged = this.hasMovedOrDragged;
     const isMarquee = prevAction === 'marquee';
-    this.activeAction = null;
-    this.activeHandle = null;
-    this.activePointerId = null;
-    this.startObjectsData = [];
-    this.isPointerDown = false;
-    this.isMarqueeShift = false;
-    this.initialMarqueeSelectedIds = null;
+
+    try {
+      if (['move', 'resize', 'rotate'].includes(prevAction)) {
+        if (wasDragged) {
+          let desc = 'Nesneleri Taşı';
+          if (prevAction === 'resize') desc = 'Nesneyi Boyutlandır';
+          if (prevAction === 'rotate') desc = 'Nesneyi Döndür';
+
+          if (this.core && typeof this.core.endTransaction === 'function') {
+            this.core.endTransaction({
+              source: prevAction,
+              description: desc,
+              forceCommit: true,
+              saveHistory: true,
+              persist: true,
+              emitDataChanged: true
+            });
+          } else {
+            this.historyManager.pushState(desc);
+            this.core.emit('dataChanged', { source: prevAction });
+            this.core.autoSave();
+          }
+        } else {
+          // Hareket gerçekleşmedi: transaction geri alınır
+          if (this.core && typeof this.core.rollbackTransaction === 'function') {
+            this.core.rollbackTransaction();
+          }
+        }
+      }
+    } finally {
+      // Güvenli temizlik: Açık veya yarım transaction kalması engellenir
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) {
+        this.core.rollbackTransaction();
+      }
+
+      this.activeAction = null;
+      this.activeHandle = null;
+      this.activePointerId = null;
+      this.startObjectsData = [];
+      this.isPointerDown = false;
+      this.isMarqueeShift = false;
+      this.initialMarqueeSelectedIds = null;
+    }
 
     // Bırakıldığı anda mini toolbar durumunu bildir:
     // Tutulduğu anla bırakıldığı an sürükleme yapılmışsa mini toolbar görünmesin, yapılmamışsa görünsün

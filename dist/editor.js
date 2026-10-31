@@ -352,6 +352,137 @@ class EditorCore {
     this.data = this.createDefaultProject();
     this.activeSubMode = null;
     this.historyManager = null;
+
+    // Transaction & Mutation Yönetimi (Toplu ve Canlı Değişiklikler İçin)
+    this._transactionDepth = 0;
+    this._activeTransaction = null;
+  }
+
+  // --- Merkezi Transaction / Mutation API ---
+  beginTransaction(options = {}) {
+    this._transactionDepth++;
+    if (this._transactionDepth === 1) {
+      this._activeTransaction = {
+        description: options.description || '',
+        source: options.source || 'transaction',
+        saveHistory: options.saveHistory !== false,
+        persist: options.persist !== false,
+        emitDataChanged: options.emitDataChanged !== false,
+        mutated: false,
+        changesCount: 0,
+        startTime: Date.now()
+      };
+    } else if (this._activeTransaction) {
+      if (options.saveHistory !== undefined) {
+        this._activeTransaction.saveHistory = this._activeTransaction.saveHistory || options.saveHistory;
+      }
+      if (options.source && (!this._activeTransaction.source || this._activeTransaction.source === 'transaction')) {
+        this._activeTransaction.source = options.source;
+      }
+      if (options.description && !this._activeTransaction.description) {
+        this._activeTransaction.description = options.description;
+      }
+    }
+    return this._activeTransaction;
+  }
+
+  isInTransaction() {
+    return this._transactionDepth > 0;
+  }
+
+  getTransaction() {
+    return this._activeTransaction;
+  }
+
+  recordMutation(info = {}) {
+    if (this._transactionDepth > 0 && this._activeTransaction) {
+      this._activeTransaction.mutated = true;
+      this._activeTransaction.changesCount++;
+      if (info.source && (!this._activeTransaction.source || this._activeTransaction.source === 'transaction')) {
+        this._activeTransaction.source = info.source;
+      }
+      if (info.description && !this._activeTransaction.description) {
+        this._activeTransaction.description = info.description;
+      }
+    }
+  }
+
+  endTransaction(options = {}) {
+    if (this._transactionDepth <= 0) {
+      this._transactionDepth = 0;
+      this._activeTransaction = null;
+      return null;
+    }
+
+    this._transactionDepth--;
+    if (this._transactionDepth > 0) {
+      return this._activeTransaction;
+    }
+
+    const tx = this._activeTransaction;
+    this._activeTransaction = null;
+    this._transactionDepth = 0;
+
+    if (!tx) return null;
+
+    if (options.rollback === true) {
+      return null;
+    }
+
+    const hasMutated = tx.mutated || options.forceCommit === true || options.mutated === true;
+    if (!hasMutated) {
+      return null;
+    }
+
+    const source = options.source || tx.source || 'transaction';
+    const description = options.description || tx.description || '';
+    const saveHistory = options.saveHistory !== undefined ? options.saveHistory : tx.saveHistory;
+    const persist = options.persist !== undefined ? options.persist : tx.persist;
+    const emitDataChanged = options.emitDataChanged !== undefined ? options.emitDataChanged : tx.emitDataChanged;
+
+    if (saveHistory && !tx.historyPushed) {
+      this.pushHistoryState(description);
+    }
+    if (emitDataChanged) {
+      this.emit('dataChanged', { source, description });
+    }
+    if (persist) {
+      this.autoSave();
+    }
+    return tx;
+  }
+
+  commitTransaction(options = {}) {
+    return this.endTransaction(options);
+  }
+
+  rollbackTransaction() {
+    this._transactionDepth = 0;
+    this._activeTransaction = null;
+  }
+
+  beginMutation(options = {}) {
+    return this.beginTransaction(options);
+  }
+
+  commitMutation(options = {}) {
+    return this.endTransaction(options);
+  }
+
+  rollbackMutation() {
+    return this.rollbackTransaction();
+  }
+
+  runTransaction(callback, options = {}) {
+    this.beginTransaction(options);
+    try {
+      const result = callback(this);
+      this.endTransaction(options);
+      return result;
+    } catch (err) {
+      this.rollbackTransaction();
+      throw err;
+    }
   }
 
   // Geçmiş Yönetimi Entegrasyonu (Merkezi API)
@@ -360,6 +491,9 @@ class EditorCore {
   }
 
   pushHistoryState(description = '') {
+    if (this._transactionDepth > 0 && this._activeTransaction) {
+      this._activeTransaction.historyPushed = true;
+    }
     if (this.historyManager && typeof this.historyManager.pushState === 'function') {
       this.historyManager.pushState(description);
     } else {
@@ -1020,9 +1154,18 @@ class ObjectManager {
     this.core.data.objects.push(finalObj);
     this.renderObjectDOM(finalObj);
 
-    this.core.emit('objectAdded', { object: finalObj, saveHistory });
-    this.core.emit('dataChanged', { source: 'createObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    const shouldSaveHistory = typeof saveHistory === 'object' ? (saveHistory.saveHistory ?? true) : !!saveHistory;
+    const addSource = typeof saveHistory === 'object' && saveHistory.source ? saveHistory.source : 'createObject';
+
+    if (inTx) {
+      this.core.recordMutation({ source: addSource, description: 'Nesne Eklendi' });
+      this.core.emit('objectAdded', { object: finalObj, saveHistory: false });
+    } else {
+      this.core.emit('objectAdded', { object: finalObj, saveHistory: shouldSaveHistory });
+      this.core.emit('dataChanged', { source: addSource });
+      this.core.autoSave();
+    }
 
     return finalObj;
   }
@@ -1051,9 +1194,43 @@ class ObjectManager {
     return this.core.data.objects;
   }
 
-  updateObject(id, partialProps, saveHistory = true) {
+  normalizeUpdateOptions(options) {
+    if (typeof options === 'boolean') {
+      return {
+        saveHistory: options,
+        emitDataChanged: true,
+        persist: true,
+        autoSave: true,
+        transient: false,
+        source: 'updateObject'
+      };
+    }
+    if (!options || typeof options !== 'object') {
+      return {
+        saveHistory: true,
+        emitDataChanged: true,
+        persist: true,
+        autoSave: true,
+        transient: false,
+        source: 'updateObject'
+      };
+    }
+    const isTransient = !!options.transient;
+    return {
+      saveHistory: options.saveHistory !== undefined ? options.saveHistory : !isTransient,
+      emitDataChanged: options.emitDataChanged !== undefined ? options.emitDataChanged : !isTransient,
+      persist: options.persist !== undefined ? options.persist : (options.autoSave !== undefined ? options.autoSave : !isTransient),
+      autoSave: options.autoSave !== undefined ? options.autoSave : (options.persist !== undefined ? options.persist : !isTransient),
+      transient: isTransient,
+      source: options.source || 'updateObject'
+    };
+  }
+
+  updateObject(id, partialProps, options = true) {
     const obj = this.getObject(id);
     if (!obj) return null;
+
+    const opts = this.normalizeUpdateOptions(options);
 
     // Sahne dışına taşmayı engelle (nesne sahne içinde kalmalı)
     if (this.core && this.core.data && this.core.data.stage) {
@@ -1073,9 +1250,20 @@ class ObjectManager {
     Object.assign(obj, partialProps);
     this.updateObjectDOM(obj);
 
-    this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory });
-    this.core.emit('dataChanged', { source: 'updateObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+
+    if (inTx) {
+      this.core.recordMutation({ source: opts.source, description: 'Nesne Güncellendi' });
+      this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory: false, options: opts });
+    } else {
+      this.core.emit('objectUpdated', { object: obj, partialProps, saveHistory: opts.saveHistory, options: opts });
+      if (opts.emitDataChanged && !opts.transient) {
+        this.core.emit('dataChanged', { source: opts.source });
+      }
+      if (opts.persist && !opts.transient) {
+        this.core.autoSave();
+      }
+    }
     return obj;
   }
 
@@ -1098,9 +1286,18 @@ class ObjectManager {
       }
     }
 
-    this.core.emit('objectDeleted', { object: removed, saveHistory });
-    this.core.emit('dataChanged', { source: 'deleteObject' });
-    this.core.autoSave();
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    const shouldSaveHistory = typeof saveHistory === 'object' ? (saveHistory.saveHistory ?? true) : !!saveHistory;
+    const delSource = typeof saveHistory === 'object' && saveHistory.source ? saveHistory.source : 'deleteObject';
+
+    if (inTx) {
+      this.core.recordMutation({ source: delSource, description: 'Nesne Silindi' });
+      this.core.emit('objectDeleted', { object: removed, saveHistory: false });
+    } else {
+      this.core.emit('objectDeleted', { object: removed, saveHistory: shouldSaveHistory });
+      this.core.emit('dataChanged', { source: delSource });
+      this.core.autoSave();
+    }
   }
 
   duplicateObject(id, saveHistory = true) {
@@ -1545,10 +1742,12 @@ class SelectionManager {
     if (selected.length < 2) return null;
 
     const newGroupId = 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
-    selected.forEach(o => {
-      this.objectManager.updateObject(o.id, { groupId: newGroupId }, false);
-    });
-    this.core.pushHistoryState('Nesneleri Grupla');
+    this.core.runTransaction(() => {
+      selected.forEach(o => {
+        this.objectManager.updateObject(o.id, { groupId: newGroupId }, false);
+      });
+    }, { description: 'Nesneleri Grupla', source: 'group' });
+
     this.updateSelectionBox();
     this.core.emit('selectionChanged', {
       selectedIds: Array.from(this.selectedIds),
@@ -1563,12 +1762,14 @@ class SelectionManager {
     if (groupIds.size === 0) return false;
 
     const allObjects = this.objectManager.getObjects();
-    allObjects.forEach(o => {
-      if (groupIds.has(o.groupId)) {
-        this.objectManager.updateObject(o.id, { groupId: null }, false);
-      }
-    });
-    this.core.pushHistoryState('Grubu Çöz');
+    this.core.runTransaction(() => {
+      allObjects.forEach(o => {
+        if (groupIds.has(o.groupId)) {
+          this.objectManager.updateObject(o.id, { groupId: null }, false);
+        }
+      });
+    }, { description: 'Grubu Çöz', source: 'ungroup' });
+
     this.updateSelectionBox();
     this.core.emit('selectionChanged', {
       selectedIds: Array.from(this.selectedIds),
@@ -1584,8 +1785,10 @@ class SelectionManager {
     if (ids.length === 1) {
       this.objectManager.deleteObject(ids[0], true);
     } else {
-      ids.forEach(id => this.objectManager.deleteObject(id, false));
-      this.core.pushHistoryState('Seçili Nesneleri Sil');
+      this.core.runTransaction(() => {
+        ids.forEach(id => this.objectManager.deleteObject(id, false));
+        this.core.pushHistoryState('Seçili Nesneleri Sil');
+      }, { description: 'Seçili Nesneleri Sil', source: 'deleteSelected' });
     }
   }
 
@@ -1595,25 +1798,27 @@ class SelectionManager {
     this.clearSelection();
     const groupMap = new Map();
     const newIds = [];
-    ids.forEach(id => {
-      const src = this.objectManager.getObject(id);
-      let targetGroupId = undefined;
-      if (src && src.groupId) {
-        if (!groupMap.has(src.groupId)) {
-          groupMap.set(src.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+    this.core.runTransaction(() => {
+      ids.forEach(id => {
+        const src = this.objectManager.getObject(id);
+        let targetGroupId = undefined;
+        if (src && src.groupId) {
+          if (!groupMap.has(src.groupId)) {
+            groupMap.set(src.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+          }
+          targetGroupId = groupMap.get(src.groupId);
         }
-        targetGroupId = groupMap.get(src.groupId);
-      }
-      const dup = this.objectManager.duplicateObject(id, false);
-      if (dup) {
-        if (targetGroupId !== undefined) {
-          this.objectManager.updateObject(dup.id, { groupId: targetGroupId }, false);
+        const dup = this.objectManager.duplicateObject(id, false);
+        if (dup) {
+          if (targetGroupId !== undefined) {
+            this.objectManager.updateObject(dup.id, { groupId: targetGroupId }, false);
+          }
+          newIds.push(dup.id);
         }
-        newIds.push(dup.id);
-      }
-    });
+      });
+      this.core.pushHistoryState('Seçili Nesneleri Çoğalt');
+    }, { description: 'Seçili Nesneleri Çoğalt', source: 'duplicateSelected' });
     newIds.forEach(id => this.select(id, true));
-    this.core.pushHistoryState('Seçili Nesneleri Çoğalt');
   }
 
   copy() {
@@ -1625,35 +1830,39 @@ class SelectionManager {
     this.clearSelection();
     const groupMap = new Map();
     const newIds = [];
-    this.clipboard.forEach(item => {
-      const copyProps = Object.assign({}, item);
-      delete copyProps.id;
-      copyProps.name = `${item.name} (Kopya)`;
-      copyProps.x = Math.min(this.core.data.stage.width - item.width, item.x + 25);
-      copyProps.y = Math.min(this.core.data.stage.height - item.height, item.y + 25);
-      if (item.groupId) {
-        if (!groupMap.has(item.groupId)) {
-          groupMap.set(item.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+    this.core.runTransaction(() => {
+      this.clipboard.forEach(item => {
+        const copyProps = Object.assign({}, item);
+        delete copyProps.id;
+        copyProps.name = `${item.name} (Kopya)`;
+        copyProps.x = Math.min(this.core.data.stage.width - item.width, item.x + 25);
+        copyProps.y = Math.min(this.core.data.stage.height - item.height, item.y + 25);
+        if (item.groupId) {
+          if (!groupMap.has(item.groupId)) {
+            groupMap.set(item.groupId, 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+          }
+          copyProps.groupId = groupMap.get(item.groupId);
         }
-        copyProps.groupId = groupMap.get(item.groupId);
-      }
-      const newObj = this.objectManager.createObject(item.type, item.role, copyProps, false);
-      if (newObj) newIds.push(newObj.id);
-    });
+        const newObj = this.objectManager.createObject(item.type, item.role, copyProps, false);
+        if (newObj) newIds.push(newObj.id);
+      });
+      this.core.pushHistoryState('Yapıştır');
+    }, { description: 'Yapıştır', source: 'paste' });
     newIds.forEach(id => this.select(id, true));
-    this.core.pushHistoryState('Yapıştır');
   }
 
   nudgeSelected(dx, dy) {
     const targets = this.getSelectedObjects().filter(obj => !obj.locked);
     if (targets.length === 0) return;
-    targets.forEach(obj => {
-      this.objectManager.updateObject(obj.id, {
-        x: Math.max(0, Math.min(this.core.data.stage.width - obj.width, obj.x + dx)),
-        y: Math.max(0, Math.min(this.core.data.stage.height - obj.height, obj.y + dy))
-      }, false);
-    });
-    this.core.pushHistoryState('Nesneleri Kaydır');
+    this.core.runTransaction(() => {
+      targets.forEach(obj => {
+        this.objectManager.updateObject(obj.id, {
+          x: Math.max(0, Math.min(this.core.data.stage.width - obj.width, obj.x + dx)),
+          y: Math.max(0, Math.min(this.core.data.stage.height - obj.height, obj.y + dy))
+        }, false);
+      });
+      this.core.pushHistoryState('Nesneleri Kaydır');
+    }, { description: 'Nesneleri Kaydır', source: 'nudge' });
     this.updateSelectionBox();
   }
 
@@ -1832,6 +2041,7 @@ class HistoryManager {
     // Nesne ekleme işlemi
     this.core.on('objectAdded', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Nesne Eklendi');
     });
@@ -1839,6 +2049,7 @@ class HistoryManager {
     // Nesne silme işlemi
     this.core.on('objectDeleted', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Nesne Silindi');
     });
@@ -1846,13 +2057,15 @@ class HistoryManager {
     // Nesne özelliği güncelleme (renk, rol, metin, boyut vb.)
     this.core.on('objectUpdated', (payload) => {
       if (this.isApplying) return;
-      if (payload && payload.saveHistory === false) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
+      if (payload && (payload.saveHistory === false || payload.options?.saveHistory === false)) return;
       this.pushState('Nesne Güncellendi');
     });
 
     // Katman sırası değişimi
     this.core.on('layerChanged', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Katman Değiştirildi');
     });
@@ -1860,6 +2073,7 @@ class HistoryManager {
     // Cevap anahtarı eşleşme değişimi
     this.core.on('answerKeyChanged', (payload) => {
       if (this.isApplying) return;
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) return;
       if (payload && payload.saveHistory === false) return;
       this.pushState('Cevap Anahtarı Güncellendi');
     });
@@ -2000,6 +2214,20 @@ class LayerManager {
     });
   }
 
+  emitLayerChange(obj, saveHistory) {
+    const inTx = this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction();
+    if (inTx) {
+      this.core.recordMutation({ source: 'layer', description: 'Katman Değiştirildi' });
+      this.core.emit('layerChanged', { object: obj, saveHistory: false });
+    } else {
+      this.core.emit('layerChanged', { object: obj, saveHistory });
+      this.core.emit('dataChanged', { source: 'layer' });
+      if (this.core && typeof this.core.autoSave === 'function') {
+        this.core.autoSave();
+      }
+    }
+  }
+
   bringToFront(id, saveHistory = true) {
     const obj = this.objectManager.getObject(id);
     if (!obj) return;
@@ -2010,8 +2238,7 @@ class LayerManager {
     obj.zIndex = maxZ + 1;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj, saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(obj, saveHistory);
   }
 
   sendToBack(id, saveHistory = true) {
@@ -2022,8 +2249,7 @@ class LayerManager {
     obj.zIndex = 0;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: obj, saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(obj, saveHistory);
   }
 
   bringForward(id, saveHistory = true) {
@@ -2039,8 +2265,7 @@ class LayerManager {
     nextObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(sorted[idx], saveHistory);
   }
 
   sendBackward(id, saveHistory = true) {
@@ -2056,8 +2281,7 @@ class LayerManager {
     prevObj.zIndex = tempZ;
 
     this.normalizeLayers();
-    this.core.emit('layerChanged', { object: sorted[idx], saveHistory });
-    this.core.emit('dataChanged', { source: 'layer' });
+    this.emitLayerChange(sorted[idx], saveHistory);
   }
 }
 
@@ -2742,6 +2966,10 @@ class TransformEngine {
       width: o.width,
       height: o.height
     }));
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'move', description: 'Nesneleri Taşı' });
+    }
   }
 
   startResize(handle, stagePos) {
@@ -2770,6 +2998,10 @@ class TransformEngine {
       }
       return item;
     });
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'resize', description: 'Nesneyi Boyutlandır' });
+    }
   }
 
   startRotate(stagePos) {
@@ -2787,6 +3019,10 @@ class TransformEngine {
       centerX: primary.x + primary.width / 2,
       centerY: primary.y + primary.height / 2
     }];
+
+    if (this.core && typeof this.core.beginTransaction === 'function') {
+      this.core.beginTransaction({ source: 'rotate', description: 'Nesneyi Döndür' });
+    }
   }
 
   startMarquee(stagePos, shiftKey = false) {
@@ -2814,6 +3050,10 @@ class TransformEngine {
       if (clientDist > 4) {
         this.hasMovedOrDragged = true;
       }
+    }
+
+    if (!this.hasMovedOrDragged && this.activeAction !== 'marquee') {
+      return;
     }
 
     const currentStagePos = this.stageManager.clientToStage(e.clientX, e.clientY);
@@ -2897,7 +3137,7 @@ class TransformEngine {
       const newX = Math.round(Math.max(0, Math.min(stageW - item.width, item.x + snappedDx)));
       const newY = Math.round(Math.max(0, Math.min(stageH - item.height, item.y + snappedDy)));
 
-      this.objectManager.updateObject(item.id, { x: newX, y: newY }, false);
+      this.objectManager.updateObject(item.id, { x: newX, y: newY }, { transient: true, saveHistory: false, source: 'move' });
     });
 
     this.selectionManager.updateSelectionBox();
@@ -2964,7 +3204,7 @@ class TransformEngine {
           width: newW,
           height: newH,
           rotation: newRot
-        }, false);
+        }, { transient: true, saveHistory: false, source: 'resize' });
         this.selectionManager.updateSelectionBox();
         return;
       } else if (handle.includes('w')) {
@@ -3008,7 +3248,7 @@ class TransformEngine {
           width: newW,
           height: newH,
           rotation: newRot
-        }, false);
+        }, { transient: true, saveHistory: false, source: 'resize' });
         this.selectionManager.updateSelectionBox();
         return;
       }
@@ -3064,7 +3304,7 @@ class TransformEngine {
       y: Math.round(newY),
       width: Math.round(newW),
       height: Math.round(newH)
-    }, false);
+    }, { transient: true, saveHistory: false, source: 'resize' });
 
     this.selectionManager.updateSelectionBox();
   }
@@ -3085,7 +3325,7 @@ class TransformEngine {
 
     this.objectManager.updateObject(start.id, {
       rotation: Math.round(deg)
-    }, false);
+    }, { transient: true, saveHistory: false, source: 'rotate' });
 
     this.selectionManager.updateSelectionBox();
   }
@@ -3163,23 +3403,52 @@ class TransformEngine {
       });
     }
 
-    if (['move', 'resize', 'rotate'].includes(this.activeAction)) {
-      if (this.hasMovedOrDragged) {
-        // Değişiklik geçmişe kaydedilir
-        this.historyManager.pushState();
-      }
-    }
-
     const prevAction = this.activeAction;
     const wasDragged = this.hasMovedOrDragged;
     const isMarquee = prevAction === 'marquee';
-    this.activeAction = null;
-    this.activeHandle = null;
-    this.activePointerId = null;
-    this.startObjectsData = [];
-    this.isPointerDown = false;
-    this.isMarqueeShift = false;
-    this.initialMarqueeSelectedIds = null;
+
+    try {
+      if (['move', 'resize', 'rotate'].includes(prevAction)) {
+        if (wasDragged) {
+          let desc = 'Nesneleri Taşı';
+          if (prevAction === 'resize') desc = 'Nesneyi Boyutlandır';
+          if (prevAction === 'rotate') desc = 'Nesneyi Döndür';
+
+          if (this.core && typeof this.core.endTransaction === 'function') {
+            this.core.endTransaction({
+              source: prevAction,
+              description: desc,
+              forceCommit: true,
+              saveHistory: true,
+              persist: true,
+              emitDataChanged: true
+            });
+          } else {
+            this.historyManager.pushState(desc);
+            this.core.emit('dataChanged', { source: prevAction });
+            this.core.autoSave();
+          }
+        } else {
+          // Hareket gerçekleşmedi: transaction geri alınır
+          if (this.core && typeof this.core.rollbackTransaction === 'function') {
+            this.core.rollbackTransaction();
+          }
+        }
+      }
+    } finally {
+      // Güvenli temizlik: Açık veya yarım transaction kalması engellenir
+      if (this.core && typeof this.core.isInTransaction === 'function' && this.core.isInTransaction()) {
+        this.core.rollbackTransaction();
+      }
+
+      this.activeAction = null;
+      this.activeHandle = null;
+      this.activePointerId = null;
+      this.startObjectsData = [];
+      this.isPointerDown = false;
+      this.isMarqueeShift = false;
+      this.initialMarqueeSelectedIds = null;
+    }
 
     // Bırakıldığı anda mini toolbar durumunu bildir:
     // Tutulduğu anla bırakıldığı an sürükleme yapılmışsa mini toolbar görünmesin, yapılmamışsa görünsün
@@ -5327,6 +5596,21 @@ class MiniToolbar {
     this.init();
   }
 
+  batchUpdateObjects(targets, getChangesFn, description = 'Nesneleri Güncelle', source = 'miniToolbar') {
+    if (!targets || targets.length === 0) return;
+    if (targets.length === 1) {
+      const changes = typeof getChangesFn === 'function' ? getChangesFn(targets[0]) : getChangesFn;
+      this.objectManager.updateObject(targets[0].id, changes, true);
+    } else {
+      this.core.runTransaction(() => {
+        targets.forEach(o => {
+          const changes = typeof getChangesFn === 'function' ? getChangesFn(o) : getChangesFn;
+          this.objectManager.updateObject(o.id, changes, false);
+        });
+      }, { description, source });
+    }
+  }
+
   init() {
     this.createDOM();
     this.bindEvents();
@@ -6284,7 +6568,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { borderStyle: style }, 'Çizgi Stili Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6293,7 +6577,7 @@ class MiniToolbar {
     const updateLineWidth = (newWidth) => {
       const clamped = Math.max(1, Math.min(24, Math.round(newWidth)));
       const targets = getTargets();
-      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderWidth: clamped }, i === targets.length - 1));
+      this.batchUpdateObjects(targets, { borderWidth: clamped }, 'Çizgi Kalınlığı Değiştir');
       const tabValEl = this.root.getElementById('mt-tab-width-val');
       if (tabValEl) tabValEl.textContent = `${clamped}`;
       this.toolbarEl.querySelectorAll('[data-line-width-preset]').forEach(b => {
@@ -6314,7 +6598,7 @@ class MiniToolbar {
     // Çizgi Rengi Seçimi (Palet Swatchları)
     const updateLineColor = (hex) => {
       const targets = getTargets();
-      targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderColor: hex }, i === targets.length - 1));
+      this.batchUpdateObjects(targets, { borderColor: hex }, 'Çizgi Rengi Değiştir');
       const swatchEl = this.root.getElementById('mt-tab-color-swatch');
       if (swatchEl) swatchEl.style.backgroundColor = hex;
       this.toolbarEl.querySelectorAll('[data-line-color]').forEach(b => {
@@ -6340,7 +6624,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-align]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { rotation: rot }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { rotation: rot }, 'Çizgi Açısı Değiştir');
         syncAppearanceControls();
         this.selectionManager.updateSelectionBox();
       };
@@ -6369,7 +6653,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-line-arrow]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { arrowStart: start, arrowEnd: end }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { arrowStart: start, arrowEnd: end }, 'Ok Ucu Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6386,7 +6670,7 @@ class MiniToolbar {
         btn.classList.add('active');
         btn.setAttribute('aria-checked', 'true');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { role }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { role }, 'Rol Değiştir');
       };
     });
 
@@ -6398,7 +6682,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-border-style]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { borderStyle: style }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { borderStyle: style }, 'Kenarlık Stili Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6418,7 +6702,7 @@ class MiniToolbar {
         const newVal = Math.max(minVal, Math.min(maxVal, currentVal + (dir * step)));
 
         const targets = getTargets();
-        targets.forEach((o, i) => this.objectManager.updateObject(o.id, { [prop]: newVal }, i === targets.length - 1));
+        this.batchUpdateObjects(targets, { [prop]: newVal }, 'Görünüm Ayarı Değiştir');
 
         const valEl = this.toolbarEl.querySelector(`#mt-val-${prop}`);
         if (valEl) {
@@ -6436,13 +6720,13 @@ class MiniToolbar {
         const color = btn.getAttribute('data-style-color');
         const prop = btn.getAttribute('data-style-color-prop');
         const targets = getTargets();
-        targets.forEach((object, i) => {
+        this.batchUpdateObjects(targets, (object) => {
           const changes = { [prop]: color };
           if (prop === 'borderColor') {
             changes.borderStyle = color === 'transparent' ? 'none' : (object.borderStyle === 'none' ? 'solid' : object.borderStyle || 'solid');
           }
-          this.objectManager.updateObject(object.id, changes, i === targets.length - 1);
-        });
+          return changes;
+        }, 'Renk Değiştir');
         this.toolbarEl.querySelectorAll(`[data-style-color-prop="${prop}"]`).forEach(button => {
           button.classList.toggle('is-active', button.getAttribute('data-style-color') === color);
         });
@@ -6487,20 +6771,20 @@ class MiniToolbar {
           const isBold = textPrimary.fontWeight === 'bold' || textPrimary.fontWeight === '700' || textPrimary.fontWeight === '800';
           const newWeight = isBold ? 'normal' : '700';
           btn.classList.toggle('active', newWeight === '700');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontWeight: newWeight }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { fontWeight: newWeight }, 'Metin Kalınlığı Değiştir');
         } else if (act === 'italic') {
           const isItalic = textPrimary.fontStyle === 'italic';
           const newStyle = isItalic ? 'normal' : 'italic';
           btn.classList.toggle('active', newStyle === 'italic');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontStyle: newStyle }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { fontStyle: newStyle }, 'Metin Stili Değiştir');
         } else if (act === 'underline') {
           const isUnderline = textPrimary.textDecoration === 'underline';
           const newDecor = isUnderline ? 'none' : 'underline';
           btn.classList.toggle('active', newDecor === 'underline');
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textDecoration: newDecor }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, { textDecoration: newDecor }, 'Metin Alt Çizgi Değiştir');
         } else if (act === 'size-up' || act === 'size-down') {
           const delta = act === 'size-up' ? 2 : -2;
-          tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { fontSize: Math.max(10, (o.fontSize || 16) + delta) }, i === tTargets.length - 1));
+          this.batchUpdateObjects(tTargets, (o) => ({ fontSize: Math.max(10, (o.fontSize || 16) + delta) }), 'Metin Boyutu Değiştir');
           const newSize = textPrimary.fontSize || 16;
           const sizeVal = this.toolbarEl.querySelector('.mt-size-val');
           if (sizeVal) sizeVal.textContent = newSize;
@@ -6523,7 +6807,7 @@ class MiniToolbar {
         btn.classList.add('is-active-swatch');
         btn.innerHTML = '<span class="swatch-check">✓</span>';
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textColor: c }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { textColor: c }, 'Metin Rengi Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6536,7 +6820,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-h]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { textAlign: align }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { textAlign: align }, 'Metin Hizalama Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6549,7 +6833,7 @@ class MiniToolbar {
         this.toolbarEl.querySelectorAll('[data-align-v]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const tTargets = getTextTargets();
-        tTargets.forEach((o, i) => this.objectManager.updateObject(o.id, { verticalAlign: vAlign }, i === tTargets.length - 1));
+        this.batchUpdateObjects(tTargets, { verticalAlign: vAlign }, 'Metin Dikey Hizalama Değiştir');
         syncAppearanceControls();
       };
     });
@@ -6562,24 +6846,28 @@ class MiniToolbar {
         const targets = getTargets();
         if (act === 'forward') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringForward(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.bringForward(o.id, false));
+          }, { description: 'Katmanı Öne Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı Öne Al');
         } else if (act === 'front') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.bringToFront(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.bringToFront(o.id, false));
+          }, { description: 'Katmanı En Öne Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı En Öne Al');
         } else if (act === 'backward') {
           const sorted = [...targets].sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendBackward(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.sendBackward(o.id, false));
+          }, { description: 'Katmanı Arkaya Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı Arkaya Al');
         } else if (act === 'back') {
           const sorted = [...targets].sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1));
-          sorted.forEach(o => this.layerManager.sendToBack(o.id, false));
+          this.core.runTransaction(() => {
+            sorted.forEach(o => this.layerManager.sendToBack(o.id, false));
+          }, { description: 'Katmanı En Arkaya Al', source: 'layer' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState('Katmanı En Arkaya Al');
         } else if (act === 'toggle-lock') {
           const allLocked = targets.every(o => o.locked);
           const newLocked = !allLocked;
@@ -6597,9 +6885,10 @@ class MiniToolbar {
           if (labelSpan) {
             labelSpan.textContent = newLocked ? 'Kilidi Aç' : 'Kilit';
           }
-          targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }, false));
+          this.core.runTransaction(() => {
+            targets.forEach(o => this.objectManager.updateObject(o.id, { locked: newLocked }, false));
+          }, { description: newLocked ? 'Nesneyi Kilitle' : 'Kilidi Aç', source: 'lock' });
           this.selectionManager.updateSelectionBox();
-          this.core.pushHistoryState(newLocked ? 'Nesneyi Kilitle' : 'Kilidi Aç');
         }
       };
     });
@@ -6703,45 +6992,44 @@ class MiniToolbar {
     const units = this.getSelectionUnits(selected);
     if (units.length < 3) return;
 
-    if (axis === 'horizontal') {
-      units.sort((a, b) => a.minX - b.minX);
-      const minX = units[0].minX;
-      const lastUnit = units[units.length - 1];
-      const maxX = lastUnit.maxX;
-      const totalWidths = units.reduce((s, u) => s + u.width, 0);
-      const totalGap = (maxX - minX) - totalWidths;
-      const gap = totalGap / (units.length - 1);
+    this.core.runTransaction(() => {
+      if (axis === 'horizontal') {
+        units.sort((a, b) => a.minX - b.minX);
+        const minX = units[0].minX;
+        const lastUnit = units[units.length - 1];
+        const maxX = lastUnit.maxX;
+        const totalWidths = units.reduce((s, u) => s + u.width, 0);
+        const totalGap = (maxX - minX) - totalWidths;
+        const gap = totalGap / (units.length - 1);
 
-      let curX = minX;
-      units.forEach(u => {
-        const deltaX = Math.round(curX) - u.minX;
-        u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false);
+        let curX = minX;
+        units.forEach(u => {
+          const deltaX = Math.round(curX) - u.minX;
+          u.objects.forEach(o => {
+            this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false);
+          });
+          curX += u.width + gap;
         });
-        curX += u.width + gap;
-      });
-    } else if (axis === 'vertical') {
-      units.sort((a, b) => a.minY - b.minY);
-      const minY = units[0].minY;
-      const lastUnit = units[units.length - 1];
-      const maxY = lastUnit.maxY;
-      const totalHeights = units.reduce((s, u) => s + u.height, 0);
-      const totalGap = (maxY - minY) - totalHeights;
-      const gap = totalGap / (units.length - 1);
+      } else if (axis === 'vertical') {
+        units.sort((a, b) => a.minY - b.minY);
+        const minY = units[0].minY;
+        const lastUnit = units[units.length - 1];
+        const maxY = lastUnit.maxY;
+        const totalHeights = units.reduce((s, u) => s + u.height, 0);
+        const totalGap = (maxY - minY) - totalHeights;
+        const gap = totalGap / (units.length - 1);
 
-      let curY = minY;
-      units.forEach(u => {
-        const deltaY = Math.round(curY) - u.minY;
-        u.objects.forEach(o => {
-          this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false);
+        let curY = minY;
+        units.forEach(u => {
+          const deltaY = Math.round(curY) - u.minY;
+          u.objects.forEach(o => {
+            this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false);
+          });
+          curY += u.height + gap;
         });
-        curY += u.height + gap;
-      });
-    }
+      }
+    }, { description: 'Eşit Dağıt', source: 'distribute' });
 
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Eşit Dağıt');
-    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -6755,17 +7043,16 @@ class MiniToolbar {
 
     const stageW = (this.core && this.core.data && this.core.data.stage && this.core.data.stage.width) || 1200;
 
-    selected.forEach(o => {
-      let newX = o.x;
-      if (newX + targetWidth > stageW) {
-        newX = Math.max(0, stageW - targetWidth);
-      }
-      this.objectManager.updateObject(o.id, { width: targetWidth, x: newX }, false);
-    });
+    this.core.runTransaction(() => {
+      selected.forEach(o => {
+        let newX = o.x;
+        if (newX + targetWidth > stageW) {
+          newX = Math.max(0, stageW - targetWidth);
+        }
+        this.objectManager.updateObject(o.id, { width: targetWidth, x: newX }, false);
+      });
+    }, { description: 'Genişlikleri Eşitle', source: 'equalizeWidth' });
 
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Genişlikleri Eşitle');
-    }
     this.selectionManager.updateSelectionBox();
   }
 
@@ -6779,76 +7066,75 @@ class MiniToolbar {
     const stageW = (this.stageManager && this.stageManager.logicalWidth) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.width) || 1200;
     const stageH = (this.stageManager && this.stageManager.logicalHeight) || (this.core && this.core.data && this.core.data.stage && this.core.data.stage.height) || 675;
 
-    if (units.length === 1) {
-      // Tek bir birim (örneğin grup haline getirilmiş bir nesneler topluluğu) sahneye tek parça olarak hizalanır
-      const unit = units[0];
-      let deltaX = 0;
-      let deltaY = 0;
+    this.core.runTransaction(() => {
+      if (units.length === 1) {
+        // Tek bir birim (örneğin grup haline getirilmiş bir nesneler topluluğu) sahneye tek parça olarak hizalanır
+        const unit = units[0];
+        let deltaX = 0;
+        let deltaY = 0;
 
-      if (direction === 'left') {
-        deltaX = 0 - unit.minX;
-      } else if (direction === 'right') {
-        deltaX = (stageW - unit.width) - unit.minX;
-      } else if (direction === 'center') {
-        deltaX = Math.round((stageW - unit.width) / 2) - unit.minX;
-      } else if (direction === 'top') {
-        deltaY = 0 - unit.minY;
-      } else if (direction === 'bottom') {
-        deltaY = (stageH - unit.height) - unit.minY;
-      } else if (direction === 'middle') {
-        deltaY = Math.round((stageH - unit.height) / 2) - unit.minY;
+        if (direction === 'left') {
+          deltaX = 0 - unit.minX;
+        } else if (direction === 'right') {
+          deltaX = (stageW - unit.width) - unit.minX;
+        } else if (direction === 'center') {
+          deltaX = Math.round((stageW - unit.width) / 2) - unit.minX;
+        } else if (direction === 'top') {
+          deltaY = 0 - unit.minY;
+        } else if (direction === 'bottom') {
+          deltaY = (stageH - unit.height) - unit.minY;
+        } else if (direction === 'middle') {
+          deltaY = Math.round((stageH - unit.height) / 2) - unit.minY;
+        }
+
+        unit.objects.forEach(o => {
+          this.objectManager.updateObject(o.id, {
+            x: Math.round(o.x + deltaX),
+            y: Math.round(o.y + deltaY)
+          }, false);
+        });
+      } else {
+        // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
+        if (direction === 'left') {
+          const minX = Math.min(...units.map(u => u.minX));
+          units.forEach(u => {
+            const deltaX = minX - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'right') {
+          const maxR = Math.max(...units.map(u => u.maxX));
+          units.forEach(u => {
+            const deltaX = (maxR - u.width) - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'center') {
+          const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
+          units.forEach(u => {
+            const deltaX = Math.round(avgX - u.width / 2) - u.minX;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
+          });
+        } else if (direction === 'top') {
+          const minY = Math.min(...units.map(u => u.minY));
+          units.forEach(u => {
+            const deltaY = minY - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        } else if (direction === 'bottom') {
+          const maxB = Math.max(...units.map(u => u.maxY));
+          units.forEach(u => {
+            const deltaY = (maxB - u.height) - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        } else if (direction === 'middle') {
+          const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
+          units.forEach(u => {
+            const deltaY = Math.round(avgY - u.height / 2) - u.minY;
+            u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
+          });
+        }
       }
+    }, { description: 'Nesneleri Hizala', source: 'align' });
 
-      unit.objects.forEach(o => {
-        this.objectManager.updateObject(o.id, {
-          x: Math.round(o.x + deltaX),
-          y: Math.round(o.y + deltaY)
-        }, false);
-      });
-    } else {
-      // Birden fazla birim seçiliyse (gruplar ve/veya bağımsız nesneler), her grup tek bir nesne gibi davranır ve birbirine hizalanır
-      if (direction === 'left') {
-        const minX = Math.min(...units.map(u => u.minX));
-        units.forEach(u => {
-          const deltaX = minX - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'right') {
-        const maxR = Math.max(...units.map(u => u.maxX));
-        units.forEach(u => {
-          const deltaX = (maxR - u.width) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'center') {
-        const avgX = units.reduce((sum, u) => sum + (u.minX + u.width / 2), 0) / units.length;
-        units.forEach(u => {
-          const deltaX = Math.round(avgX - u.width / 2) - u.minX;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { x: Math.round(o.x + deltaX) }, false));
-        });
-      } else if (direction === 'top') {
-        const minY = Math.min(...units.map(u => u.minY));
-        units.forEach(u => {
-          const deltaY = minY - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      } else if (direction === 'bottom') {
-        const maxB = Math.max(...units.map(u => u.maxY));
-        units.forEach(u => {
-          const deltaY = (maxB - u.height) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      } else if (direction === 'middle') {
-        const avgY = units.reduce((sum, u) => sum + (u.minY + u.height / 2), 0) / units.length;
-        units.forEach(u => {
-          const deltaY = Math.round(avgY - u.height / 2) - u.minY;
-          u.objects.forEach(o => this.objectManager.updateObject(o.id, { y: Math.round(o.y + deltaY) }, false));
-        });
-      }
-    }
-
-    if (this.core && this.core.pushHistoryState) {
-      this.core.pushHistoryState('Nesneleri Hizala');
-    }
     this.selectionManager.updateSelectionBox();
   }
 }

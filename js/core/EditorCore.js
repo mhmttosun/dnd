@@ -9,6 +9,137 @@ class EditorCore {
     this.data = this.createDefaultProject();
     this.activeSubMode = null;
     this.historyManager = null;
+
+    // Transaction & Mutation Yönetimi (Toplu ve Canlı Değişiklikler İçin)
+    this._transactionDepth = 0;
+    this._activeTransaction = null;
+  }
+
+  // --- Merkezi Transaction / Mutation API ---
+  beginTransaction(options = {}) {
+    this._transactionDepth++;
+    if (this._transactionDepth === 1) {
+      this._activeTransaction = {
+        description: options.description || '',
+        source: options.source || 'transaction',
+        saveHistory: options.saveHistory !== false,
+        persist: options.persist !== false,
+        emitDataChanged: options.emitDataChanged !== false,
+        mutated: false,
+        changesCount: 0,
+        startTime: Date.now()
+      };
+    } else if (this._activeTransaction) {
+      if (options.saveHistory !== undefined) {
+        this._activeTransaction.saveHistory = this._activeTransaction.saveHistory || options.saveHistory;
+      }
+      if (options.source && (!this._activeTransaction.source || this._activeTransaction.source === 'transaction')) {
+        this._activeTransaction.source = options.source;
+      }
+      if (options.description && !this._activeTransaction.description) {
+        this._activeTransaction.description = options.description;
+      }
+    }
+    return this._activeTransaction;
+  }
+
+  isInTransaction() {
+    return this._transactionDepth > 0;
+  }
+
+  getTransaction() {
+    return this._activeTransaction;
+  }
+
+  recordMutation(info = {}) {
+    if (this._transactionDepth > 0 && this._activeTransaction) {
+      this._activeTransaction.mutated = true;
+      this._activeTransaction.changesCount++;
+      if (info.source && (!this._activeTransaction.source || this._activeTransaction.source === 'transaction')) {
+        this._activeTransaction.source = info.source;
+      }
+      if (info.description && !this._activeTransaction.description) {
+        this._activeTransaction.description = info.description;
+      }
+    }
+  }
+
+  endTransaction(options = {}) {
+    if (this._transactionDepth <= 0) {
+      this._transactionDepth = 0;
+      this._activeTransaction = null;
+      return null;
+    }
+
+    this._transactionDepth--;
+    if (this._transactionDepth > 0) {
+      return this._activeTransaction;
+    }
+
+    const tx = this._activeTransaction;
+    this._activeTransaction = null;
+    this._transactionDepth = 0;
+
+    if (!tx) return null;
+
+    if (options.rollback === true) {
+      return null;
+    }
+
+    const hasMutated = tx.mutated || options.forceCommit === true || options.mutated === true;
+    if (!hasMutated) {
+      return null;
+    }
+
+    const source = options.source || tx.source || 'transaction';
+    const description = options.description || tx.description || '';
+    const saveHistory = options.saveHistory !== undefined ? options.saveHistory : tx.saveHistory;
+    const persist = options.persist !== undefined ? options.persist : tx.persist;
+    const emitDataChanged = options.emitDataChanged !== undefined ? options.emitDataChanged : tx.emitDataChanged;
+
+    if (saveHistory && !tx.historyPushed) {
+      this.pushHistoryState(description);
+    }
+    if (emitDataChanged) {
+      this.emit('dataChanged', { source, description });
+    }
+    if (persist) {
+      this.autoSave();
+    }
+    return tx;
+  }
+
+  commitTransaction(options = {}) {
+    return this.endTransaction(options);
+  }
+
+  rollbackTransaction() {
+    this._transactionDepth = 0;
+    this._activeTransaction = null;
+  }
+
+  beginMutation(options = {}) {
+    return this.beginTransaction(options);
+  }
+
+  commitMutation(options = {}) {
+    return this.endTransaction(options);
+  }
+
+  rollbackMutation() {
+    return this.rollbackTransaction();
+  }
+
+  runTransaction(callback, options = {}) {
+    this.beginTransaction(options);
+    try {
+      const result = callback(this);
+      this.endTransaction(options);
+      return result;
+    } catch (err) {
+      this.rollbackTransaction();
+      throw err;
+    }
   }
 
   // Geçmiş Yönetimi Entegrasyonu (Merkezi API)
@@ -17,6 +148,9 @@ class EditorCore {
   }
 
   pushHistoryState(description = '') {
+    if (this._transactionDepth > 0 && this._activeTransaction) {
+      this._activeTransaction.historyPushed = true;
+    }
     if (this.historyManager && typeof this.historyManager.pushState === 'function') {
       this.historyManager.pushState(description);
     } else {

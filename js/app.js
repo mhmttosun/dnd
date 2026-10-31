@@ -164,15 +164,45 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sahne verisi her değiştiğinde ebeveyn uygulamaya canlı bildirim gönder (iframe içindeyse)
-    core.on('dataChanged', (e) => {
+    // Sürükleme ve toplu işlemler sırasında transaction koruması ve savunma amaçlı animasyon karesi birleştirme (coalescing)
+    let pendingPostMessageId = null;
+    let pendingSource = 'dataChanged';
+
+    const flushParentMessage = () => {
+      pendingPostMessageId = null;
       if (isIframe && typeof window !== 'undefined' && window.parent && window.parent !== window) {
         try {
           window.parent.postMessage({
             type: 'DND_DATA_CHANGED',
-            source: e.source,
+            source: pendingSource,
             data: exportJSON()
           }, '*');
         } catch (err) {}
+      }
+    };
+
+    if (window.app) {
+      window.app.flushPostMessage = flushParentMessage;
+    }
+
+    core.on('dataChanged', (e) => {
+      // 1. Transaction devam ediyorsa kesinlikle ebeveyn uygulamaya ara mesaj gönderme
+      if (core.isInTransaction && core.isInTransaction()) {
+        return;
+      }
+
+      pendingSource = (e && e.source) || 'dataChanged';
+
+      // 2. Savunma amaçlı coalescing (aynı animasyon karesinde veya ardışık olaylarda tek mesaj)
+      if (typeof requestAnimationFrame === 'function') {
+        if (pendingPostMessageId !== null && typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(pendingPostMessageId);
+        }
+        pendingPostMessageId = requestAnimationFrame(() => {
+          flushParentMessage();
+        });
+      } else {
+        flushParentMessage();
       }
     });
 
