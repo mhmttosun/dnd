@@ -1,6 +1,6 @@
 {
   "name": "@mhmttosun/dnd",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "HTML Tabanlı Görsel Sürükle-Bırak Etkinlik Editörü ve Oynatıcısı (100% DOM/SVG, Zero Canvas, Bağımsız Çevrimdışı Tek Parça HTML İhracı, React/Vue/Web-Component Entegrasyonu)",
   "main": "./dist/player.umd.cjs",
   "module": "./dist/player.js",
@@ -62,7 +62,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mhmttosun/dnd.git"
+    "url": "git+https://github.com/mhmttosun/dnd.git"
   },
   "bugs": {
     "url": "https://github.com/mhmttosun/dnd/issues"
