@@ -2887,6 +2887,22 @@ class TransformEngine {
     if (selectionBorder) {
       e.stopPropagation();
       e.preventDefault();
+
+      // Akıllı Katman Sorgusu (Hit-Testing): Tıklanan noktada seçili nesneden daha üstte bir nesne var mı?
+      const topmostObj = this.getTopmostObjectAtPoint(stagePos, e.clientX, e.clientY);
+      if (topmostObj && !this.selectionManager.selectedIds.has(topmostObj.id)) {
+        if (e.shiftKey) {
+          this.selectionManager.toggleSelect(topmostObj.id);
+        } else {
+          this.selectionManager.select(topmostObj.id, false);
+        }
+
+        if (!topmostObj.locked) {
+          this.startMove(stagePos);
+        }
+        return;
+      }
+
       const primary = this.selectionManager.getPrimarySelected();
       if (primary && primary.locked) {
         return; // Kilitli nesne taşınamaz
@@ -2926,6 +2942,63 @@ class TransformEngine {
       this.selectionManager.clearSelection();
     }
     this.startMarquee(stagePos, e.shiftKey);
+  }
+
+  getTopmostObjectAtPoint(stagePos, clientX, clientY) {
+    const rootNode = this.root || (this.stage && typeof this.stage.getRootNode === 'function' ? this.stage.getRootNode() : document);
+    let elements = [];
+    if (clientX !== undefined && clientY !== undefined) {
+      if (rootNode && typeof rootNode.elementsFromPoint === 'function') {
+        elements = rootNode.elementsFromPoint(clientX, clientY) || [];
+      } else if (typeof document !== 'undefined' && typeof document.elementsFromPoint === 'function') {
+        elements = document.elementsFromPoint(clientX, clientY) || [];
+      }
+    }
+
+    if (elements.length > 0) {
+      for (const el of elements) {
+        const objEl = el.closest ? el.closest('.stage-object') : null;
+        if (objEl) {
+          const id = objEl.getAttribute('data-id');
+          const obj = this.objectManager.getObject(id);
+          if (obj && obj.visible !== false) {
+            return obj;
+          }
+        }
+      }
+    }
+
+    // Geometrik tarama yedeği (elementsFromPoint desteklenmeyen veya test ortamları için)
+    const objects = this.objectManager.getObjects().filter(o => o.visible !== false);
+    const hits = objects.filter(o => {
+      const w = o.width || 0;
+      const h = o.height || 0;
+      if (!o.rotation) {
+        return stagePos.x >= o.x && stagePos.x <= o.x + w &&
+               stagePos.y >= o.y && stagePos.y <= o.y + h;
+      }
+      const cx = o.x + w / 2;
+      const cy = o.y + h / 2;
+      const rad = (-o.rotation * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const dx = stagePos.x - cx;
+      const dy = stagePos.y - cy;
+      const rx = cos * dx - sin * dy + cx;
+      const ry = sin * dx + cos * dy + cy;
+      return rx >= o.x && rx <= o.x + w && ry >= o.y && ry <= o.y + h;
+    });
+
+    if (hits.length === 0) return null;
+
+    hits.sort((a, b) => {
+      const za = a.zIndex !== undefined ? a.zIndex : 1;
+      const zb = b.zIndex !== undefined ? b.zIndex : 1;
+      if (za !== zb) return zb - za;
+      return objects.indexOf(b) - objects.indexOf(a);
+    });
+
+    return hits[0];
   }
 
   startMove(stagePos) {

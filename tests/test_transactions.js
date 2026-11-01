@@ -774,4 +774,158 @@ function assert(cond, msg) {
   console.log('Senaryo 7 (Toplu Hizalama ve Stil): OK (Döngüdeki çoklu updateObject çağrılarına rağmen tek commit, tek undo)');
 }
 
+// ============================================================================
+// SENARYO 8: Akıllı Katman Seçimi (Hit-Testing / Tıklama Aktarımı) Testi
+// Büyük kutu seçiliyken içindeki daha yüksek z-index'li küçük kutuya tıklandığında
+// seçimin küçük kutuya aktarılması ve boş alana tıklandığında büyük kutunun taşınması
+// ============================================================================
+{
+  const h = createHarness();
+
+  // 1. Büyük kutu (alt katman, zIndex: 1)
+  const bigBox = h.objectManager.createObject('rectangle', 'draggable', {
+    x: 50,
+    y: 50,
+    width: 400,
+    height: 400,
+    zIndex: 1
+  });
+
+  // 2. Küçük kutu (üst katman, zIndex: 10, büyük kutunun içinde)
+  const smallBox = h.objectManager.createObject('rectangle', 'draggable', {
+    x: 100,
+    y: 100,
+    width: 80,
+    height: 80,
+    zIndex: 10
+  });
+
+  // 3. Kilitli küçük kutu (daha da üst katman, zIndex: 20, büyük kutunun içinde)
+  const lockedBox = h.objectManager.createObject('rectangle', 'draggable', {
+    x: 250,
+    y: 250,
+    width: 60,
+    height: 60,
+    zIndex: 20,
+    locked: true
+  });
+
+  // Başlangıçta büyük kutu seçili olsun
+  h.selectionManager.select(bigBox.id, false);
+  assert(h.selectionManager.selectedIds.has(bigBox.id), 'Senaryo 8: Başlangıçta bigBox seçili olmalı');
+  assert(!h.selectionManager.selectedIds.has(smallBox.id), 'Senaryo 8: smallBox başlangıçta seçili olmamalı');
+
+  const borderEl = h.selectionOverlay.querySelector('.selection-border') || h.selectionOverlay;
+
+  // 8A: Büyük kutu seçiliyken, üstteki küçük kutunun olduğu koordinatta (120, 120) selectionBorder'a tıklama
+  h.stageEl.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    clientX: 120,
+    clientY: 120,
+    pointerId: 8,
+    target: borderEl,
+    stopPropagation: () => {},
+    preventDefault: () => {}
+  });
+
+  assert(h.selectionManager.selectedIds.has(smallBox.id), 'Senaryo 8A: Tıklama sonrası smallBox seçilmiş olmalı');
+  assert(!h.selectionManager.selectedIds.has(bigBox.id), 'Senaryo 8A: Tıklama sonrası bigBox seçimi bırakılmış olmalı');
+  assert(h.transformEngine.activeAction === 'move', 'Senaryo 8A: smallBox kilitli olmadığı için move aksiyonu başlamalı');
+
+  global.window.dispatchEvent({
+    type: 'pointerup',
+    clientX: 120,
+    clientY: 120,
+    pointerId: 8
+  });
+
+  // 8B: Yeniden bigBox seçilsin, bu kez smallBox dışında boş bir alana (380, 380) tıklansın
+  h.selectionManager.select(bigBox.id, false);
+  assert(h.selectionManager.selectedIds.has(bigBox.id), 'Senaryo 8B: bigBox yeniden seçilmiş olmalı');
+
+  const borderEl2 = h.selectionOverlay.querySelector('.selection-border') || h.selectionOverlay;
+  h.stageEl.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    clientX: 380,
+    clientY: 380,
+    pointerId: 8,
+    target: borderEl2,
+    stopPropagation: () => {},
+    preventDefault: () => {}
+  });
+
+  assert(h.selectionManager.selectedIds.has(bigBox.id), 'Senaryo 8B: Boş alana tıklandığında bigBox seçili kalmalı');
+  assert(!h.selectionManager.selectedIds.has(smallBox.id), 'Senaryo 8B: smallBox seçilmemeli');
+  assert(h.transformEngine.activeAction === 'move', 'Senaryo 8B: bigBox taşınmaya hazır olmalı');
+
+  global.window.dispatchEvent({
+    type: 'pointerup',
+    clientX: 380,
+    clientY: 380,
+    pointerId: 8
+  });
+
+  // 8C: Kilitli küçük kutunun olduğu koordinata (260, 260) tıklama
+  h.selectionManager.select(bigBox.id, false);
+  const borderEl3 = h.selectionOverlay.querySelector('.selection-border') || h.selectionOverlay;
+  h.stageEl.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    clientX: 260,
+    clientY: 260,
+    pointerId: 8,
+    target: borderEl3,
+    stopPropagation: () => {},
+    preventDefault: () => {}
+  });
+
+  assert(h.selectionManager.selectedIds.has(lockedBox.id), 'Senaryo 8C: Kilitli kutuya tıklandığında lockedBox seçilmeli');
+  assert(!h.selectionManager.selectedIds.has(bigBox.id), 'Senaryo 8C: bigBox seçimi bırakılmalı');
+  assert(h.transformEngine.activeAction !== 'move', 'Senaryo 8C: Kilitli nesne taşınmaya başlamamalı');
+
+  global.window.dispatchEvent({
+    type: 'pointerup',
+    clientX: 260,
+    clientY: 260,
+    pointerId: 8
+  });
+
+  // 8D: elementsFromPoint desteği olan ortam simülasyonu
+  h.selectionManager.select(bigBox.id, false);
+  const smallEl = h.objectsContainer.querySelector(`[data-id="${smallBox.id}"]`);
+  const origEfp = global.document.elementsFromPoint;
+  global.document.elementsFromPoint = (x, y) => {
+    if (x === 120 && y === 120) {
+      return [borderEl, smallEl];
+    }
+    return [borderEl];
+  };
+
+  const borderEl4 = h.selectionOverlay.querySelector('.selection-border') || h.selectionOverlay;
+  h.stageEl.dispatchEvent({
+    type: 'pointerdown',
+    button: 0,
+    clientX: 120,
+    clientY: 120,
+    pointerId: 8,
+    target: borderEl4,
+    stopPropagation: () => {},
+    preventDefault: () => {}
+  });
+
+  assert(h.selectionManager.selectedIds.has(smallBox.id), 'Senaryo 8D (elementsFromPoint): smallBox seçilmiş olmalı');
+  global.document.elementsFromPoint = origEfp;
+
+  global.window.dispatchEvent({
+    type: 'pointerup',
+    clientX: 120,
+    clientY: 120,
+    pointerId: 8
+  });
+
+  console.log('Senaryo 8 (Akıllı Katman Hit-Testing): OK (Seçili büyük kutu altındaki yüksek z-index nesneler doğrudan seçilebiliyor)');
+}
+
 console.log('Transaction and Debounce Scenarios: ALL_OK');

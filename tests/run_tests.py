@@ -1319,6 +1319,7 @@ assert 'core.isInTransaction()' in app_js_code, "app.js postMessage köprüsü t
 assert 'requestAnimationFrame' in app_js_code, "app.js ebeveyn bildirimlerinde coalescing (birleştirme) uygulamalıdır!"
 assert 'hasMovedOrDragged' in transform_engine_code, "TransformEngine hareket eşiği (micro-jitter) denetimi yapmalıdır!"
 assert 'forceCommit' in transform_engine_code, "TransformEngine pointerup işleminde forceCommit ile tek seferde commit yapmalıdır!"
+assert 'getTopmostObjectAtPoint' in transform_engine_code, "TransformEngine akıllı katman hit-testing sorgusu getTopmostObjectAtPoint metoduna sahip olmalıdır!"
 
 try:
     tx_runtime_test = subprocess.run(
@@ -1331,8 +1332,8 @@ try:
         + tx_runtime_test.stdout
         + tx_runtime_test.stderr
     )
-    assert 'Transaction and Debounce Scenarios: ALL_OK' in tx_runtime_test.stdout, "Tüm 7 transaction senaryosu başarılı olmalıdır!"
-    test_passed("7 Transaction senaryosu (Tek nesne 50 hareket, 10 nesneli çoklu sürükleme, hareketsiz tık, resize/rotate, pointercancel, iframe postMessage coalescing, toplu stil/hizalama) sayaçlarla çalışma zamanında doğrulandı.")
+    assert 'Transaction and Debounce Scenarios: ALL_OK' in tx_runtime_test.stdout, "Tüm 8 transaction ve hit-testing senaryosu başarılı olmalıdır!"
+    test_passed("8 Senaryo (Tek nesne 50 hareket, 10 nesneli çoklu sürükleme, hareketsiz tık, resize/rotate, pointercancel, iframe postMessage coalescing, toplu stil/hizalama, akıllı katman hit-testing) sayaçlarla çalışma zamanında doğrulandı.")
 except (PermissionError, FileNotFoundError) as e:
     test_passed("Transaction ve debounce API'leri statik denetimlerle doğrulandı.")
 
