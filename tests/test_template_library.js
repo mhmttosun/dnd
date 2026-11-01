@@ -21,7 +21,7 @@ loadSource('js/data/TemplateLibrary.js');
 const { TemplateLibrary, TEMPLATE_PROJECTS } = window.DND;
 const library = new TemplateLibrary();
 
-assert(TEMPLATE_PROJECTS.length === 17, `17 şablon bekleniyordu, ${TEMPLATE_PROJECTS.length} bulundu.`);
+assert(TEMPLATE_PROJECTS.length === 19, `19 şablon bekleniyordu, ${TEMPLATE_PROJECTS.length} bulundu.`);
 TEMPLATE_PROJECTS.forEach(entry => library.validateProject(entry.project));
 
 const firstEntry = TEMPLATE_PROJECTS[0];

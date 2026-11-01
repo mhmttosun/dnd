@@ -1340,7 +1340,7 @@ except (PermissionError, FileNotFoundError) as e:
 print("\n[Aşama 5.35] Yatay Şablon Kütüphanesi ve Güvenli Kopyalama Testi")
 templates_dir = os.path.join(BASE_DIR, 'templates')
 template_files = sorted(name for name in os.listdir(templates_dir) if name.endswith('.json'))
-assert len(template_files) == 17, f"17 şablon JSON'u bekleniyordu, {len(template_files)} bulundu."
+assert len(template_files) == 19, f"19 şablon JSON'u bekleniyordu, {len(template_files)} bulundu."
 
 for template_file in template_files:
     with open(os.path.join(templates_dir, template_file), 'r', encoding='utf-8') as f:
@@ -1377,7 +1377,7 @@ assert template_runtime_test.returncode == 0, (
     + template_runtime_test.stderr
 )
 assert 'Template library cloning and validation: OK' in template_runtime_test.stdout
-test_passed("17 JSON şablonu, yatay önizleme rafı, güvenli ID/answerKey/group kopyalama ve zararlı değer filtreleri doğrulandı.")
+test_passed("19 JSON şablonu, yatay önizleme rafı, güvenli ID/answerKey/group kopyalama ve zararlı değer filtreleri doğrulandı.")
 
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")
