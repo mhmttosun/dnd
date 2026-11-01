@@ -296,53 +296,191 @@ body.is-embedded .editor-workspace {
   margin: 0 4px;
 }
 
-/* Şablon Açılır Menüsü */
-.template-dropdown-wrapper {
-  position: relative;
+/* Şablon Önizleme Kütüphanesi */
+.template-library-wrapper {
+  display: flex;
+  align-items: center;
 }
 
-.templates-menu {
+.template-shelf {
   position: absolute;
-  top: 42px;
+  top: 48px;
   left: 0;
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-popup);
-  padding: 8px;
+  right: 0;
+  z-index: 39;
+  padding: 12px 16px 10px;
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+.template-shelf[hidden] {
+  display: none !important;
+}
+
+.template-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1px 1px 8px;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.template-rail::-webkit-scrollbar {
+  height: 7px;
+}
+
+.template-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.template-rail::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.38);
+  border-radius: 999px;
+}
+
+.template-card {
+  flex: 0 0 232px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 280px;
-  z-index: 1000;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  box-shadow: var(--shadow-sm);
 }
 
-.menu-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 6px 10px;
-}
-
-.template-menu-item {
+.template-preview {
   width: 100%;
-  text-align: left;
-  background: transparent;
-  border: none;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-main);
-  cursor: pointer;
-  transition: background 0.15s ease;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  pointer-events: none;
 }
 
-.template-menu-item:hover {
-  background: #eff6ff;
+.template-preview-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.template-preview-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.template-start-btn {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--primary-border);
+  border-radius: 8px;
+  background: var(--primary-light);
   color: var(--primary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.template-start-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.template-start-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.template-confirm-dialog {
+  width: min(420px, calc(100vw - 32px));
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--text-main);
+  box-shadow: var(--shadow-popup);
+}
+
+.template-confirm-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.template-confirm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+}
+
+.template-confirm-content strong {
+  font-size: 0.95rem;
+}
+
+.template-confirm-content p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.template-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.template-confirm-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.template-confirm-actions .is-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .template-shelf {
+    padding-inline: 10px;
+  }
+
+  .template-card {
+    flex-basis: min(78vw, 280px);
+  }
 }
 
 /* Sağ Küme ve Geçmiş / Yakınlaştırma */

@@ -38,18 +38,11 @@
         </button>
       </div>
 
-      <!-- Şablon Seçici Menü -->
-      <div class="template-dropdown-wrapper">
-        <button type="button" class="sub-tool-btn" id="btn-toggle-templates" title="Örnek Etkinlik Şablonları">
+      <!-- Şablon Kütüphanesi -->
+      <div class="template-library-wrapper">
+        <button type="button" class="sub-tool-btn" id="btn-toggle-templates" title="Şablonları Aç" aria-expanded="false" aria-controls="template-shelf">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
-        <div class="templates-menu" id="templates-menu" style="display: none;">
-          <div class="menu-title">Örnek Şablonlar</div>
-          <button type="button" class="template-menu-item" data-sample="matching">1. Eşleştirme (Kavram ve Tanım)</button>
-          <button type="button" class="template-menu-item" data-sample="image-labeling">2. Görsel Etiketleme (İnsan Anatomisi)</button>
-          <button type="button" class="template-menu-item" data-sample="categorization">3. Kategorilere Ayırma (Meyve/Sebze)</button>
-          <button type="button" class="template-menu-item" data-sample="sequencing">4. Sıralama (Kelebek Yaşam Döngüsü)</button>
-        </div>
       </div>
 
       <!-- Cevap Anahtarı Rehber Bloğu (Yalnızca Cevap Anahtarı Modunda) -->
@@ -152,6 +145,10 @@
     </div>
   </nav>
 
+  <section class="template-shelf" id="template-shelf" aria-label="Şablonlar" hidden>
+    <div class="template-rail" id="template-rail" role="list"></div>
+  </section>
+
   <!-- ==========================================
        3. ÇALIŞMA ALANI (FULL CANVAS WORKSPACE)
        Sağ ve Sol Panel Yoktur.
@@ -197,6 +194,8 @@
   <script src="js/player/ActivityEngine.js"></script>
   <script src="js/player/ExportManager.js"></script>
   <script src="js/ui/MiniToolbar.js"></script>
+  <script src="js/data/TemplateProjects.js"></script>
+  <script src="js/data/TemplateLibrary.js"></script>
   <script src="js/ui/UIManager.js"></script>
   <script src="js/data/SampleProjects.js"></script>
   <script src="js/app.js"></script>

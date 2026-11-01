@@ -54,6 +54,8 @@ required_files = [
     'js/player/ExportManager.js',
     'js/ui/MiniToolbar.js',
     'js/ui/PropertyPanel.js',
+    'js/data/TemplateProjects.js',
+    'js/data/TemplateLibrary.js',
     'js/ui/UIManager.js',
     'js/data/SampleProjects.js',
     'js/app.js'
@@ -1333,6 +1335,49 @@ try:
     test_passed("7 Transaction senaryosu (Tek nesne 50 hareket, 10 nesneli çoklu sürükleme, hareketsiz tık, resize/rotate, pointercancel, iframe postMessage coalescing, toplu stil/hizalama) sayaçlarla çalışma zamanında doğrulandı.")
 except (PermissionError, FileNotFoundError) as e:
     test_passed("Transaction ve debounce API'leri statik denetimlerle doğrulandı.")
+
+# 5.35 Yatay Şablon Kütüphanesi ve Güvenli Kopyalama Testi
+print("\n[Aşama 5.35] Yatay Şablon Kütüphanesi ve Güvenli Kopyalama Testi")
+templates_dir = os.path.join(BASE_DIR, 'templates')
+template_files = sorted(name for name in os.listdir(templates_dir) if name.endswith('.json'))
+assert len(template_files) == 17, f"17 şablon JSON'u bekleniyordu, {len(template_files)} bulundu."
+
+for template_file in template_files:
+    with open(os.path.join(templates_dir, template_file), 'r', encoding='utf-8') as f:
+        template_data = json.load(f)
+    assert isinstance(template_data.get('objects'), list), f"{template_file}: objects dizisi eksik."
+    assert isinstance(template_data.get('answerKey'), dict), f"{template_file}: answerKey nesnesi eksik."
+    object_ids = [obj.get('id') for obj in template_data['objects']]
+    assert len(object_ids) == len(set(object_ids)), f"{template_file}: yinelenen nesne kimliği var."
+    known_ids = set(object_ids)
+    for draggable_id, target_id in template_data['answerKey'].items():
+        assert draggable_id in known_ids and target_id in known_ids, f"{template_file}: bozuk answerKey referansı var."
+
+with open(os.path.join(BASE_DIR, 'index.html'), 'r', encoding='utf-8') as f:
+    template_index_code = f.read()
+with open(os.path.join(BASE_DIR, 'css/editor.css'), 'r', encoding='utf-8') as f:
+    template_css_code = f.read()
+with open(os.path.join(BASE_DIR, 'js/ui/UIManager.js'), 'r', encoding='utf-8') as f:
+    template_ui_code = f.read()
+
+assert 'template-shelf' in template_index_code and 'template-rail' in template_index_code, "Şablon rafı HTML yapısı eksik."
+assert 'template-menu-item' not in template_index_code, "Eski metin tabanlı şablon menüsü kaldırılmalıdır."
+assert 'overflow-x: auto' in template_css_code and '.template-card' in template_css_code, "Yatay kaydırılabilir şablon kartları eksik."
+assert "startButton.textContent = 'Başla'" in template_ui_code, "Şablon kartlarında Başla butonu bulunmalıdır."
+assert 'projectCopy' in template_ui_code and 'updateSaveStatus(false)' in template_ui_code, "Şablon kopyası kaydedilmemiş yeni çalışma olarak açılmalıdır."
+
+template_runtime_test = subprocess.run(
+    [node_bin, os.path.join(BASE_DIR, 'tests/test_template_library.js')],
+    capture_output=True,
+    text=True
+)
+assert template_runtime_test.returncode == 0, (
+    "Şablon kütüphanesi çalışma zamanı testi başarısız:\n"
+    + template_runtime_test.stdout
+    + template_runtime_test.stderr
+)
+assert 'Template library cloning and validation: OK' in template_runtime_test.stdout
+test_passed("17 JSON şablonu, yatay önizleme rafı, güvenli ID/answerKey/group kopyalama ve zararlı değer filtreleri doğrulandı.")
 
 # 6. HTML Dışa Aktarma ve 4 Örnek Etkinlik Üretimi
 print("\n[Aşama 6] Bağımsız HTML Üretimi ve Çevrimdışı Bütünlük Testi")

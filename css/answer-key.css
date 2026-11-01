@@ -189,12 +189,12 @@
 /* Cevap Anahtarı Modunda Orta (Nesne Ekleme), Sağ (Geçmiş & Zoom) ve Şablon Kümelerini Gizle */
 .app-sub-toolbar.mode-answer-key .cluster-add-objects,
 .app-sub-toolbar.mode-answer-key .cluster-history-zoom,
-.app-sub-toolbar.mode-answer-key .template-dropdown-wrapper,
+.app-sub-toolbar.mode-answer-key .template-library-wrapper,
 body.mode-answer-key .app-sub-toolbar .cluster-add-objects,
 body.mode-answer-key .app-sub-toolbar .cluster-history-zoom,
-body.mode-answer-key .app-sub-toolbar .template-dropdown-wrapper,
+body.mode-answer-key .app-sub-toolbar .template-library-wrapper,
 .dnd-editor-root.mode-answer-key .app-sub-toolbar .cluster-add-objects,
 .dnd-editor-root.mode-answer-key .app-sub-toolbar .cluster-history-zoom,
-.dnd-editor-root.mode-answer-key .app-sub-toolbar .template-dropdown-wrapper {
+.dnd-editor-root.mode-answer-key .app-sub-toolbar .template-library-wrapper {
   display: none !important;
 }

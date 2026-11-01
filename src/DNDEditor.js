@@ -19,17 +19,10 @@ const shell = () => `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-        <div class="template-dropdown-wrapper">
-          <button id="btn-toggle-templates" class="sub-tool-btn" type="button" title="Örnek Etkinlik Şablonları">
+        <div class="template-library-wrapper">
+          <button id="btn-toggle-templates" class="sub-tool-btn" type="button" title="Şablonları Aç" aria-expanded="false" aria-controls="template-shelf">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           </button>
-          <div id="templates-menu" class="templates-menu" style="display:none">
-            <div class="menu-title">Örnek Şablonlar</div>
-            <button class="template-menu-item" data-sample="matching" type="button">1. Eşleştirme (Kavram ve Tanım)</button>
-            <button class="template-menu-item" data-sample="image-labeling" type="button">2. Görsel Etiketleme (İnsan Anatomisi)</button>
-            <button class="template-menu-item" data-sample="categorization" type="button">3. Kategorilere Ayırma (Meyve/Sebze)</button>
-            <button class="template-menu-item" data-sample="sequencing" type="button">4. Sıralama (Kelebek Yaşam Döngüsü)</button>
-          </div>
         </div>
         <div class="answer-key-toolbar-guide" id="answer-key-guide-bar" style="display: none;">
           <div class="ak-toolbar-divider"></div>
@@ -84,6 +77,9 @@ const shell = () => `
         </button>
       </div>
     </nav>
+    <section class="template-shelf" id="template-shelf" aria-label="Şablonlar" hidden>
+      <div class="template-rail" id="template-rail" role="list"></div>
+    </section>
     <main id="editor-layout" class="editor-workspace">
       <div id="stage-viewport" class="stage-viewport">
         <div id="stage-container" class="stage-container">

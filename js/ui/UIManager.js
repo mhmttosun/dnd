@@ -1,6 +1,6 @@
 /**
  * UIManager - DND arayüzü, üst başlık, ikincil araç çubuğu,
- * şablonlar menüsü, mod geçişleri ve bildirimleri yönetir.
+ * şablon kütüphanesi, mod geçişleri ve bildirimleri yönetir.
  * Yan paneller kaldırılmış, tam ekran tuval düzeni uygulanmıştır.
  */
 class UIManager {
@@ -17,6 +17,12 @@ class UIManager {
     this.previewContainer = this.root.getElementById('preview-container');
     this.editorContainer = this.root.getElementById('editor-layout');
     this.activePlayerInstance = null;
+    this.isProjectDirty = false;
+    this.templateShelfRendered = false;
+    this.pendingTemplateId = null;
+    this.templateLibrary = window.DND.TemplateLibrary
+      ? new window.DND.TemplateLibrary()
+      : null;
 
     this.init();
   }
@@ -52,6 +58,7 @@ class UIManager {
   }
 
   updateSaveStatus(isSaved) {
+    this.isProjectDirty = !isSaved;
     const statusBox = this.root.querySelector('.project-save-status');
     const statusText = this.root.getElementById('status-text');
     if (statusBox && statusText) {
@@ -63,6 +70,26 @@ class UIManager {
         statusText.textContent = 'Kaydedilmedi';
       }
     }
+  }
+
+  downloadProjectJSON() {
+    const projectData = this.core.getProjectData();
+    const jsonStr = JSON.stringify(projectData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const safeTitle = ((projectData.project && projectData.project.name) || 'etkinlik')
+      .toLowerCase()
+      .replace(/[^a-z0-9ğüşıöç]+/g, '_');
+    const ownerDocument = this.root.ownerDocument || document;
+    const anchor = ownerDocument.createElement('a');
+    anchor.href = url;
+    anchor.download = `${safeTitle}.json`;
+    ownerDocument.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    this.updateSaveStatus(true);
+    this.showToast('Proje JSON olarak kaydedildi.', 'success');
   }
 
   bindHeaderActions() {
@@ -94,27 +121,7 @@ class UIManager {
     // 2. Projeyi Kaydet (JSON İndir)
     const btnSave = this.root.getElementById('btn-save-project');
     if (btnSave) {
-      btnSave.onclick = () => {
-        const projectData = this.core.getProjectData();
-        const jsonStr = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-
-        const safeTitle = ((projectData.project && projectData.project.name) || 'etkinlik')
-          .toLowerCase()
-          .replace(/[^a-z0-9ğüşıöç]+/g, '_');
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${safeTitle}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        this.updateSaveStatus(true);
-        this.showToast('Proje JSON olarak kaydedildi.', 'success');
-      };
+      btnSave.onclick = () => this.downloadProjectJSON();
     }
 
     // 3. HTML İndir
@@ -130,44 +137,56 @@ class UIManager {
   }
 
   bindSubToolbar() {
-    // Şablonlar Menüsü Aç / Kapa
+    // Şablon Önizleme Kütüphanesi Aç / Kapa
     const btnTemplates = this.root.getElementById('btn-toggle-templates');
-    const menuTemplates = this.root.getElementById('templates-menu');
+    const templateShelf = this.root.getElementById('template-shelf');
+    const templateRail = this.root.getElementById('template-rail');
     const btnMore = this.root.getElementById('btn-more-menu');
     const menuMore = this.root.getElementById('more-dropdown-menu');
 
-    if (btnTemplates && menuTemplates) {
+    if (btnTemplates && templateShelf && templateRail && this.templateLibrary) {
       btnTemplates.onclick = (e) => {
         e.stopPropagation();
-        if (menuMore) menuMore.style.display = 'none';
-        const isHidden = menuTemplates.style.display === 'none';
-        menuTemplates.style.display = isHidden ? 'flex' : 'none';
+        if (menuMore) {
+          menuMore.style.display = 'none';
+          if (btnMore) btnMore.setAttribute('aria-expanded', 'false');
+        }
+        if (templateShelf.hidden) {
+          this.ensureTemplateShelfRendered();
+          this.openTemplateShelf();
+        } else {
+          this.closeTemplateShelf();
+        }
       };
 
-      window.addEventListener('click', () => {
-        if (menuTemplates) menuTemplates.style.display = 'none';
+      templateRail.addEventListener('wheel', (event) => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+        event.preventDefault();
+        templateRail.scrollLeft += event.deltaY;
+      }, this.options.signal ? { passive: false, signal: this.options.signal } : { passive: false });
+
+      window.addEventListener('pointerdown', (event) => {
+        if (templateShelf.hidden) return;
+        const utils = window.DND.InteractionUtils;
+        if (!utils.pathContains(event, templateShelf) && !utils.pathContains(event, btnTemplates)) {
+          this.closeTemplateShelf();
+        }
       }, this.options.signal ? { signal: this.options.signal } : undefined);
 
-      menuTemplates.querySelectorAll('[data-sample]').forEach(item => {
-        item.onclick = (e) => {
-          e.stopPropagation();
-          const sampleKey = item.getAttribute('data-sample');
-          const sample = window.DND.SAMPLE_PROJECTS[sampleKey];
-          if (sample) {
-            this.core.loadProject(sample);
-            this.updateSaveStatus(true);
-            this.showToast(`"${sample.project.name}" şablonu yüklendi.`, 'success');
-          }
-          menuTemplates.style.display = 'none';
-        };
-      });
+      this.root.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !templateShelf.hidden) {
+          event.preventDefault();
+          this.closeTemplateShelf();
+          btnTemplates.focus();
+        }
+      }, this.options.signal ? { signal: this.options.signal } : undefined);
     }
 
     // Daha Fazla Seçenek Menüsü Aç / Kapa (Proje Aç, Çevrimdışı HTML İndir, Kaydet)
     if (btnMore && menuMore) {
       btnMore.onclick = (e) => {
         e.stopPropagation();
-        if (menuTemplates) menuTemplates.style.display = 'none';
+        this.closeTemplateShelf();
         const isHidden = menuMore.style.display === 'none';
         menuMore.style.display = isHidden ? 'flex' : 'none';
         btnMore.setAttribute('aria-expanded', String(isHidden));
@@ -344,6 +363,153 @@ class UIManager {
     if (btnZoomReset) btnZoomReset.onclick = () => this.stageManager.fitToScreen();
   }
 
+  ensureTemplateShelfRendered() {
+    if (this.templateShelfRendered || !this.templateLibrary) return;
+    const rail = this.root.getElementById('template-rail');
+    if (!rail) return;
+    const ownerDocument = this.root.ownerDocument || document;
+    const fragment = ownerDocument.createDocumentFragment();
+
+    this.templateLibrary.list().forEach(entry => {
+      try {
+        const card = ownerDocument.createElement('article');
+        card.className = 'template-card';
+        card.setAttribute('role', 'listitem');
+
+        const preview = ownerDocument.createElement('div');
+        preview.className = 'template-preview';
+        preview.appendChild(this.templateLibrary.createPreviewElement(entry.project, ownerDocument));
+
+        const startButton = ownerDocument.createElement('button');
+        startButton.type = 'button';
+        startButton.className = 'template-start-btn';
+        startButton.textContent = 'Başla';
+        startButton.setAttribute('aria-label', `${entry.project.project?.name || 'Şablon'} ile başla`);
+        startButton.onclick = (event) => {
+          event.stopPropagation();
+          this.requestTemplateStart(entry.id);
+        };
+
+        card.append(preview, startButton);
+        fragment.appendChild(card);
+      } catch (error) {
+        console.error(`[DND] Şablon önizlemesi oluşturulamadı: ${entry.id}`, error);
+      }
+    });
+
+    rail.replaceChildren(fragment);
+    this.templateShelfRendered = true;
+  }
+
+  openTemplateShelf() {
+    const shelf = this.root.getElementById('template-shelf');
+    const button = this.root.getElementById('btn-toggle-templates');
+    if (!shelf || this.core.getMode() !== 'design') return;
+    shelf.hidden = false;
+    if (button) {
+      button.classList.add('active');
+      button.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  closeTemplateShelf() {
+    const shelf = this.root.getElementById('template-shelf');
+    const button = this.root.getElementById('btn-toggle-templates');
+    if (shelf) shelf.hidden = true;
+    if (button) {
+      button.classList.remove('active');
+      button.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  requestTemplateStart(templateId) {
+    if (!this.isProjectDirty) {
+      this.applyTemplate(templateId);
+      return;
+    }
+
+    const dialog = this.getTemplateConfirmDialog();
+    if (dialog && typeof dialog.showModal === 'function') {
+      this.pendingTemplateId = templateId;
+      if (!dialog.open) dialog.showModal();
+      return;
+    }
+
+    if (window.confirm('Kaydedilmemiş değişiklikleriniz var. Şablonla devam edilsin mi?')) {
+      this.applyTemplate(templateId);
+    }
+  }
+
+  getTemplateConfirmDialog() {
+    let dialog = this.root.getElementById('template-confirm-dialog');
+    if (dialog) return dialog;
+    const ownerDocument = this.root.ownerDocument || document;
+    dialog = ownerDocument.createElement('dialog');
+    dialog.id = 'template-confirm-dialog';
+    dialog.className = 'template-confirm-dialog';
+
+    const content = ownerDocument.createElement('div');
+    content.className = 'template-confirm-content';
+    const title = ownerDocument.createElement('strong');
+    title.textContent = 'Kaydedilmemiş değişiklikler var';
+    const message = ownerDocument.createElement('p');
+    message.textContent = 'Şablon başlatıldığında mevcut çalışma yeni bir projeyle değiştirilecek.';
+    const actions = ownerDocument.createElement('div');
+    actions.className = 'template-confirm-actions';
+
+    [
+      ['cancel', 'Vazgeç', false],
+      ['discard', 'Kaydetmeden devam et', false],
+      ['save', 'Kaydet ve başla', true]
+    ].forEach(([action, label, primary]) => {
+      const button = ownerDocument.createElement('button');
+      button.type = 'button';
+      button.dataset.templateAction = action;
+      button.textContent = label;
+      if (primary) button.classList.add('is-primary');
+      actions.appendChild(button);
+    });
+
+    content.append(title, message, actions);
+    dialog.appendChild(content);
+    (this.root.body || this.root).appendChild(dialog);
+
+    dialog.addEventListener('click', event => {
+      const button = event.target.closest('[data-template-action]');
+      if (!button) return;
+      const action = button.dataset.templateAction;
+      const templateId = this.pendingTemplateId;
+      this.pendingTemplateId = null;
+      dialog.close();
+      if (!templateId || action === 'cancel') return;
+      if (action === 'save') this.downloadProjectJSON();
+      this.applyTemplate(templateId);
+    }, this.options.signal ? { signal: this.options.signal } : undefined);
+
+    dialog.addEventListener('cancel', () => {
+      this.pendingTemplateId = null;
+    }, this.options.signal ? { signal: this.options.signal } : undefined);
+    return dialog;
+  }
+
+  applyTemplate(templateId) {
+    try {
+      this.finishInlineEditing?.();
+      const projectCopy = this.templateLibrary.instantiate(templateId);
+      this.closeTemplateShelf();
+      if (this.core.getMode() !== 'design') this.core.setMode('design');
+      this.core.loadProject(projectCopy);
+      this.updateSaveStatus(false);
+      const fit = () => this.stageManager.fitToScreen();
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
+      else fit();
+      this.showToast('Şablon kopyası sahneye eklendi.', 'success');
+    } catch (error) {
+      console.error('[DND] Şablon başlatılamadı:', error);
+      this.showToast(`Şablon başlatılamadı: ${error.message}`, 'error');
+    }
+  }
+
   bindModeSwitcher() {
     const modeBtns = this.root.querySelectorAll('.mode-toggle-btn');
     modeBtns.forEach(btn => {
@@ -355,6 +521,7 @@ class UIManager {
   }
 
   handleModeChanged(newMode) {
+    if (newMode !== 'design') this.closeTemplateShelf();
     this.root.querySelectorAll('.mode-toggle-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-mode') === newMode);
     });
@@ -366,10 +533,10 @@ class UIManager {
 
     const clusterAdd = this.root.querySelector('.cluster-add-objects') || this.root.getElementById('cluster-add-objects');
     const clusterHistoryZoom = this.root.querySelector('.cluster-history-zoom') || this.root.getElementById('cluster-history-zoom');
-    const templateDropdown = this.root.querySelector('.template-dropdown-wrapper');
+    const templateLibrary = this.root.querySelector('.template-library-wrapper');
     if (clusterAdd) clusterAdd.style.display = newMode === 'answer-key' ? 'none' : 'flex';
     if (clusterHistoryZoom) clusterHistoryZoom.style.display = newMode === 'answer-key' ? 'none' : 'flex';
-    if (templateDropdown) templateDropdown.style.display = newMode === 'answer-key' ? 'none' : '';
+    if (templateLibrary) templateLibrary.style.display = newMode === 'design' ? '' : 'none';
     const moreMenuDivider = this.root.getElementById('more-menu-divider');
     if (moreMenuDivider) moreMenuDivider.style.display = newMode === 'answer-key' ? 'none' : 'block';
 

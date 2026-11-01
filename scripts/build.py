@@ -23,6 +23,59 @@ def read_file(rel_path):
     with open(os.path.join(BASE_DIR, rel_path), 'r', encoding='utf-8') as f:
         return f.read()
 
+def generate_template_bundle():
+    """Validate the source template JSON files and embed them for offline use."""
+    templates_dir = os.path.join(BASE_DIR, 'templates')
+    output_path = os.path.join(BASE_DIR, 'js', 'data', 'TemplateProjects.js')
+    required_root_keys = {'project', 'stage', 'objects', 'answerKey', 'settings'}
+    catalog = []
+
+    if not os.path.isdir(templates_dir):
+        raise RuntimeError('templates/ klasoru bulunamadi.')
+
+    for filename in sorted(name for name in os.listdir(templates_dir) if name.endswith('.json')):
+        source_path = os.path.join(templates_dir, filename)
+        with open(source_path, 'r', encoding='utf-8') as source_file:
+            project = json.load(source_file)
+
+        missing = required_root_keys.difference(project.keys())
+        if missing:
+            raise RuntimeError(f'{filename}: eksik kok alanlar: {", ".join(sorted(missing))}')
+        if not isinstance(project.get('objects'), list):
+            raise RuntimeError(f'{filename}: objects bir dizi olmalidir.')
+        if not isinstance(project.get('answerKey'), dict):
+            raise RuntimeError(f'{filename}: answerKey bir nesne olmalidir.')
+
+        object_ids = [obj.get('id') for obj in project['objects'] if isinstance(obj, dict)]
+        if any(not isinstance(object_id, str) or not object_id for object_id in object_ids):
+            raise RuntimeError(f'{filename}: her nesnenin dolu bir string id alani olmalidir.')
+        if len(object_ids) != len(project['objects']) or len(set(object_ids)) != len(object_ids):
+            raise RuntimeError(f'{filename}: nesne kimlikleri eksik veya tekrarlaniyor.')
+
+        known_ids = set(object_ids)
+        for draggable_id, target_id in project['answerKey'].items():
+            if draggable_id not in known_ids or target_id not in known_ids:
+                raise RuntimeError(f'{filename}: answerKey bilinmeyen bir nesneye referans veriyor.')
+
+        catalog.append({
+            'id': os.path.splitext(filename)[0],
+            'project': project,
+        })
+
+    if not catalog:
+        raise RuntimeError('templates/ klasorunde hic JSON sablonu bulunamadi.')
+
+    payload = json.dumps(catalog, ensure_ascii=False, separators=(',', ':'))
+    generated = (
+        '/** Bu dosya scripts/build.py tarafindan templates/*.json kaynaklarindan uretilir. */\n'
+        'window.DND = window.DND || {};\n'
+        f'window.DND.TEMPLATE_PROJECTS = Object.freeze({payload});\n'
+    )
+    with open(output_path, 'w', encoding='utf-8') as output_file:
+        output_file.write(generated)
+
+generate_template_bundle()
+
 # CSS Dosyalarını Kopyala
 shutil.copy(os.path.join(BASE_DIR, 'css/player.css'), os.path.join(DIST_DIR, 'player.css'))
 editor_css = '\n'.join(read_file(path) for path in [
@@ -67,6 +120,8 @@ editor_sources = [
     'js/player/ActivityEngine.js',
     'js/player/ExportManager.js',
     'js/ui/MiniToolbar.js',
+    'js/data/TemplateProjects.js',
+    'js/data/TemplateLibrary.js',
     'js/ui/UIManager.js',
     'js/data/SampleProjects.js',
 ]
